@@ -249,7 +249,7 @@ class ContentElementWrappingService
                     $nodeIdentifiers[] = $subNode->getIdentifier();
                 }
             }
-            return json_encode($nodeIdentifiers);
+            return empty($nodeIdentifiers) ? '' : json_encode($nodeIdentifiers);
         }
 
         // Serialize node reference to node identifier
