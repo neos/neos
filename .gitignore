@@ -7,4 +7,3 @@
 .DS_Store
 /Scripts/**/src
 /Tests/Behavior/behat.yml
-/Resources/Public/JavaScript/ContentModule-built.js
