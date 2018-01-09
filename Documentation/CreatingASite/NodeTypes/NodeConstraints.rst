@@ -82,7 +82,7 @@ The following logic applies for node type constraints:
   as a superType, its constraints will apply for your node type as well.
 
 The last rule is especially important, since most node types you define will have either ``Neos.NodeTypes:Page``
-(which, in turn, inherits from ``Neos.Neos:Document`) or ``Neos.Neos:Content`` as superTypes. You should know which
+(which, in turn, inherits from ``Neos.Neos:Document``) or ``Neos.Neos:Content`` as superTypes. You should know which
 constraints are defined per default in order to effectively override them. These are the current defaults for these
 two node types - this is taken from ``NodeTypes.yaml`` in the Neos.Neos package. ::
 
