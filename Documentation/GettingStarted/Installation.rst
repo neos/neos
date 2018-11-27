@@ -143,7 +143,7 @@ The Neos Setup Tool
    accessible databases to choose from, or you can create a new one.
 
    .. tip::
-      Configure your MySQL server to use the ``utf8_unicode_ci`` collation by default if possible!
+      Configure your MySQL server to use the ``utf8mb4_unicode_ci`` collation by default if possible!
 
    .. figure:: Images/Setup-Step-2.png
       :alt: Setup database credentials
