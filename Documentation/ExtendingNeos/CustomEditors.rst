@@ -39,8 +39,8 @@ In order to implement a custom inspector editor one has to use the UI
 extensibility layer exposed through the `@neos-project/neos-ui-extensibility` package.
 See :ref:`ui-extensibility` for the detailed information on the topic.
 
-Let's create a simple colour picker editor. For this, create a folder structure
-in your package to lok like this::
+Let's create a simple color picker editor. For this, create a folder structure
+in your package to look like this::
 
   AcmeCom.Neos.Colorpicker
   ├── Configuration
