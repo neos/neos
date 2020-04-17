@@ -20,6 +20,308 @@ Neos.Fusion:Array
 
 .. note:: The Neos.Fusion:Array object has been renamed to Neos.Fusion:Join the old name is DEPRECATED;
 
+.. _Neos_Fusion__Attributes:
+
+Neos.Fusion:Attributes
+----------------------
+
+A Fusion object to render HTML tag attributes. This object is used by the :ref:`Neos_Fusion__Tag` object to
+render the attributes of a tag. But it's also useful standalone to render extensible attributes in a Fluid template.
+
+:[key]: (string) A single attribute, array values are joined with whitespace. Boolean values will be rendered as an empty or absent attribute.
+:@allowEmpty: (boolean) Whether empty attributes (HTML5 syntax) should be used for empty, false or null attribute values
+
+.. note:: The ``Neos.Fusion:Attributes`` object is DEPRECATED in favor of a solution inside Neos.Fusion:Tag which takes attributes
+   as ``Neos.Fusion:DataStructure`` now. If you have to render attributes as string without a tag you can use
+   ``Neos.Fusion:Join`` with ``@glue` but you will have to concatenate array attributes yourself.
+
+Example:
+^^^^^^^^
+
+::
+
+	attributes = Neos.Fusion:Attributes {
+		foo = 'bar'
+		class = Neos.Fusion:DataStructure {
+			class1 = 'class1'
+			class2 = 'class2'
+		}
+	}
+
+Evaluates to::
+
+	foo="bar" class="class1 class2"
+
+Unsetting an attribute:
+^^^^^^^^^^^^^^^^^^^^^^^
+
+It's possible to unset an attribute by assigning ``false`` or ``${null}`` as a value. No attribute will be rendered for
+this case.
+
+.. _Neos_Fusion__Augmenter:
+
+Neos.Fusion:Augmenter
+---------------------
+
+Modify given html content and add attributes. The augmenter can be used as processor or as a standalone prototype
+
+:content: (string) The content that shall be augmented
+:fallbackTagName: (string, defaults to ``div``) If no single tag that can be augmented is found the content is wrapped into the fallback-tag before augmentation
+:[key]: All other fusion properties are added to the html content as html attributes
+
+Example as a standalone augmenter::
+
+	augmentedContent = Neos.Fusion:Augmenter {
+
+		content = Neos.Fusion:Join {
+			title = Neos.Fusion:Tag {
+				@if.hasContent = ${this.content}
+				tagName = 'h2'
+				content = ${q(node).property('title')}
+			}
+			text = Neos.Fusion:Tag {
+				@if.hasContent = ${this.content}
+				tagName = 'p'
+				content = ${q(node).property('text')}
+			}
+		}
+
+		fallbackTagName = 'header'
+
+		class = 'header'
+		data-foo = 'bar'
+	}
+
+Example as a processor augmenter::
+
+	augmentedContent = Neos.Fusion:Tag {
+		tagName = 'h2'
+		content = 'Hello World'
+		@process.augment = Neos.Fusion:Augmenter {
+				class = 'header'
+				data-foo = 'bar'
+		}
+	}
+
+.. _Neos_Fusion__CanRender:
+
+Neos.Fusion:CanRender
+---------------------
+
+Check whether a Fusion prototype can be rendered. For being renderable a prototype must exist and have an implementation class, or inherit from an existing renderable prototype. The implementation class can be defined indirectly via base prototypes.
+
+:type: (string) The prototype name that is checked
+
+Example::
+
+	canRender = Neos.Fusion:CanRender {
+		type = 'My.Package:Prototype'
+	}
+
+.. _Neos_Fusion__Case:
+
+Neos.Fusion:Case
+----------------
+
+**Conditionally evaluate** nested definitions.
+
+Evaluates all nested definitions until the first ``condition`` evaluates to ``TRUE``. The Case object will
+evaluate to a result using either ``renderer``, ``renderPath`` or ``type`` on the matching definition.
+
+:[key]: A matcher definition
+:[key].condition: (boolean, **required**) A simple value, expression or object that will be used as a condition for this matcher
+:[key].type: (string) Object type to render (as string)
+:[key].element.*: (mixed) Properties for the rendered object (when using ``type``)
+:[key].renderPath: (string) Relative or absolute path to render, overrules ``type``
+:[key].renderer: (mixed) Rendering definition (simple value, expression or object), overrules ``renderPath`` and ``type``
+:[key].@position: (string/integer) Define the ordering of the nested definition
+
+Simple Example::
+
+	myCase = Neos.Fusion:Case {
+		someCondition {
+			condition = ${q(node).is('[instanceof MyNamespace:My.Special.SuperType]')}
+			type = 'MyNamespace:My.Special.Type'
+		}
+
+		otherCondition {
+			@position = 'start'
+			condition = ${q(documentNode).property('layout') == 'special'}
+			renderer = ${'<marquee>' + q(node).property('content') + '</marquee>'}
+		}
+
+		fallback {
+			condition = ${true}
+			renderPath = '/myPath'
+		}
+	}
+
+The ordering of matcher definitions can be specified with the ``@position`` property (see :ref:`Neos_Fusion__Array`).
+Thus, the priority of existing matchers (e.g. the default Neos document rendering) can be changed by setting or
+overriding the ``@position`` property.
+
+.. note:: The internal ``Neos.Fusion:Matcher`` object type is used to evaluate the matcher definitions which
+   is based on the ``Neos.Fusion:Renderer``.
+
+.. _Neos_Fusion__Collection:
+
+Neos.Fusion:Collection
+----------------------
+
+Render each item in ``collection`` using ``itemRenderer``.
+
+:collection: (array/Iterable, **required**) The array or iterable to iterate over
+:itemName: (string, defaults to ``item``) Context variable name for each item
+:itemKey: (string, defaults to ``itemKey``) Context variable name for each item key, when working with array
+:iterationName: (string, defaults to ``iterator``) A context variable with iteration information will be available under the given name: ``index`` (zero-based), ``cycle`` (1-based), ``isFirst``, ``isLast``
+:itemRenderer: (string, **required**) The renderer definition (simple value, expression or object) will be called once for every collection element, and its results will be concatenated (if ``itemRenderer`` cannot be rendered the path ``content`` is used as fallback for convenience in afx)
+
+.. note:: The Neos.Fusion:Collection object is DEPRECATED use Neos.Fusion:Loop instead.
+
+Example using an object ``itemRenderer``::
+
+	myCollection = Neos.Fusion:Collection {
+		collection = ${[1, 2, 3]}
+		itemName = 'element'
+		itemRenderer = Neos.Fusion:Template {
+			templatePath = 'resource://...'
+			element = ${element}
+		}
+	}
+
+
+Example using an expression ``itemRenderer``::
+
+	myCollection = Neos.Fusion:Collection {
+		collection = ${[1, 2, 3]}
+		itemName = 'element'
+		itemRenderer = ${element * 2}
+	}
+
+.. _Neos_Fusion__Component:
+
+Neos.Fusion:Component
+---------------------
+
+Create a component that adds all properties to the props context and afterward evaluates the renderer.
+
+:renderer: (mixed, **required**) The value which gets rendered
+
+Example::
+
+	prototype(Vendor.Site:Component) < prototype(Neos.Fusion:Component) {
+		title = 'Hello World'
+		titleTagName = 'h1'
+		description = 'Description of the Neos World'
+		bold = false
+
+		renderer = Neos.Fusion:Tag {
+			attributes.class = Neos.Fusion:DataStructure {
+				component = 'component'
+				bold = ${props.bold ? 'component--bold' : false}
+			}
+			content = Neos.Fusion:Join {
+				headline = Neos.Fusion:Tag {
+					tagName = ${props.titleTagName}
+					content = ${props.title}
+				}
+
+				description = Neos.Fusion:Tag {
+						content = ${props.description}
+				}
+			}
+		}
+	}
+
+.. _Neos_Fusion__DataStructure:
+
+Neos.Fusion:DataStructure
+--------------------
+
+Evaluate nested definitions as an array (opposed to *string* for :ref:`Neos_Fusion__Array`)
+
+:[key]: (mixed) A nested definition (simple value, expression or object), ``[key]`` will be used for the resulting array key
+:[key].@position: (string/integer) Define the ordering of the nested definition
+
+.. tip:: For simple cases an expression with an array literal ``${[1, 2, 3]}`` might be easier to read
+
+.. _Neos_Fusion__Debug:
+
+Neos.Fusion:Debug
+-----------------
+
+Shows the result of Fusion Expressions directly.
+
+:title: (optional) Title for the debug output
+:plaintext: (boolean) If set true, the result will be shown as plaintext
+:[key]: (mixed) A nested definition (simple value, expression or object), ``[key]`` will be used as key for the resulting output
+
+Example::
+
+  valueToDebug = "hello neos world"
+  valueToDebug.@process.debug = Neos.Fusion:Debug {
+        title = 'Debug of hello world'
+
+        # Additional values for debugging
+        documentTitle = ${q(documentNode).property('title')}
+        documentPath = ${documentNode.path}
+  }
+
+  # the initial value is not changed, so you can define the Debug prototype anywhere in your Fusion code
+
+.. _Neos_Fusion__Fragment:
+
+Neos.Fusion:Fragment
+--------------------
+
+A fragment is a component that renders the given `content` without additional markup.
+That way conditions can be defined for bigger chunks of afx instead of single tags.
+
+:content: (string) The value which gets rendered
+
+Example::
+
+	renderer = afx`
+		<Neos.Fusion:Fragment @if.isEnabled={props.enable}>
+			<h1>Example</h1>
+			<h2>Content</h2>
+		</Neos.Fusion:Fragment>
+	`
+
+.. _Neos_Fusion__Http_Message:
+
+Neos.Fusion:Http.Message
+------------------------
+
+A prototype based on :ref:`Neos_Fusion__Array` for rendering an HTTP message (response). It should be used to
+render documents since it generates a full HTTP response and allows to override the HTTP status code and headers.
+
+:httpResponseHead: (:ref:`Neos_Fusion__Http_ResponseHead`) An HTTP response head with properties to adjust the status and headers, the position in the ``Array`` defaults to the very beginning
+:[key]: (string) A nested definition (see :ref:`Neos_Fusion__Array`)
+
+Example:
+^^^^^^^^
+
+::
+
+	// Page extends from Http.Message
+	//
+	// prototype(Neos.Neos:Page) < prototype(Neos.Fusion:Http.Message)
+	//
+	page = Neos.Neos:Page {
+		httpResponseHead.headers.Content-Type = 'application/json'
+	}
+
+.. _Neos_Fusion__Http_ResponseHead:
+
+Neos.Fusion:Http.ResponseHead
+-----------------------------
+
+A helper object to render the head of an HTTP response
+
+:statusCode: (integer) The HTTP status code for the response, defaults to ``200``
+:headers.*: (string) An HTTP header that should be set on the response, the property name (e.g. ``headers.Content-Type``) will be used for the header name
+
 .. _Neos_Fusion__Join:
 
 Neos.Fusion:Join
@@ -105,55 +407,7 @@ Example of numeric keys (discouraged)::
 	}
 
 
-.. _Neos_Fusion__Collection:
 
-Neos.Fusion:Collection
-----------------------
-
-Render each item in ``collection`` using ``itemRenderer``.
-
-:collection: (array/Iterable, **required**) The array or iterable to iterate over
-:itemName: (string, defaults to ``item``) Context variable name for each item
-:itemKey: (string, defaults to ``itemKey``) Context variable name for each item key, when working with array
-:iterationName: (string, defaults to ``iterator``) A context variable with iteration information will be available under the given name: ``index`` (zero-based), ``cycle`` (1-based), ``isFirst``, ``isLast``
-:itemRenderer: (string, **required**) The renderer definition (simple value, expression or object) will be called once for every collection element, and its results will be concatenated (if ``itemRenderer`` cannot be rendered the path ``content`` is used as fallback for convenience in afx)
-
-.. note:: The Neos.Fusion:Collection object is DEPRECATED use Neos.Fusion:Loop instead.
-
-Example using an object ``itemRenderer``::
-
-	myCollection = Neos.Fusion:Collection {
-		collection = ${[1, 2, 3]}
-		itemName = 'element'
-		itemRenderer = Neos.Fusion:Template {
-			templatePath = 'resource://...'
-			element = ${element}
-		}
-	}
-
-
-Example using an expression ``itemRenderer``::
-
-	myCollection = Neos.Fusion:Collection {
-		collection = ${[1, 2, 3]}
-		itemName = 'element'
-		itemRenderer = ${element * 2}
-	}
-
-.. _Neos_Fusion__RawCollection:
-
-Neos.Fusion:RawCollection
--------------------------
-
-Render each item in ``collection`` using ``itemRenderer`` and return the result as an array (opposed to *string* for :ref:`Neos_Fusion__Collection`)
-
-:collection: (array/Iterable, **required**) The array or iterable to iterate over
-:itemName: (string, defaults to ``item``) Context variable name for each item
-:itemKey: (string, defaults to ``itemKey``) Context variable name for each item key, when working with array
-:iterationName: (string, defaults to ``iterator``) A context variable with iteration information will be available under the given name: ``index`` (zero-based), ``cycle`` (1-based), ``isFirst``, ``isLast``
-:itemRenderer: (mixed, **required**) The renderer definition (simple value, expression or object) will be called once for every collection element (if ``itemRenderer`` cannot be rendered the path ``content`` is used as fallback for convenience in afx)
-
-.. note:: The Neos.Fusion:RawCollection object is DEPRECATED use Neos.Fusion:Map instead.**
 
 .. _Neos_Fusion__Loop:
 
@@ -202,6 +456,35 @@ Render each item in ``items`` using ``itemRenderer`` and return the result as an
 :iterationName: (string, defaults to ``iterator``) A context variable with iteration information will be available under the given name: ``index`` (zero-based), ``cycle`` (1-based), ``isFirst``, ``isLast``
 :itemRenderer: (mixed, **required**) The renderer definition (simple value, expression or object) will be called once for every collection element (if ``itemRenderer`` cannot be rendered the path ``content`` is used as fallback for convenience in afx)
 
+.. _Neos_Fusion__RawArray:
+
+Neos.Fusion:RawArray
+--------------------
+
+Evaluate nested definitions as an array (opposed to *string* for :ref:`Neos_Fusion__Array`)
+
+:[key]: (mixed) A nested definition (simple value, expression or object), ``[key]`` will be used for the resulting array key
+:[key].@position: (string/integer) Define the ordering of the nested definition
+
+.. tip:: For simple cases an expression with an array literal ``${[1, 2, 3]}`` might be easier to read
+
+.. note:: The Neos.Fusion:RawArray object has been renamed to Neos.Fusion:DataStructure the old name is DEPRECATED;
+
+.. _Neos_Fusion__RawCollection:
+
+Neos.Fusion:RawCollection
+-------------------------
+
+Render each item in ``collection`` using ``itemRenderer`` and return the result as an array (opposed to *string* for :ref:`Neos_Fusion__Collection`)
+
+:collection: (array/Iterable, **required**) The array or iterable to iterate over
+:itemName: (string, defaults to ``item``) Context variable name for each item
+:itemKey: (string, defaults to ``itemKey``) Context variable name for each item key, when working with array
+:iterationName: (string, defaults to ``iterator``) A context variable with iteration information will be available under the given name: ``index`` (zero-based), ``cycle`` (1-based), ``isFirst``, ``isLast``
+:itemRenderer: (mixed, **required**) The renderer definition (simple value, expression or object) will be called once for every collection element (if ``itemRenderer`` cannot be rendered the path ``content`` is used as fallback for convenience in afx)
+
+.. note:: The Neos.Fusion:RawCollection object is DEPRECATED use Neos.Fusion:Map instead.**
+
 .. _Neos_Fusion__Reduce:
 
 Neos.Fusion:Reduce
@@ -216,51 +499,6 @@ Reduce the given items to a single value by using ``itemRenderer``.
 :iterationName: (string, defaults to ``iterator``) A context variable with iteration information will be available under the given name: ``index`` (zero-based), ``cycle`` (1-based), ``isFirst``, ``isLast``
 :itemReducer: (mixed, **required**) The reducer definition (simple value, expression or object) that will be applied for every item.
 :initialValue: (mixed, defaults to ``null``) The value that is passed to the first iteration or returned if the items are empty
-
-.. _Neos_Fusion__Case:
-
-Neos.Fusion:Case
-----------------
-
-**Conditionally evaluate** nested definitions.
-
-Evaluates all nested definitions until the first ``condition`` evaluates to ``TRUE``. The Case object will
-evaluate to a result using either ``renderer``, ``renderPath`` or ``type`` on the matching definition.
-
-:[key]: A matcher definition
-:[key].condition: (boolean, **required**) A simple value, expression or object that will be used as a condition for this matcher
-:[key].type: (string) Object type to render (as string)
-:[key].element.*: (mixed) Properties for the rendered object (when using ``type``)
-:[key].renderPath: (string) Relative or absolute path to render, overrules ``type``
-:[key].renderer: (mixed) Rendering definition (simple value, expression or object), overrules ``renderPath`` and ``type``
-:[key].@position: (string/integer) Define the ordering of the nested definition
-
-Simple Example::
-
-	myCase = Neos.Fusion:Case {
-		someCondition {
-			condition = ${q(node).is('[instanceof MyNamespace:My.Special.SuperType]')}
-			type = 'MyNamespace:My.Special.Type'
-		}
-
-		otherCondition {
-			@position = 'start'
-			condition = ${q(documentNode).property('layout') == 'special'}
-			renderer = ${'<marquee>' + q(node).property('content') + '</marquee>'}
-		}
-
-		fallback {
-			condition = ${true}
-			renderPath = '/myPath'
-		}
-	}
-
-The ordering of matcher definitions can be specified with the ``@position`` property (see :ref:`Neos_Fusion__Array`).
-Thus, the priority of existing matchers (e.g. the default Neos document rendering) can be changed by setting or
-overriding the ``@position`` property.
-
-.. note:: The internal ``Neos.Fusion:Matcher`` object type is used to evaluate the matcher definitions which
-   is based on the ``Neos.Fusion:Renderer``.
 
 .. _Neos_Fusion__Renderer:
 
@@ -283,198 +521,29 @@ Simple Example::
 
 .. note:: This is especially handy if the prototype that should be rendered is determined via eel or passed via @context.
 
-.. _Neos_Fusion__Debug:
+.. _Neos_Fusion__ResourceUri:
 
-Neos.Fusion:Debug
------------------
+Neos.Fusion:ResourceUri
+-----------------------
 
-Shows the result of Fusion Expressions directly.
+Build a URI to a static or persisted resource
 
-:title: (optional) Title for the debug output
-:plaintext: (boolean) If set true, the result will be shown as plaintext
-:[key]: (mixed) A nested definition (simple value, expression or object), ``[key]`` will be used as key for the resulting output
-
-Example::
-
-  valueToDebug = "hello neos world"
-  valueToDebug.@process.debug = Neos.Fusion:Debug {
-        title = 'Debug of hello world'
-
-        # Additional values for debugging
-        documentTitle = ${q(documentNode).property('title')}
-        documentPath = ${documentNode.path}
-  }
-
-  # the initial value is not changed, so you can define the Debug prototype anywhere in your Fusion code
-
-
-.. _Neos_Fusion__Component:
-
-Neos.Fusion:Component
----------------------
-
-Create a component that adds all properties to the props context and afterward evaluates the renderer.
-
-:renderer: (mixed, **required**) The value which gets rendered
+:path: (string) Path to resource, either a path relative to ``Public`` and ``package`` or a ``resource://`` URI
+:package: (string) The package key (e.g. ``'My.Package'``)
+:resource: (Resource) A ``Resource`` object instead of ``path`` and ``package``
+:localize: (boolean) Whether resource localization should be used, defaults to ``true``
 
 Example::
 
-	prototype(Vendor.Site:Component) < prototype(Neos.Fusion:Component) {
-		title = 'Hello World'
-		titleTagName = 'h1'
-		description = 'Description of the Neos World'
-		bold = false
-
-		renderer = Neos.Fusion:Tag {
-			attributes.class = Neos.Fusion:DataStructure {
-				component = 'component'
-				bold = ${props.bold ? 'component--bold' : false}
-			}
-			content = Neos.Fusion:Join {
-				headline = Neos.Fusion:Tag {
-					tagName = ${props.titleTagName}
-					content = ${props.title}
-				}
-
-				description = Neos.Fusion:Tag {
-						content = ${props.description}
-				}
+	scriptInclude = Neos.Fusion:Tag {
+		tagName = 'script'
+		attributes {
+			src = Neos.Fusion:ResourceUri {
+				path = 'resource://My.Package/Public/Scripts/App.js'
 			}
 		}
 	}
 
-.. _Neos_Fusion__Fragment:
-
-Neos.Fusion:Fragment
---------------------
-
-A fragment is a component that renders the given `content` without additional markup.
-That way conditions can be defined for bigger chunks of afx instead of single tags.
-
-:content: (string) The value which gets rendered
-
-Example::
-
-	renderer = afx`
-		<Neos.Fusion:Fragment @if.isEnabled={props.enable}>
-			<h1>Example</h1>
-			<h2>Content</h2>
-		</Neos.Fusion:Fragment>
-	`
-
-.. _Neos_Fusion__Augmenter:
-
-Neos.Fusion:Augmenter
----------------------
-
-Modify given html content and add attributes. The augmenter can be used as processor or as a standalone prototype
-
-:content: (string) The content that shall be augmented
-:fallbackTagName: (string, defaults to ``div``) If no single tag that can be augmented is found the content is wrapped into the fallback-tag before augmentation
-:[key]: All other fusion properties are added to the html content as html attributes
-
-Example as a standalone augmenter::
-
-	augmentedContent = Neos.Fusion:Augmenter {
-
-		content = Neos.Fusion:Join {
-			title = Neos.Fusion:Tag {
-				@if.hasContent = ${this.content}
-				tagName = 'h2'
-				content = ${q(node).property('title')}
-			}
-			text = Neos.Fusion:Tag {
-				@if.hasContent = ${this.content}
-				tagName = 'p'
-				content = ${q(node).property('text')}
-			}
-		}
-
-		fallbackTagName = 'header'
-
-		class = 'header'
-		data-foo = 'bar'
-	}
-
-Example as a processor augmenter::
-
-	augmentedContent = Neos.Fusion:Tag {
-		tagName = 'h2'
-		content = 'Hello World'
-		@process.augment = Neos.Fusion:Augmenter {
-				class = 'header'
-				data-foo = 'bar'
-		}
-	}
-
-.. _Neos_Fusion__Template:
-
-Neos.Fusion:Template
---------------------
-
-Render a *Fluid template* specified by ``templatePath``.
-
-:templatePath: (string, **required**) Path and filename for the template to be rendered, often a ``resource://`` URI
-:partialRootPath: (string) Path where partials are found on the file system
-:layoutRootPath: (string) Path where layouts are found on the file system
-:sectionName: (string) The Fluid ``<f:section>`` to be rendered, if given
-:[key]: (mixed) All remaining properties are directly passed into the Fluid template as template variables
-
-Example::
-
-	myTemplate = Neos.Fusion:Template {
-		templatePath = 'resource://My.Package/Private/Templates/FusionObjects/MyTemplate.html'
-		someDataAvailableInsideFluid = 'my data'
-	}
-
-	<div class="hero">
-		{someDataAvailableInsideFluid}
-	</div>
-
-.. _Neos_Fusion__Value:
-
-Neos.Fusion:Value
------------------
-
-Evaluate any value as a Fusion object
-
-:value: (mixed, **required**) The value to evaluate
-
-Example::
-
-	myValue = Neos.Fusion:Value {
-		value = 'Hello World'
-	}
-
-.. note:: Most of the time this can be simplified by directly assigning the value instead of using the ``Value`` object.
-
-
-.. _Neos_Fusion__RawArray:
-
-Neos.Fusion:RawArray
---------------------
-
-Evaluate nested definitions as an array (opposed to *string* for :ref:`Neos_Fusion__Array`)
-
-:[key]: (mixed) A nested definition (simple value, expression or object), ``[key]`` will be used for the resulting array key
-:[key].@position: (string/integer) Define the ordering of the nested definition
-
-.. tip:: For simple cases an expression with an array literal ``${[1, 2, 3]}`` might be easier to read
-
-.. note:: The Neos.Fusion:RawArray object has been renamed to Neos.Fusion:DataStructure the old name is DEPRECATED;
-
-.. _Neos_Fusion__Tag:
-
-
-Neos.Fusion:DataStructure
---------------------
-
-Evaluate nested definitions as an array (opposed to *string* for :ref:`Neos_Fusion__Array`)
-
-:[key]: (mixed) A nested definition (simple value, expression or object), ``[key]`` will be used for the resulting array key
-:[key].@position: (string/integer) Define the ordering of the nested definition
-
-.. tip:: For simple cases an expression with an array literal ``${[1, 2, 3]}`` might be easier to read
 
 .. _Neos_Fusion__Tag:
 
@@ -509,77 +578,29 @@ Evaluates to::
 
 	<html version="HTML+RDFa 1.1" xmlns="http://www.w3.org/1999/xhtml">
 
-.. _Neos_Fusion__Attributes:
+.. _Neos_Fusion__Template:
 
-Neos.Fusion:Attributes
-----------------------
+Neos.Fusion:Template
+--------------------
 
-A Fusion object to render HTML tag attributes. This object is used by the :ref:`Neos_Fusion__Tag` object to
-render the attributes of a tag. But it's also useful standalone to render extensible attributes in a Fluid template.
+Render a *Fluid template* specified by ``templatePath``.
 
-:[key]: (string) A single attribute, array values are joined with whitespace. Boolean values will be rendered as an empty or absent attribute.
-:@allowEmpty: (boolean) Whether empty attributes (HTML5 syntax) should be used for empty, false or null attribute values
+:templatePath: (string, **required**) Path and filename for the template to be rendered, often a ``resource://`` URI
+:partialRootPath: (string) Path where partials are found on the file system
+:layoutRootPath: (string) Path where layouts are found on the file system
+:sectionName: (string) The Fluid ``<f:section>`` to be rendered, if given
+:[key]: (mixed) All remaining properties are directly passed into the Fluid template as template variables
 
-.. note:: The ``Neos.Fusion:Attributes`` object is DEPRECATED in favor of a solution inside Neos.Fusion:Tag which takes attributes
-   as ``Neos.Fusion:DataStructure`` now. If you have to render attributes as string without a tag you can use
-   ``Neos.Fusion:Join`` with ``@glue` but you will have to concatenate array attributes yourself.
+Example::
 
-Example:
-^^^^^^^^
-
-::
-
-	attributes = Neos.Fusion:Attributes {
-		foo = 'bar'
-		class = Neos.Fusion:DataStructure {
-			class1 = 'class1'
-			class2 = 'class2'
-		}
+	myTemplate = Neos.Fusion:Template {
+		templatePath = 'resource://My.Package/Private/Templates/FusionObjects/MyTemplate.html'
+		someDataAvailableInsideFluid = 'my data'
 	}
 
-Evaluates to::
-
-	foo="bar" class="class1 class2"
-
-Unsetting an attribute:
-^^^^^^^^^^^^^^^^^^^^^^^
-
-It's possible to unset an attribute by assigning ``false`` or ``${null}`` as a value. No attribute will be rendered for
-this case.
-
-.. _Neos_Fusion__Http_Message:
-
-Neos.Fusion:Http.Message
-------------------------
-
-A prototype based on :ref:`Neos_Fusion__Array` for rendering an HTTP message (response). It should be used to
-render documents since it generates a full HTTP response and allows to override the HTTP status code and headers.
-
-:httpResponseHead: (:ref:`Neos_Fusion__Http_ResponseHead`) An HTTP response head with properties to adjust the status and headers, the position in the ``Array`` defaults to the very beginning
-:[key]: (string) A nested definition (see :ref:`Neos_Fusion__Array`)
-
-Example:
-^^^^^^^^
-
-::
-
-	// Page extends from Http.Message
-	//
-	// prototype(Neos.Neos:Page) < prototype(Neos.Fusion:Http.Message)
-	//
-	page = Neos.Neos:Page {
-		httpResponseHead.headers.Content-Type = 'application/json'
-	}
-
-.. _Neos_Fusion__Http_ResponseHead:
-
-Neos.Fusion:Http.ResponseHead
------------------------------
-
-A helper object to render the head of an HTTP response
-
-:statusCode: (integer) The HTTP status code for the response, defaults to ``200``
-:headers.*: (string) An HTTP header that should be set on the response, the property name (e.g. ``headers.Content-Type``) will be used for the header name
+	<div class="hero">
+		{someDataAvailableInsideFluid}
+	</div>
 
 .. _Neos_Fusion__UriBuilder:
 
@@ -608,41 +629,22 @@ Example::
 		action = 'new'
 	}
 
-.. _Neos_Fusion__ResourceUri:
+.. _Neos_Fusion__Value:
 
-Neos.Fusion:ResourceUri
------------------------
+Neos.Fusion:Value
+-----------------
 
-Build a URI to a static or persisted resource
+Evaluate any value as a Fusion object
 
-:path: (string) Path to resource, either a path relative to ``Public`` and ``package`` or a ``resource://`` URI
-:package: (string) The package key (e.g. ``'My.Package'``)
-:resource: (Resource) A ``Resource`` object instead of ``path`` and ``package``
-:localize: (boolean) Whether resource localization should be used, defaults to ``true``
+:value: (mixed, **required**) The value to evaluate
 
 Example::
 
-	scriptInclude = Neos.Fusion:Tag {
-		tagName = 'script'
-		attributes {
-			src = Neos.Fusion:ResourceUri {
-				path = 'resource://My.Package/Public/Scripts/App.js'
-			}
-		}
+	myValue = Neos.Fusion:Value {
+		value = 'Hello World'
 	}
 
-Neos.Fusion:CanRender
----------------------
-
-Check whether a Fusion prototype can be rendered. For being renderable a prototype must exist and have an implementation class, or inherit from an existing renderable prototype. The implementation class can be defined indirectly via base prototypes.
-
-:type: (string) The prototype name that is checked
-
-Example::
-
-	canRender = Neos.Fusion:CanRender {
-		type = 'My.Package:Prototype'
-	}
+.. note:: Most of the time this can be simplified by directly assigning the value instead of using the ``Value`` object.
 
 Neos.Neos Fusion Objects
 =============================
