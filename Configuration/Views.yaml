@@ -1,0 +1,6 @@
+-
+  requestFilter: 'isPackage("Neos.Neos") && isController("Login") && isAction("index")'
+  viewObjectName: 'Neos\Fusion\View\FusionView'
+  options:
+    fusionPathPatterns:
+      - 'resource://Neos.Neos/Private/Fusion/Backend'
