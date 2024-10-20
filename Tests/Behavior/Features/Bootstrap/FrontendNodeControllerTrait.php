@@ -16,6 +16,7 @@ use Behat\Gherkin\Node\PyStringNode;
 use GuzzleHttp\Psr7\Message;
 use Neos\ContentRepository\TestSuite\Behavior\Features\Bootstrap\CRTestSuiteRuntimeVariables;
 use Neos\Fusion\Core\Cache\ContentCache;
+use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Assert;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestFactoryInterface;
@@ -45,6 +46,18 @@ trait FrontendNodeControllerTrait
         $this->getObject(ContentCache::class)->flush();
         $this->getObject(\Neos\Neos\Testing\TestingFusionAutoIncludeHandler::class)->reset();
         $this->frontendNodeControllerResponse = null;
+    }
+
+    /**
+     * @When I have the following Fusion file :fileName:
+     */
+    public function iHaveTheFollowingFusionFile(PyStringNode $fusionCode, string $fileName)
+    {
+        if (!str_starts_with($fileName, 'vfs://fusion/')) {
+            throw new \InvalidArgumentException('Fusion file name must be virtual.');
+        }
+        vfsStream::setup('fusion');
+        file_put_contents($fileName, $fusionCode->getRaw());
     }
 
     /**
