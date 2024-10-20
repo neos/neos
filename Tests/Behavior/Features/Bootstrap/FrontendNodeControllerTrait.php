@@ -57,6 +57,31 @@ trait FrontendNodeControllerTrait
     }
 
     /**
+     * @When I declare the following controller :fullyQualifiedClassName:
+     */
+    public function iDeclareTheFollowingController(string $fullyQualifiedClassName, PyStringNode $expectedResult): void
+    {
+        eval($expectedResult->getRaw());
+
+        $controllerInstance = new ('\\' . $fullyQualifiedClassName)();
+
+        if ($controllerInstance instanceof \Neos\Flow\Mvc\Controller\ActionController) {
+            // inject all the necessary properties of an action controller, as extended classes dont call $this->Flow_Proxy_injectProperties();
+            \Neos\Utility\ObjectAccess::setProperty($controllerInstance, 'validatorResolver', $this->getObject(\Neos\Flow\Validation\ValidatorResolver::class), true);
+            \Neos\Utility\ObjectAccess::setProperty($controllerInstance, 'mvcPropertyMappingConfigurationService', $this->getObject(\Neos\Flow\Mvc\Controller\MvcPropertyMappingConfigurationService::class), true);
+            \Neos\Utility\ObjectAccess::setProperty($controllerInstance, 'viewConfigurationManager', $this->getObject(\Neos\Flow\Mvc\ViewConfigurationManager::class), true);
+            \Neos\Utility\ObjectAccess::setProperty($controllerInstance, 'objectManager', $this->getObject(\Neos\Flow\ObjectManagement\ObjectManager::class), true);
+        }
+
+
+        $objectManager = $this->getObject(\Neos\Flow\ObjectManagement\ObjectManager::class);
+        $objects = \Neos\Utility\ObjectAccess::getProperty($objectManager, 'objects', true);
+        $objects[get_class($controllerInstance)]['i'] = $controllerInstance;
+        $objects[get_class($controllerInstance)]['l'] = strtolower(get_class($controllerInstance));
+        $objectManager->setObjects($objects);
+    }
+
+    /**
      * @When I dispatch the following request :requestUri
      */
     public function iDispatchTheFollowingRequest(string $requestUri)
