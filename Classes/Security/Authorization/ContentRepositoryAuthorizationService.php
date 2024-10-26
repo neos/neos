@@ -5,21 +5,26 @@ declare(strict_types=1);
 namespace Neos\Neos\Security\Authorization;
 
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTags;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Security\Account;
 use Neos\Flow\Security\Authorization\PrivilegeManagerInterface;
 use Neos\Flow\Security\Policy\PolicyService;
 use Neos\Flow\Security\Policy\Role;
+use Neos\Neos\Domain\Model\NodePermissions;
 use Neos\Neos\Domain\Model\User;
 use Neos\Neos\Domain\Model\WorkspacePermissions;
 use Neos\Neos\Domain\Model\WorkspaceRole;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubject;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubjects;
 use Neos\Neos\Domain\Service\WorkspaceService;
-use Neos\Neos\Security\Authorization\Privilege\SubtreeTagPrivilege;
+use Neos\Neos\Security\Authorization\Privilege\EditNodePrivilege;
+use Neos\Neos\Security\Authorization\Privilege\ReadNodePrivilege;
 use Neos\Neos\Security\Authorization\Privilege\SubtreeTagPrivilegeSubject;
 use Neos\Party\Domain\Service\PartyService;
 
@@ -36,10 +41,10 @@ final readonly class ContentRepositoryAuthorizationService
     private const FLOW_ROLE_AUTHENTICATED_USER = 'Neos.Flow:AuthenticatedUser';
     private const FLOW_ROLE_NEOS_ADMINISTRATOR = 'Neos.Neos:Administrator';
 
-
     public function __construct(
         private PartyService $partyService,
         private WorkspaceService $workspaceService,
+        private ContentRepositoryRegistry $contentRepositoryRegistry,
         private PolicyService $policyService,
         private PrivilegeManagerInterface $privilegeManager,
     ) {
@@ -95,23 +100,25 @@ final readonly class ContentRepositoryAuthorizationService
         );
     }
 
+    public function getNodePermissionsForAnonymousUser(Node|NodeAddress $node): NodePermissions
+    {
+        $roles = $this->rolesOfAnonymousUser();
+        return $this->nodePermissionsForRoles($node, $roles);
+    }
+
+    public function getNodePermissionsForAccount(Node|NodeAddress $node, Account $account): NodePermissions
+    {
+        $roles = $this->expandAccountRoles($account);
+        return $this->nodePermissionsForRoles($node, $roles);
+    }
+
     /**
      * Determines the default {@see VisibilityConstraints} for an anonymous user (aka "public access")
      */
     public function getVisibilityConstraintsForAnonymousUser(ContentRepositoryId $contentRepositoryId): VisibilityConstraints
     {
-        $roles = [
-            self::FLOW_ROLE_EVERYBODY => $this->policyService->getRole(self::FLOW_ROLE_EVERYBODY),
-            self::FLOW_ROLE_ANONYMOUS => $this->policyService->getRole(self::FLOW_ROLE_ANONYMOUS),
-        ];
-        $restrictedSubtreeTags = [];
-        /** @var SubtreeTagPrivilege $privilege */
-        foreach ($this->policyService->getAllPrivilegesByType(SubtreeTagPrivilege::class) as $privilege) {
-            if (!$this->privilegeManager->isGrantedForRoles($roles, SubtreeTagPrivilege::class, new SubtreeTagPrivilegeSubject($privilege->getSubtreeTag(), $contentRepositoryId))) {
-                $restrictedSubtreeTags[] = $privilege->getSubtreeTag();
-            }
-        }
-        return new VisibilityConstraints(SubtreeTags::fromArray($restrictedSubtreeTags));
+        $roles = $this->rolesOfAnonymousUser();
+        return new VisibilityConstraints($this->restrictedSubtreeTagsForRoles($contentRepositoryId, $roles));
     }
 
     /**
@@ -120,17 +127,21 @@ final readonly class ContentRepositoryAuthorizationService
     public function getVisibilityConstraintsForAccount(ContentRepositoryId $contentRepositoryId, Account $account): VisibilityConstraints
     {
         $roles = $this->expandAccountRoles($account);
-        $restrictedSubtreeTags = [];
-        /** @var SubtreeTagPrivilege $privilege */
-        foreach ($this->policyService->getAllPrivilegesByType(SubtreeTagPrivilege::class) as $privilege) {
-            if (!$this->privilegeManager->isGrantedForRoles($roles, SubtreeTagPrivilege::class, new SubtreeTagPrivilegeSubject($privilege->getSubtreeTag(), $contentRepositoryId))) {
-                $restrictedSubtreeTags[] = $privilege->getSubtreeTag();
-            }
-        }
-        return new VisibilityConstraints(SubtreeTags::fromArray($restrictedSubtreeTags));
+        return new VisibilityConstraints($this->restrictedSubtreeTagsForRoles($contentRepositoryId, $roles));
     }
 
     // ------------------------------
+
+    /**
+     * @return array<Role>
+     */
+    private function rolesOfAnonymousUser(): array
+    {
+        return [
+            self::FLOW_ROLE_EVERYBODY => $this->policyService->getRole(self::FLOW_ROLE_EVERYBODY),
+            self::FLOW_ROLE_ANONYMOUS => $this->policyService->getRole(self::FLOW_ROLE_ANONYMOUS),
+        ];
+    }
 
     /**
      * @return array<Role>
@@ -154,9 +165,54 @@ final readonly class ContentRepositoryAuthorizationService
         return $roles;
     }
 
+    /**
+     * @param array<Role> $roles
+     */
+    private function restrictedSubtreeTagsForRoles(ContentRepositoryId $contentRepositoryId, array $roles): SubtreeTags
+    {
+        $restrictedSubtreeTags = SubtreeTags::createEmpty();
+        /** @var ReadNodePrivilege $privilege */
+        foreach ($this->policyService->getAllPrivilegesByType(ReadNodePrivilege::class) as $privilege) {
+            if (!$this->privilegeManager->isGrantedForRoles($roles, ReadNodePrivilege::class, new SubtreeTagPrivilegeSubject($privilege->getSubtreeTags(), $contentRepositoryId))) {
+                $restrictedSubtreeTags = $restrictedSubtreeTags->merge($privilege->getSubtreeTags());
+            }
+        }
+        return $restrictedSubtreeTags;
+    }
+
     private function neosUserFromAccount(Account $account): ?User
     {
         $user = $this->partyService->getAssignedPartyOfAccount($account);
         return $user instanceof User ? $user : null;
+    }
+
+    /**
+     * @param array<Role> $roles
+     */
+    private function nodePermissionsForRoles(Node|NodeAddress $node, array $roles): NodePermissions
+    {
+        if ($node instanceof NodeAddress) {
+            $converted = $this->nodeForNodeAddress($node);
+            if ($converted === null) {
+                return NodePermissions::none(sprintf('Node "%s" not found in Content Repository "%s"', $node->aggregateId->value, $node->contentRepositoryId->value));
+            }
+            $node = $converted;
+        }
+        $subtreeTagPrivilegeSubject = new SubtreeTagPrivilegeSubject($node->tags->all(), $node->contentRepositoryId);
+        $readGranted = $this->privilegeManager->isGrantedForRoles($roles, ReadNodePrivilege::class, $subtreeTagPrivilegeSubject, $readReason);
+        $writeGranted = $this->privilegeManager->isGrantedForRoles($roles, EditNodePrivilege::class, $subtreeTagPrivilegeSubject, $writeReason);
+        return NodePermissions::create(
+            read: $readGranted,
+            edit: $writeGranted,
+            reason: $readReason . "\n" . $writeReason,
+        );
+    }
+
+    private function nodeForNodeAddress(NodeAddress $nodeAddress): ?Node
+    {
+        return $this->contentRepositoryRegistry->get($nodeAddress->contentRepositoryId)
+            ->getContentGraph($nodeAddress->workspaceName)
+            ->getSubgraph($nodeAddress->dimensionSpacePoint, VisibilityConstraints::withoutRestrictions())
+            ->findNodeById($nodeAddress->aggregateId);
     }
 }

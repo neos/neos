@@ -143,7 +143,7 @@ privilegeTargets:
       matcher: 'administration/dimensions'
 
 
-  'Neos\Neos\Security\Authorization\Privilege\SubtreeTagPrivilege':
+  'Neos\Neos\Security\Authorization\Privilege\ReadNodePrivilege':
 
     'Neos.Neos:ContentRepository.ReadDisabledNodes':
       # !!! matcher payload in this case is a ContentRepository SubtreeTag,

@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Neos\Neos\Security\Authorization\Privilege;
 
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
+use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTags;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\Flow\Security\Authorization\Privilege\AbstractPrivilege;
 use Neos\Flow\Security\Authorization\Privilege\PrivilegeSubjectInterface;
@@ -23,14 +24,15 @@ use Neos\Flow\Security\Exception\InvalidPrivilegeTypeException;
 /**
  * TODO docs
  */
-class SubtreeTagPrivilege extends AbstractPrivilege
+abstract class AbstractSubtreeTagBasedPrivilege extends AbstractPrivilege
 {
-    private SubtreeTag|null $subtreeTagRuntimeCache = null;
+    private bool $initialized = false;
+    private SubtreeTags|null $subtreeTagsRuntimeCache = null;
     private ContentRepositoryId|null $contentRepositoryIdRuntimeCache = null;
 
     private function initialize(): void
     {
-        if ($this->subtreeTagRuntimeCache !== null) {
+        if ($this->initialized) {
             return;
         }
         $subtreeTag = $this->getParsedMatcher();
@@ -38,7 +40,8 @@ class SubtreeTagPrivilege extends AbstractPrivilege
             [$contentRepositoryId, $subtreeTag] = explode(':', $subtreeTag);
             $this->contentRepositoryIdRuntimeCache = ContentRepositoryId::fromString($contentRepositoryId);
         }
-        $this->subtreeTagRuntimeCache = SubtreeTag::fromString($subtreeTag);
+        $this->subtreeTagsRuntimeCache = SubtreeTags::fromStrings($subtreeTag);
+        $this->initialized = true;
     }
 
     /**
@@ -57,14 +60,14 @@ class SubtreeTagPrivilege extends AbstractPrivilege
         if ($contentRepositoryId !== null && $subject->contentRepositoryId !== null && !$contentRepositoryId->equals($subject->contentRepositoryId)) {
             return false;
         }
-        return $subject->subTreeTag->equals($this->getSubtreeTag());
+        return !$this->getSubtreeTags()->intersection($subject->subTreeTags)->isEmpty();
     }
 
-    public function getSubtreeTag(): SubtreeTag
+    public function getSubtreeTags(): SubtreeTags
     {
         $this->initialize();
-        assert($this->subtreeTagRuntimeCache !== null);
-        return $this->subtreeTagRuntimeCache;
+        assert($this->subtreeTagsRuntimeCache !== null);
+        return $this->subtreeTagsRuntimeCache;
     }
 
     public function getContentRepositoryId(): ?ContentRepositoryId

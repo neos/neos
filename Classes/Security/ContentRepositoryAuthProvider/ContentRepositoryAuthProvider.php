@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Neos\Neos\Security\ContentRepositoryAuthProvider;
 
 use Neos\ContentRepository\Core\CommandHandler\CommandInterface;
+use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\Feature\Common\RebasableToOtherWorkspaceInterface;
+use Neos\ContentRepository\Core\Feature\NodeModification\Command\SetNodeProperties;
+use Neos\ContentRepository\Core\Feature\NodeModification\Command\SetSerializedNodeProperties;
 use Neos\ContentRepository\Core\Feature\Security\AuthProviderInterface;
 use Neos\ContentRepository\Core\Feature\Security\Dto\Privilege;
 use Neos\ContentRepository\Core\Feature\Security\Dto\UserId;
+use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateRootWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Command\ChangeBaseWorkspace;
@@ -20,8 +24,11 @@ use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishWork
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Command\RebaseWorkspace;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Security\Context as SecurityContext;
+use Neos\Neos\Domain\Model\NodePermissions;
 use Neos\Neos\Domain\Model\WorkspacePermissions;
 use Neos\Neos\Domain\Service\UserService;
 use Neos\Neos\Security\Authorization\ContentRepositoryAuthorizationService;
@@ -82,6 +89,20 @@ final class ContentRepositoryAuthProvider implements AuthProviderInterface
         if ($this->securityContext->areAuthorizationChecksDisabled()) {
             return Privilege::granted('Authorization checks are disabled');
         }
+        if ($command instanceof SetNodeProperties) {
+            $nodePermissions = $this->getNodePermissionsForCurrentUser(
+                NodeAddress::create(
+                    $this->contentRepositoryId,
+                    $command->workspaceName,
+                    $command->originDimensionSpacePoint->toDimensionSpacePoint(),
+                    $command->nodeAggregateId,
+                )
+            );
+            if (!$nodePermissions->edit) {
+                return Privilege::denied($nodePermissions->getReason());
+            }
+            return $this->requireWorkspacePermission($command->workspaceName, self::WORKSPACE_PERMISSION_WRITE);
+        }
 
         // Note: We check against the {@see RebasableToOtherWorkspaceInterface} because that is implemented by all
         // commands that interact with nodes on a content stream. With that it's likely that we don't have to adjust the
@@ -133,5 +154,14 @@ final class ContentRepositoryAuthProvider implements AuthProviderInterface
             return $this->authorizationService->getWorkspacePermissionsForAnonymousUser($this->contentRepositoryId, $workspaceName);
         }
         return $this->authorizationService->getWorkspacePermissionsForAccount($this->contentRepositoryId, $workspaceName, $authenticatedAccount);
+    }
+
+    private function getNodePermissionsForCurrentUser(NodeAddress $nodeAddress): NodePermissions
+    {
+        $authenticatedAccount = $this->securityContext->getAccount();
+        if ($authenticatedAccount === null) {
+            return $this->authorizationService->getNodePermissionsForAnonymousUser($nodeAddress);
+        }
+        return $this->authorizationService->getNodePermissionsForAccount($nodeAddress, $authenticatedAccount);
     }
 }
