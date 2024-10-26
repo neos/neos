@@ -18,26 +18,43 @@ class TestingFusionAutoIncludeHandler implements FusionAutoIncludeHandler
     /**
      * @Flow\Inject
      */
-    protected ResourceFusionAutoIncludeHandler $resourceFusionAutoIncludeHandler;
+    protected ResourceFusionAutoIncludeHandler $defaultHandler;
 
-    private ?FusionAutoIncludeHandler $overrideHandler = null;
+    /**
+     * @var array<string,FusionSourceCodeCollection|true>
+     */
+    private array $overriddenIncludes = [];
 
-    public function overrideHandler(FusionAutoIncludeHandler $overrideHandler): void
+    public function setIncludeFusionPackage(string $packageKey): void
     {
-        $this->overrideHandler = $overrideHandler;
+        $this->overriddenIncludes[$packageKey] = true;
     }
 
-    public function resetOverride(): void
+    public function setFusionForPackage(string $packageKey, FusionSourceCodeCollection $packageFusionSource): void
     {
-        $this->overrideHandler = null;
+        $this->overriddenIncludes[$packageKey] = $packageFusionSource;
     }
 
+    public function reset(): void
+    {
+        $this->overriddenIncludes = [];
+    }
+
+    /**
+     * If no override is set via {@see setIncludeFusionPackage} or {@see setFusionForPackage} we load all the fusion via the default implementation
+     */
     public function loadFusionFromPackage(string $packageKey, FusionSourceCodeCollection $sourceCodeCollection): FusionSourceCodeCollection
     {
-        if ($this->overrideHandler !== null) {
-            return $this->overrideHandler->loadFusionFromPackage($packageKey, $sourceCodeCollection);
-        } else {
-            return $this->resourceFusionAutoIncludeHandler->loadFusionFromPackage($packageKey, $sourceCodeCollection);
+        if ($this->overriddenIncludes === []) {
+            return $this->defaultHandler->loadFusionFromPackage($packageKey, $sourceCodeCollection);
         }
+        $override = $this->overriddenIncludes[$packageKey] ?? null;
+        if ($override === null) {
+            return $sourceCodeCollection;
+        }
+        if ($override === true) {
+            return $this->defaultHandler->loadFusionFromPackage($packageKey, $sourceCodeCollection);
+        }
+        return $sourceCodeCollection->union($override);
     }
 }
