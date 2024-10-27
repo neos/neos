@@ -122,8 +122,7 @@ class FusionExceptionView extends AbstractView
             $currentSiteNode = $this->siteNodeUtility->findSiteNodeBySite(
                 $site,
                 WorkspaceName::forLive(),
-                $arbitraryRootDimensionSpacePoint,
-                VisibilityConstraints::default()
+                $arbitraryRootDimensionSpacePoint
             );
         } catch (WorkspaceDoesNotExist | \RuntimeException) {
             return $this->renderErrorWelcomeScreen();
