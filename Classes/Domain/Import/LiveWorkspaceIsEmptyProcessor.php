@@ -43,7 +43,7 @@ final readonly class LiveWorkspaceIsEmptyProcessor implements ProcessorInterface
 
     private function workspaceHasEvents(WorkspaceName $workspaceName): bool
     {
-        /** @phpstan-ignore-next-line internal method of the cr is called */
+        /** @phpstan-ignore neos.cr.internal */
         $workspaceStreamName = WorkspaceEventStreamName::fromWorkspaceName($workspaceName)->getEventStreamName();
         $eventStream = $this->eventStore->load($workspaceStreamName);
         foreach ($eventStream as $event) {

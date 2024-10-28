@@ -59,7 +59,6 @@ final readonly class SiteExportService
             throw new \RuntimeException('Failed to find live workspace', 1716652280);
         }
 
-        // TODO make configurable (?)
         /** @var array<string, ProcessorInterface> $processors */
         $processors = [
             'Exporting events' => $this->contentRepositoryRegistry->buildService(

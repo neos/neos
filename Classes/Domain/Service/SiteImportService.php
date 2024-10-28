@@ -71,7 +71,6 @@ final readonly class SiteImportService
         $context = new ProcessingContext($filesystem, $onMessage);
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
 
-        // TODO make configurable (?)
         /** @var array<string, ProcessorInterface> $processors */
         $processors = [
             'Run doctrine migrations' => new DoctrineMigrateProcessor($this->doctrineService),

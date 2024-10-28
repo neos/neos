@@ -67,7 +67,6 @@ final readonly class SitePruningService
         $filesystem = new Filesystem(new LocalFilesystemAdapter('.'));
         $context = new ProcessingContext($filesystem, $onMessage);
 
-        // TODO make configurable (?)
         /** @var array<string, ProcessorInterface> $processors */
         $processors = [
             'Remove site nodes' => $this->contentRepositoryRegistry->buildService(

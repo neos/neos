@@ -21,6 +21,7 @@ use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
 use Neos\ContentRepository\Export\Severity;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
+use Neos\Neos\Domain\Export\SiteExportProcessor;
 use Neos\Neos\Domain\Model\Domain;
 use Neos\Neos\Domain\Model\Site;
 use Neos\Neos\Domain\Repository\DomainRepository;
@@ -29,8 +30,8 @@ use Neos\Neos\Domain\Repository\SiteRepository;
 /**
  * Import processor that creates and persists a Neos {@see Site} instance
  *
- * @phpstan-type DomainShape array{hostname: string, scheme?: ?string, port?: ?int, active?: ?bool, primary?: ?bool }
- * @phpstan-type SiteShape array{name:string, siteResourcesPackageKey:string, nodeName?: string, online?:bool, domains?: ?DomainShape[] }
+ * @phpstan-import-type DomainShape from SiteExportProcessor
+ * @phpstan-import-type SiteShape from SiteExportProcessor
  */
 final readonly class SiteCreationProcessor implements ProcessorInterface
 {
