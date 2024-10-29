@@ -32,7 +32,7 @@ enum WorkspaceRole : string
         return $this->specificity() >= $role->specificity();
     }
 
-    private function specificity(): int
+    public function specificity(): int
     {
         return match ($this) {
             self::VIEWER => 1,

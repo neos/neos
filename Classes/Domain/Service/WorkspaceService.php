@@ -277,6 +277,7 @@ final readonly class WorkspaceService
     public function getMostPrivilegedWorkspaceRoleForSubjects(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceRoleSubjects $subjects): ?WorkspaceRole
     {
         $tableRole = self::TABLE_NAME_WORKSPACE_ROLE;
+        $roleCasesBySpecificity = implode("\n", array_map(static fn (WorkspaceRole $role) => "WHEN role='{$role->value}' THEN {$role->specificity()}\n", WorkspaceRole::cases()));
         $query = <<<SQL
             SELECT
                 role
@@ -293,10 +294,9 @@ final readonly class WorkspaceService
             ORDER BY
                 /* We only want to return the most specific role so we order them and return the first row */
                 CASE
-                    WHEN role='MANAGER' THEN 1
-                    WHEN role='COLLABORATOR' THEN 2
-                    WHEN role='VIEWER' THEN 3
+                    {$roleCasesBySpecificity}
                 END
+                DESC
             LIMIT 1
         SQL;
         $userSubjectValues = [];
