@@ -273,7 +273,7 @@ class AssetUsageIndexingService
                     $propertyType,
                     $propertyValues->offsetGet($propertyName),
                 );
-            } catch (\Throwable) {
+            } catch (\Exception) {
                 $extractedAssetIds = [];
                 // We can't deserialize the property, so skip.
             }

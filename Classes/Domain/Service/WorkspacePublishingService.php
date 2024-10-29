@@ -16,6 +16,7 @@ namespace Neos\Neos\Domain\Service;
 
 use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Command\ChangeBaseWorkspace;
+use Neos\ContentRepository\Core\Feature\WorkspaceModification\Exception\WorkspaceIsNotEmptyException;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\DiscardIndividualNodesFromWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\DiscardWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishIndividualNodesFromWorkspace;
@@ -78,7 +79,8 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceDoesNotExist | WorkspaceRebaseFailed
+     * @throws WorkspaceRebaseFailed is thrown if there are conflicts and the rebase strategy was {@see RebaseErrorHandlingStrategy::STRATEGY_FAIL}
+     * The workspace will be unchanged for this case.
      */
     public function rebaseWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, RebaseErrorHandlingStrategy $rebaseErrorHandlingStrategy = RebaseErrorHandlingStrategy::STRATEGY_FAIL): void
     {
@@ -86,6 +88,10 @@ final class WorkspacePublishingService
         $this->contentRepositoryRegistry->get($contentRepositoryId)->handle($rebaseCommand);
     }
 
+    /**
+     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
+     * No changes would be published for this case.
+     */
     public function publishWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): PublishingResult
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
@@ -98,6 +104,10 @@ final class WorkspacePublishingService
         return new PublishingResult($numberOfPendingChanges, $crWorkspace->baseWorkspaceName);
     }
 
+    /**
+     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
+     * No changes would be published for this case.
+     */
     public function publishChangesInSite(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $siteId): PublishingResult
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
@@ -128,6 +138,10 @@ final class WorkspacePublishingService
         );
     }
 
+    /**
+     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
+     * No changes would be published for this case.
+     */
     public function publishChangesInDocument(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $documentId): PublishingResult
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
@@ -170,6 +184,10 @@ final class WorkspacePublishingService
         return new DiscardingResult($numberOfChangesToBeDiscarded);
     }
 
+    /**
+     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
+     * No changes would be discarded for this case.
+     */
     public function discardChangesInSite(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $siteId): DiscardingResult
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
@@ -196,6 +214,10 @@ final class WorkspacePublishingService
         );
     }
 
+    /**
+     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
+     * No changes would be discarded for this case.
+     */
     public function discardChangesInDocument(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $documentId): DiscardingResult
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
@@ -222,6 +244,9 @@ final class WorkspacePublishingService
         );
     }
 
+    /**
+     * @throws WorkspaceIsNotEmptyException in case a switch is attempted while the workspace still has pending changes
+     */
     public function changeBaseWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceName $newBaseWorkspaceName): void
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
@@ -234,19 +259,15 @@ final class WorkspacePublishingService
         );
     }
 
+    /**
+     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
+     * No changes would be discarded for this case.
+     */
     private function discardNodes(
         ContentRepository $contentRepository,
         WorkspaceName $workspaceName,
         NodeIdsToPublishOrDiscard $nodeIdsToDiscard
     ): void {
-        /**
-         * TODO: only rebase if necessary!
-         * Also, isn't this already included in @see WorkspaceCommandHandler::handleDiscardIndividualNodesFromWorkspace ?
-         */
-        $contentRepository->handle(
-            RebaseWorkspace::create($workspaceName)
-        );
-
         $contentRepository->handle(
             DiscardIndividualNodesFromWorkspace::create(
                 $workspaceName,
@@ -255,19 +276,15 @@ final class WorkspacePublishingService
         );
     }
 
+    /**
+     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
+     * No changes would be published for this case.
+     */
     private function publishNodes(
         ContentRepository $contentRepository,
         WorkspaceName $workspaceName,
         NodeIdsToPublishOrDiscard $nodeIdsToPublish
     ): void {
-        /**
-         * TODO: only rebase if necessary!
-         * Also, isn't this already included in @see WorkspaceCommandHandler::handlePublishIndividualNodesFromWorkspace ?
-         */
-        $contentRepository->handle(
-            RebaseWorkspace::create($workspaceName)
-        );
-
         $contentRepository->handle(
             PublishIndividualNodesFromWorkspace::create(
                 $workspaceName,

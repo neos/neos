@@ -108,7 +108,7 @@ final class ContentRepositoryAuthProvider implements AuthProviderInterface
         // commands that interact with nodes on a content stream. With that it's likely that we don't have to adjust the
         // code if we were to add new commands in the future
         if ($command instanceof RebasableToOtherWorkspaceInterface) {
-            return $this->requireWorkspacePermission($command->getWorkspaceName(), self::WORKSPACE_PERMISSION_WRITE);
+            return $this->requireWorkspacePermission($command->getWorkspaceName(), self::WORKSPACE_PERMISSION_WRITE); // @phpstan-ignore-line
         }
 
         if ($command instanceof CreateRootWorkspace) {
