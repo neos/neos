@@ -13,7 +13,7 @@ use Neos\Neos\Security\Authorization\ContentRepositoryAuthorizationService;
  * - read: Permission to read the node and its properties and references
  * - edit: Permission to change the node
  *
- * @api
+ * @internal
  */
 #[Flow\Proxy(false)]
 final readonly class NodePermissions
