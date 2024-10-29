@@ -118,7 +118,7 @@ final readonly class ContentRepositoryAuthorizationService
     public function getVisibilityConstraintsForAnonymousUser(ContentRepositoryId $contentRepositoryId): VisibilityConstraints
     {
         $roles = $this->rolesOfAnonymousUser();
-        return new VisibilityConstraints($this->restrictedSubtreeTagsForRoles($contentRepositoryId, $roles));
+        return VisibilityConstraints::fromTagConstraints($this->tagConstraintsForRoles($contentRepositoryId, $roles));
     }
 
     /**
@@ -127,7 +127,7 @@ final readonly class ContentRepositoryAuthorizationService
     public function getVisibilityConstraintsForAccount(ContentRepositoryId $contentRepositoryId, Account $account): VisibilityConstraints
     {
         $roles = $this->expandAccountRoles($account);
-        return new VisibilityConstraints($this->restrictedSubtreeTagsForRoles($contentRepositoryId, $roles));
+        return VisibilityConstraints::fromTagConstraints($this->tagConstraintsForRoles($contentRepositoryId, $roles));
     }
 
     // ------------------------------
@@ -168,7 +168,7 @@ final readonly class ContentRepositoryAuthorizationService
     /**
      * @param array<Role> $roles
      */
-    private function restrictedSubtreeTagsForRoles(ContentRepositoryId $contentRepositoryId, array $roles): SubtreeTags
+    private function tagConstraintsForRoles(ContentRepositoryId $contentRepositoryId, array $roles): SubtreeTags
     {
         $restrictedSubtreeTags = SubtreeTags::createEmpty();
         /** @var ReadNodePrivilege $privilege */
