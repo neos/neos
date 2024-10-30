@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Neos\Neos\Security\ContentRepositoryAuthProvider;
 
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\ContentRepositoryRegistry\Factory\AuthProvider\AuthProviderFactoryInterface;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Security\Context as SecurityContext;
@@ -21,6 +22,7 @@ final readonly class ContentRepositoryAuthProviderFactory implements AuthProvide
 {
     public function __construct(
         private UserService $userService,
+        private ContentRepositoryRegistry $contentRepositoryRegistry,
         private ContentRepositoryAuthorizationService $contentRepositoryAuthorizationService,
         private SecurityContext $securityContext,
     ) {
@@ -31,6 +33,6 @@ final readonly class ContentRepositoryAuthProviderFactory implements AuthProvide
      */
     public function build(ContentRepositoryId $contentRepositoryId, array $options): ContentRepositoryAuthProvider
     {
-        return new ContentRepositoryAuthProvider($contentRepositoryId, $this->userService, $this->contentRepositoryAuthorizationService, $this->securityContext);
+        return new ContentRepositoryAuthProvider($contentRepositoryId, $this->userService, $this->contentRepositoryRegistry, $this->contentRepositoryAuthorizationService, $this->securityContext);
     }
 }

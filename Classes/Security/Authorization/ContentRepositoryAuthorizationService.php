@@ -8,9 +8,7 @@ use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTags;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
-use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
-use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Security\Account;
 use Neos\Flow\Security\Authorization\PrivilegeManagerInterface;
@@ -44,7 +42,6 @@ final readonly class ContentRepositoryAuthorizationService
     public function __construct(
         private PartyService $partyService,
         private WorkspaceService $workspaceService,
-        private ContentRepositoryRegistry $contentRepositoryRegistry,
         private PolicyService $policyService,
         private PrivilegeManagerInterface $privilegeManager,
     ) {
@@ -100,13 +97,13 @@ final readonly class ContentRepositoryAuthorizationService
         );
     }
 
-    public function getNodePermissionsForAnonymousUser(Node|NodeAddress $node): NodePermissions
+    public function getNodePermissionsForAnonymousUser(Node $node): NodePermissions
     {
         $roles = $this->rolesOfAnonymousUser();
         return $this->nodePermissionsForRoles($node, $roles);
     }
 
-    public function getNodePermissionsForAccount(Node|NodeAddress $node, Account $account): NodePermissions
+    public function getNodePermissionsForAccount(Node $node, Account $account): NodePermissions
     {
         $roles = $this->expandAccountRoles($account);
         return $this->nodePermissionsForRoles($node, $roles);
@@ -189,15 +186,8 @@ final readonly class ContentRepositoryAuthorizationService
     /**
      * @param array<Role> $roles
      */
-    private function nodePermissionsForRoles(Node|NodeAddress $node, array $roles): NodePermissions
+    private function nodePermissionsForRoles(Node $node, array $roles): NodePermissions
     {
-        if ($node instanceof NodeAddress) {
-            $converted = $this->nodeForNodeAddress($node);
-            if ($converted === null) {
-                return NodePermissions::none(sprintf('Node "%s" not found in Content Repository "%s"', $node->aggregateId->value, $node->contentRepositoryId->value));
-            }
-            $node = $converted;
-        }
         $subtreeTagPrivilegeSubject = new SubtreeTagPrivilegeSubject($node->tags->all(), $node->contentRepositoryId);
         $readGranted = $this->privilegeManager->isGrantedForRoles($roles, ReadNodePrivilege::class, $subtreeTagPrivilegeSubject, $readReason);
         $writeGranted = $this->privilegeManager->isGrantedForRoles($roles, EditNodePrivilege::class, $subtreeTagPrivilegeSubject, $writeReason);
@@ -206,13 +196,5 @@ final readonly class ContentRepositoryAuthorizationService
             edit: $writeGranted,
             reason: $readReason . "\n" . $writeReason,
         );
-    }
-
-    private function nodeForNodeAddress(NodeAddress $nodeAddress): ?Node
-    {
-        return $this->contentRepositoryRegistry->get($nodeAddress->contentRepositoryId)
-            ->getContentGraph($nodeAddress->workspaceName)
-            ->getSubgraph($nodeAddress->dimensionSpacePoint, VisibilityConstraints::withoutRestrictions())
-            ->findNodeById($nodeAddress->aggregateId);
     }
 }

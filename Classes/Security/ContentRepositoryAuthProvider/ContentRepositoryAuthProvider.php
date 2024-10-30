@@ -6,6 +6,7 @@ namespace Neos\Neos\Security\ContentRepositoryAuthProvider;
 
 use Neos\ContentRepository\Core\CommandHandler\CommandInterface;
 use Neos\ContentRepository\Core\ContentRepository;
+use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\Feature\Common\RebasableToOtherWorkspaceInterface;
 use Neos\ContentRepository\Core\Feature\NodeModification\Command\SetNodeProperties;
 use Neos\ContentRepository\Core\Feature\NodeModification\Command\SetSerializedNodeProperties;
@@ -22,9 +23,11 @@ use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\DiscardWork
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishIndividualNodesFromWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Command\RebaseWorkspace;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Security\Context as SecurityContext;
@@ -39,16 +42,17 @@ use Neos\Neos\Security\Authorization\ContentRepositoryAuthorizationService;
  *
  * @internal use {@see ContentRepositoryAuthorizationService} to ask for specific authorization decisions
  */
-final class ContentRepositoryAuthProvider implements AuthProviderInterface
+final readonly class ContentRepositoryAuthProvider implements AuthProviderInterface
 {
     private const WORKSPACE_PERMISSION_WRITE = 'write';
     private const WORKSPACE_PERMISSION_MANAGE = 'manage';
 
     public function __construct(
-        private readonly ContentRepositoryId $contentRepositoryId,
-        private readonly UserService $userService,
-        private readonly ContentRepositoryAuthorizationService $authorizationService,
-        private readonly SecurityContext $securityContext,
+        private ContentRepositoryId $contentRepositoryId,
+        private UserService $userService,
+        private ContentRepositoryRegistry $contentRepositoryRegistry,
+        private ContentRepositoryAuthorizationService $authorizationService,
+        private SecurityContext $securityContext,
     ) {
     }
 
@@ -90,14 +94,11 @@ final class ContentRepositoryAuthProvider implements AuthProviderInterface
             return Privilege::granted('Authorization checks are disabled');
         }
         if ($command instanceof SetNodeProperties) {
-            $nodePermissions = $this->getNodePermissionsForCurrentUser(
-                NodeAddress::create(
-                    $this->contentRepositoryId,
-                    $command->workspaceName,
-                    $command->originDimensionSpacePoint->toDimensionSpacePoint(),
-                    $command->nodeAggregateId,
-                )
-            );
+            $node = $this->getNode($command->workspaceName, $command->originDimensionSpacePoint->toDimensionSpacePoint(), $command->nodeAggregateId);
+            if ($node === null) {
+                return Privilege::denied(sprintf('Failed to load node "%s" in workspace "%s"', $command->nodeAggregateId->value, $command->workspaceName->value));
+            }
+            $nodePermissions = $this->getNodePermissionsForCurrentUser($node);
             if (!$nodePermissions->edit) {
                 return Privilege::denied($nodePermissions->getReason());
             }
@@ -156,12 +157,20 @@ final class ContentRepositoryAuthProvider implements AuthProviderInterface
         return $this->authorizationService->getWorkspacePermissionsForAccount($this->contentRepositoryId, $workspaceName, $authenticatedAccount);
     }
 
-    private function getNodePermissionsForCurrentUser(NodeAddress $nodeAddress): NodePermissions
+    private function getNodePermissionsForCurrentUser(Node $node): NodePermissions
     {
         $authenticatedAccount = $this->securityContext->getAccount();
         if ($authenticatedAccount === null) {
-            return $this->authorizationService->getNodePermissionsForAnonymousUser($nodeAddress);
+            return $this->authorizationService->getNodePermissionsForAnonymousUser($node);
         }
-        return $this->authorizationService->getNodePermissionsForAccount($nodeAddress, $authenticatedAccount);
+        return $this->authorizationService->getNodePermissionsForAccount($node, $authenticatedAccount);
+    }
+
+    private function getNode(WorkspaceName $workspaceName, DimensionSpacePoint $dimensionSpacePoint, NodeAggregateId $nodeAggregateId): ?Node
+    {
+        return $this->contentRepositoryRegistry->get($this->contentRepositoryId)
+            ->getContentGraph($workspaceName)
+            ->getSubgraph($dimensionSpacePoint, VisibilityConstraints::withoutRestrictions())
+            ->findNodeById($nodeAggregateId);
     }
 }
