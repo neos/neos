@@ -130,7 +130,7 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
         };
         if ($nodeThatRequiresEditPrivilege !== null) {
             $workspacePermissions = $this->getWorkspacePermissionsForCurrentUser($nodeThatRequiresEditPrivilege->workspaceName);
-            if ($workspacePermissions->write) {
+            if (!$workspacePermissions->write) {
                 return Privilege::denied(sprintf('No write permissions on workspace "%s": %s', $nodeThatRequiresEditPrivilege->workspaceName->value, $workspacePermissions->getReason()));
             }
             $node = $this->contentRepositoryRegistry->get($this->contentRepositoryId)
