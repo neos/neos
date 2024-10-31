@@ -396,20 +396,15 @@ class WorkspaceCommandController extends CommandController
             $this->quit(3);
         }
 
-
-        try {
-            $nodesCount = $this->workspacePublishingService->countPendingWorkspaceChanges($contentRepositoryId, $workspaceName);
-        } catch (\Exception $exception) {
-            $this->outputLine('Could not fetch unpublished nodes for workspace %s, nothing was deleted. %s', [$workspaceName->value, $exception->getMessage()]);
-            $this->quit(4);
-        }
-
-        if ($nodesCount > 0) {
+        if ($crWorkspace->hasPublishableChanges()) {
             if ($force === false) {
                 $this->outputLine(
-                    'Did not delete workspace "%s" because it contains %s unpublished node(s).'
+                    'Did not delete workspace "%s" because it contains %d publishable changes.'
                         . ' Use --force to delete it nevertheless.',
-                    [$workspaceName->value, $nodesCount]
+                    [
+                        $crWorkspace->countPublishableChanges(),
+                        $workspaceName->value
+                    ]
                 );
                 $this->quit(5);
             }
