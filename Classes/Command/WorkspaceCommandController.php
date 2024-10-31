@@ -398,13 +398,15 @@ class WorkspaceCommandController extends CommandController
 
         if ($crWorkspace->hasPublishableChanges()) {
             if ($force === false) {
+                try {
+                    $nodesCount = $this->workspacePublishingService->countPendingWorkspaceChanges($contentRepositoryId, $workspaceName);
+                } catch (\Exception) {
+                    $nodesCount = 'NAN';
+                }
                 $this->outputLine(
-                    'Did not delete workspace "%s" because it contains %d publishable changes.'
-                        . ' Use --force to delete it nevertheless.',
-                    [
-                        $crWorkspace->countPublishableChanges(),
-                        $workspaceName->value
-                    ]
+                    'Did not delete workspace "%s" because it contains %s unpublished node(s).'
+                    . ' Use --force to delete it nevertheless.',
+                    [$workspaceName->value, $nodesCount]
                 );
                 $this->quit(5);
             }
