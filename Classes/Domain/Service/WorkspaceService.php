@@ -376,6 +376,9 @@ final class WorkspaceService
     }
 
     // ------------------
+    public function removeWorkspaceRoleAssignment(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceRoleSubject $fromString)
+    {
+    }
 
     private function deleteWorkspaceMetadata(ContentRepositoryId $contentRepositoryId, $workspaceName): void
     {
