@@ -21,6 +21,7 @@ use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryI
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
+use Neos\ContentRepository\Export\Processors;
 use Neos\ContentRepository\Export\Severity;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\ContentRepositoryRegistry\Processors\ProjectionResetProcessor;
@@ -56,8 +57,7 @@ final readonly class SitePruningService
 
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
 
-            /** @var array<string, ProcessorInterface> $processors */
-        $processors = [
+        $processors = Processors::fromArray([
             'Remove site nodes' => new SitePruningProcessor(
                 $contentRepository,
                 WorkspaceName::forLive(),
@@ -77,7 +77,7 @@ final readonly class SitePruningService
                     $contentRepositoryId,
                     new ProjectionServiceFactory()
                 ))
-        ];
+        ]);
 
         foreach ($processors as $processorLabel => $processor) {
             ($onProcessor)($processorLabel);
