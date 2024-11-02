@@ -14,7 +14,6 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Domain\Pruning;
 
-use Neos\ContentRepository\Core\Factory\ContentRepositoryServiceInterface;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
@@ -23,7 +22,7 @@ use Neos\Neos\Domain\Service\WorkspaceService;
 /**
  * Pruning processor that removes role and metadata for a specified content repository
  */
-final readonly class RoleAndMetadataPruningProcessor implements ProcessorInterface, ContentRepositoryServiceInterface
+final readonly class RoleAndMetadataPruningProcessor implements ProcessorInterface
 {
     public function __construct(
         private ContentRepositoryId $contentRepositoryId,

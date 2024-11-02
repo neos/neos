@@ -26,7 +26,7 @@ use Neos\ContentRepositoryRegistry\Processors\ProjectionReplayProcessorFactory;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
 use Neos\Neos\Domain\Pruning\ContentRepositoryPruningProcessorFactory;
-use Neos\Neos\Domain\Pruning\RoleAndMetadataPruningProcessorFactory;
+use Neos\Neos\Domain\Pruning\RoleAndMetadataPruningProcessor;
 use Neos\Neos\Domain\Pruning\SitePruningProcessorFactory;
 use Neos\Neos\Domain\Repository\DomainRepository;
 use Neos\Neos\Domain\Repository\SiteRepository;
@@ -68,12 +68,7 @@ final readonly class SitePruningService
                 $contentRepositoryId,
                 new ContentRepositoryPruningProcessorFactory()
             ),
-            'Prune roles and metadata' => $this->contentRepositoryRegistry->buildService(
-                $contentRepositoryId,
-                new RoleAndMetadataPruningProcessorFactory(
-                    $this->workspaceService
-                )
-            ),
+            'Prune roles and metadata' => new RoleAndMetadataPruningProcessor($contentRepositoryId, $this->workspaceService),
             'Replay all projections' => $this->contentRepositoryRegistry->buildService($contentRepositoryId, $this->projectionReplayProcessorFactory),
         ];
 
