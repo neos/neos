@@ -16,6 +16,7 @@ namespace Neos\Neos\Domain\Service;
 
 use League\Flysystem\Filesystem;
 use League\Flysystem\Local\LocalFilesystemAdapter;
+use Neos\ContentRepository\Core\Service\ContentStreamPrunerFactory;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Export\ProcessingContext;
@@ -25,7 +26,7 @@ use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\ContentRepositoryRegistry\Processors\ProjectionReplayProcessorFactory;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
-use Neos\Neos\Domain\Pruning\ContentRepositoryPruningProcessorFactory;
+use Neos\Neos\Domain\Pruning\ContentRepositoryPruningProcessor;
 use Neos\Neos\Domain\Pruning\RoleAndMetadataPruningProcessor;
 use Neos\Neos\Domain\Pruning\SitePruningProcessorFactory;
 use Neos\Neos\Domain\Repository\DomainRepository;
@@ -64,9 +65,11 @@ final readonly class SitePruningService
                     $this->persistenceManager
                 )
             ),
-            'Prune content repository' => $this->contentRepositoryRegistry->buildService(
-                $contentRepositoryId,
-                new ContentRepositoryPruningProcessorFactory()
+            'Prune content repository' => new ContentRepositoryPruningProcessor(
+                $this->contentRepositoryRegistry->buildService(
+                    $contentRepositoryId,
+                    new ContentStreamPrunerFactory()
+                )
             ),
             'Prune roles and metadata' => new RoleAndMetadataPruningProcessor($contentRepositoryId, $this->workspaceService),
             'Replay all projections' => $this->contentRepositoryRegistry->buildService($contentRepositoryId, $this->projectionReplayProcessorFactory),

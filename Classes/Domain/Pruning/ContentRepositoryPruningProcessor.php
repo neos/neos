@@ -14,13 +14,10 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Domain\Pruning;
 
-use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\Factory\ContentRepositoryServiceInterface;
-use Neos\ContentRepository\Core\Feature\ContentStreamEventStreamName;
-use Neos\ContentRepository\Core\Feature\WorkspaceEventStreamName;
+use Neos\ContentRepository\Core\Service\ContentStreamPruner;
 use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
-use Neos\EventStore\EventStoreInterface;
 
 /**
  * Pruning processor that removes all events from the given cr
@@ -28,22 +25,12 @@ use Neos\EventStore\EventStoreInterface;
 final readonly class ContentRepositoryPruningProcessor implements ProcessorInterface, ContentRepositoryServiceInterface
 {
     public function __construct(
-        private ContentRepository $contentRepository,
-        private EventStoreInterface $eventStore,
+        private ContentStreamPruner $contentStreamPruner,
     ) {
     }
 
     public function run(ProcessingContext $context): void
     {
-        foreach ($this->contentRepository->findContentStreams() as $contentStream) {
-            /** @phpstan-ignore-next-line calling internal method */
-            $streamName = ContentStreamEventStreamName::fromContentStreamId($contentStream->id)->getEventStreamName();
-            $this->eventStore->deleteStream($streamName);
-        }
-        foreach ($this->contentRepository->findWorkspaces() as $workspace) {
-            /** @phpstan-ignore-next-line calling internal method */
-            $streamName = WorkspaceEventStreamName::fromWorkspaceName($workspace->workspaceName)->getEventStreamName();
-            $this->eventStore->deleteStream($streamName);
-        }
+        $this->contentStreamPruner->pruneAllWorkspacesAndContentStreamsFromEventStream();
     }
 }
