@@ -15,7 +15,6 @@ declare(strict_types=1);
 namespace Neos\Neos\Domain\Export;
 
 use Neos\ContentRepository\Core\ContentRepository;
-use Neos\ContentRepository\Core\Factory\ContentRepositoryServiceInterface;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
@@ -31,7 +30,7 @@ use Neos\Neos\Domain\Service\NodeTypeNameFactory;
  * @phpstan-type SiteShape array{name:string, siteResourcesPackageKey:string, nodeName?: string, online?:bool, domains?: ?DomainShape[] }
  *
  */
-final readonly class SiteExportProcessor implements ProcessorInterface, ContentRepositoryServiceInterface
+final readonly class SiteExportProcessor implements ProcessorInterface
 {
     public function __construct(
         private ContentRepository $contentRepository,

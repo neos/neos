@@ -27,7 +27,7 @@ use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Neos\Media\Domain\Repository\AssetRepository;
 use Neos\Neos\AssetUsage\AssetUsageService;
-use Neos\Neos\Domain\Export\SiteExportProcessorFactory;
+use Neos\Neos\Domain\Export\SiteExportProcessor;
 use Neos\Neos\Domain\Repository\SiteRepository;
 
 #[Flow\Scope('singleton')]
@@ -73,12 +73,10 @@ final readonly class SiteExportService
                 $liveWorkspace,
                 $this->assetUsageService
             ),
-            'Export sites' => $this->contentRepositoryRegistry->buildService(
-                $contentRepositoryId,
-                new SiteExportProcessorFactory(
-                    $liveWorkspace->workspaceName,
-                    $this->siteRepository,
-                )
+            'Export sites' => new SiteExportProcessor(
+                $contentRepository,
+                $liveWorkspace->workspaceName,
+                $this->siteRepository
             ),
         ];
         foreach ($processors as $processorLabel => $processor) {
