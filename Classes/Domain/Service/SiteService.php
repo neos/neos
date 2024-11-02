@@ -173,7 +173,6 @@ class SiteService
             throw SiteNodeNameIsAlreadyInUseByAnotherSite::butWasAttemptedToBeClaimed($siteNodeName);
         }
 
-        // @todo use node aggregate identifier instead of node name
         $site = new Site($siteNodeName->value);
         $site->setSiteResourcesPackageKey($packageKey);
         $site->setState($inactive ? Site::STATE_OFFLINE : Site::STATE_ONLINE);

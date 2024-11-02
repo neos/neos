@@ -66,7 +66,6 @@ final readonly class SiteCreationProcessor implements ProcessorInterface
                 $context->dispatch(Severity::NOTICE, "Site for node name \"{$siteNodeName->value}\" already exists, skipping");
                 continue;
             }
-            // TODO use node aggregate identifier instead of node name
             $siteInstance = new Site($siteNodeName->value);
             $siteInstance->setSiteResourcesPackageKey($site['siteResourcesPackageKey']);
             $siteInstance->setState(($site['online'] ?? false) ? Site::STATE_OFFLINE : Site::STATE_ONLINE);

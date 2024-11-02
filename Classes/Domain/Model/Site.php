@@ -63,7 +63,10 @@ class Site
      * Node name of this site in the content repository.
      *
      * The first level of nodes of a site can be reached via a path like
-     * "/Sites/MySite/" where "MySite" is the nodeName.
+     * "/<Neos.Neos:Sites>/my-site" where "my-site" is the nodeName.
+     *
+     * TODO use node aggregate identifier instead of node name
+     * see https://github.com/neos/neos-development-collection/issues/4470
      *
      * @var string
      * @Flow\Identity
