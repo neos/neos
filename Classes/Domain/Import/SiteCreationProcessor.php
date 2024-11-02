@@ -26,6 +26,7 @@ use Neos\Neos\Domain\Model\Domain;
 use Neos\Neos\Domain\Model\Site;
 use Neos\Neos\Domain\Repository\DomainRepository;
 use Neos\Neos\Domain\Repository\SiteRepository;
+use Neos\Neos\Domain\Service\NodeTypeNameFactory;
 
 /**
  * Import processor that creates and persists a Neos {@see Site} instance
@@ -52,6 +53,7 @@ final readonly class SiteCreationProcessor implements ProcessorInterface
                 throw new \RuntimeException("Failed to decode sites.json: {$e->getMessage()}", 1729506117, $e);
             }
         } else {
+            $context->dispatch(Severity::WARNING, 'Deprecated legacy handling: No "sites.json" in export found, attempting to extract neos sites from the events. Please update the export soonish.');
             $sites = self::extractSitesFromEventStream($context);
         }
 
@@ -89,20 +91,21 @@ final readonly class SiteCreationProcessor implements ProcessorInterface
     }
 
     /**
+     * @deprecated with Neos 9 Beta 15 please make sure that exports contain `sites.json`
      * @return array<SiteShape>
      */
     private static function extractSitesFromEventStream(ProcessingContext $context): array
     {
         $eventFileResource = $context->files->readStream('events.jsonl');
-        $rootNodeAggregateIds = [];
+        $siteRooNodeAggregateId = null;
         $sites = [];
         while (($line = fgets($eventFileResource)) !== false) {
             $event = ExportedEvent::fromJson($line);
-            if ($event->type === 'RootNodeAggregateWithNodeWasCreated') {
-                $rootNodeAggregateIds[] = $event->payload['nodeAggregateId'];
+            if ($event->type === 'RootNodeAggregateWithNodeWasCreated' && $event->payload['nodeTypeName'] === NodeTypeNameFactory::NAME_SITES) {
+                $siteRooNodeAggregateId = $event->payload['nodeAggregateId'];
                 continue;
             }
-            if ($event->type === 'NodeAggregateWithNodeWasCreated' && in_array($event->payload['parentNodeAggregateId'], $rootNodeAggregateIds, true)) {
+            if ($event->type === 'NodeAggregateWithNodeWasCreated' && $event->payload['parentNodeAggregateId'] === $siteRooNodeAggregateId) {
                 $sites[] = [
                     'siteResourcesPackageKey' => self::extractPackageKeyFromNodeTypeName($event->payload['nodeTypeName']),
                     'name' => $event->payload['initialPropertyValues']['title']['value'] ?? $event->payload['nodeTypeName'],
