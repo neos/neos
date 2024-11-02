@@ -22,6 +22,7 @@ use Neos\ContentRepository\Export\Factory\ContentRepositorySetupProcessorFactory
 use Neos\ContentRepository\Export\Factory\EventStoreImportProcessorFactory;
 use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
+use Neos\ContentRepository\Export\Processors;
 use Neos\ContentRepository\Export\Processors\AssetRepositoryImportProcessor;
 use Neos\ContentRepository\Export\Severity;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
@@ -68,8 +69,7 @@ final readonly class SiteImportService
         $context = new ProcessingContext($filesystem, $onMessage);
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
 
-        /** @var array<string, ProcessorInterface> $processors */
-        $processors = [
+        $processors = Processors::fromArray([
             'Run doctrine migrations' => new DoctrineMigrateProcessor($this->doctrineService),
             'Setup content repository' => $this->contentRepositoryRegistry->buildService($contentRepositoryId, new ContentRepositorySetupProcessorFactory()),
             'Create Live workspace' => new LiveWorkspaceCreationProcessor($contentRepository, $this->workspaceService),
@@ -77,7 +77,7 @@ final readonly class SiteImportService
             'Import events' => $this->contentRepositoryRegistry->buildService($contentRepositoryId, new EventStoreImportProcessorFactory(WorkspaceName::forLive(), keepEventIds: true)),
             'Import assets' => new AssetRepositoryImportProcessor($this->assetRepository, $this->resourceRepository, $this->resourceManager, $this->persistenceManager),
             'Catchup all projections' => new ProjectionCatchupProcessor($this->contentRepositoryRegistry->buildService($contentRepositoryId, new ProjectionServiceFactory())),
-        ];
+        ]);
 
         foreach ($processors as $processorLabel => $processor) {
             ($onProcessor)($processorLabel);

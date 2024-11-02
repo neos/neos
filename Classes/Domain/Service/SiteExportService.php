@@ -21,6 +21,7 @@ use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Export\Factory\EventExportProcessorFactory;
 use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
+use Neos\ContentRepository\Export\Processors;
 use Neos\ContentRepository\Export\Processors\AssetExportProcessor;
 use Neos\ContentRepository\Export\Severity;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
@@ -59,8 +60,7 @@ final readonly class SiteExportService
             throw new \RuntimeException('Failed to find live workspace', 1716652280);
         }
 
-        /** @var array<string, ProcessorInterface> $processors */
-        $processors = [
+        $processors = Processors::fromArray([
             'Exporting events' => $this->contentRepositoryRegistry->buildService(
                 $contentRepositoryId,
                 new EventExportProcessorFactory(
@@ -78,7 +78,8 @@ final readonly class SiteExportService
                 $liveWorkspace->workspaceName,
                 $this->siteRepository
             ),
-        ];
+        ]);
+
         foreach ($processors as $processorLabel => $processor) {
             ($onProcessor)($processorLabel);
             $processor->run($context);
