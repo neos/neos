@@ -346,6 +346,10 @@ class SiteCommandController extends CommandController
             $package = $this->packageManager->getPackage($packageKey);
             $path = Files::concatenatePaths([$package->getPackagePath(), 'Resources/Private/Content']);
         }
+        if (str_starts_with($path, 'resource://')) {
+            $this->outputLine('<error>Resource paths are not allowed, please use <em>--package-key</em> instead or a real path.</error>');
+            $this->quit(1);
+        }
         return $path;
     }
 
