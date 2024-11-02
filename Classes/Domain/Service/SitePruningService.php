@@ -23,7 +23,7 @@ use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
 use Neos\ContentRepository\Export\Severity;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
-use Neos\ContentRepositoryRegistry\Processors\ProjectionCatchupProcessor;
+use Neos\ContentRepositoryRegistry\Processors\ProjectionResetProcessor;
 use Neos\ContentRepositoryRegistry\Service\ProjectionServiceFactory;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
@@ -72,7 +72,11 @@ final readonly class SitePruningService
                 )
             ),
             'Prune roles and metadata' => new RoleAndMetadataPruningProcessor($contentRepositoryId, $this->workspaceService),
-            'Replay all projections' =>  new ProjectionCatchupProcessor($this->contentRepositoryRegistry->buildService($contentRepositoryId, new ProjectionServiceFactory()))
+            'Reset all projections' => new ProjectionResetProcessor(
+                $this->contentRepositoryRegistry->buildService(
+                    $contentRepositoryId,
+                    new ProjectionServiceFactory()
+                ))
         ];
 
         foreach ($processors as $processorLabel => $processor) {
