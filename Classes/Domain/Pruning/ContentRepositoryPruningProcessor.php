@@ -14,7 +14,6 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Domain\Pruning;
 
-use Neos\ContentRepository\Core\Factory\ContentRepositoryServiceInterface;
 use Neos\ContentRepository\Core\Service\ContentStreamPruner;
 use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
@@ -22,7 +21,7 @@ use Neos\ContentRepository\Export\ProcessorInterface;
 /**
  * Pruning processor that removes all events from the given cr
  */
-final readonly class ContentRepositoryPruningProcessor implements ProcessorInterface, ContentRepositoryServiceInterface
+final readonly class ContentRepositoryPruningProcessor implements ProcessorInterface
 {
     public function __construct(
         private ContentStreamPruner $contentStreamPruner,
