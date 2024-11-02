@@ -14,10 +14,9 @@ namespace Neos\Neos\Fusion\Cache;
  * source code.
  */
 
+use Neos\ContentRepository\Core\Projection\CatchUpHookFactoryDependencies;
 use Neos\ContentRepository\Core\Projection\CatchUpHookFactoryInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
-use Neos\ContentRepository\Core\Projection\ProjectionStateInterface;
-use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 
 /**
  * @implements CatchUpHookFactoryInterface<ContentGraphReadModelInterface>
@@ -29,11 +28,11 @@ class GraphProjectorCatchUpHookForCacheFlushingFactory implements CatchUpHookFac
     ) {
     }
 
-    public function build(ContentRepositoryId $contentRepositoryId, ProjectionStateInterface $projectionState): GraphProjectorCatchUpHookForCacheFlushing
+    public function build(CatchUpHookFactoryDependencies $dependencies): GraphProjectorCatchUpHookForCacheFlushing
     {
         return new GraphProjectorCatchUpHookForCacheFlushing(
-            $contentRepositoryId,
-            $projectionState,
+            $dependencies->contentRepositoryId,
+            $dependencies->projectionState,
             $this->contentCacheFlusher
         );
     }

@@ -14,10 +14,9 @@ namespace Neos\Neos\AssetUsage\CatchUpHook;
  * source code.
  */
 
+use Neos\ContentRepository\Core\Projection\CatchUpHookFactoryDependencies;
 use Neos\ContentRepository\Core\Projection\CatchUpHookFactoryInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
-use Neos\ContentRepository\Core\Projection\ProjectionStateInterface;
-use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\Neos\AssetUsage\Service\AssetUsageIndexingService;
 
 /**
@@ -30,11 +29,11 @@ class AssetUsageCatchUpHookFactory implements CatchUpHookFactoryInterface
     ) {
     }
 
-    public function build(ContentRepositoryId $contentRepositoryId, ProjectionStateInterface $projectionState): AssetUsageCatchUpHook
+    public function build(CatchUpHookFactoryDependencies $dependencies): AssetUsageCatchUpHook
     {
         return new AssetUsageCatchUpHook(
-            $contentRepositoryId,
-            $projectionState,
+            $dependencies->contentRepositoryId,
+            $dependencies->projectionState,
             $this->assetUsageIndexingService
         );
     }

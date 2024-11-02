@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Neos\Neos\FrontendRouting\CatchUpHook;
 
+use Neos\ContentRepository\Core\Projection\CatchUpHookFactoryDependencies;
 use Neos\ContentRepository\Core\Projection\CatchUpHookFactoryInterface;
 use Neos\ContentRepository\Core\Projection\CatchUpHookInterface;
-use Neos\ContentRepository\Core\Projection\ProjectionStateInterface;
-use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\Flow\Mvc\Routing\RouterCachingService;
 use Neos\Neos\FrontendRouting\Projection\DocumentUriPathFinder;
 
@@ -21,10 +20,10 @@ final class RouterCacheHookFactory implements CatchUpHookFactoryInterface
     ) {
     }
 
-    public function build(ContentRepositoryId $contentRepositoryId, ProjectionStateInterface $projectionState): CatchUpHookInterface
+    public function build(CatchUpHookFactoryDependencies $dependencies): CatchUpHookInterface
     {
         return new RouterCacheHook(
-            $projectionState,
+            $dependencies->projectionState,
             $this->routerCachingService
         );
     }
