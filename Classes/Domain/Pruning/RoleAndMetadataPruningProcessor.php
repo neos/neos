@@ -33,7 +33,7 @@ final readonly class RoleAndMetadataPruningProcessor implements ProcessorInterfa
 
     public function run(ProcessingContext $context): void
     {
-        $this->workspaceService->pruneRoleAsssignments($this->contentRepositoryId);
+        $this->workspaceService->pruneRoleAssignments($this->contentRepositoryId);
         $this->workspaceService->pruneWorkspaceMetadata($this->contentRepositoryId);
     }
 }
