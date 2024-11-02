@@ -39,8 +39,13 @@ final readonly class LiveWorkspaceCreationProcessor implements ProcessorInterfac
     public function run(ProcessingContext $context): void
     {
         $context->dispatch(Severity::NOTICE, 'Creating live workspace');
-        $existingWorkspace = $this->contentRepository->findWorkspaceByName(WorkspaceName::forLive());
-        if ($existingWorkspace !== null) {
+        $liveWorkspace = $this->contentRepository->findWorkspaceByName(WorkspaceName::forLive());
+        $liveContentStreamVersion = $liveWorkspace ? $this->contentRepository->findContentStreamById($liveWorkspace->currentContentStreamId)?->version : null;
+        if ($liveWorkspace && $liveContentStreamVersion !== 0) {
+            // todo we cannot use `hasPublishableChanges` here... maybe introduce `hasChanges`?
+            throw new \RuntimeException('Live workspace already contains content please run "site:pruneAll" before importing.');
+        }
+        if ($liveWorkspace !== null) {
             $context->dispatch(Severity::NOTICE, 'Workspace already exists, skipping');
             return;
         }
