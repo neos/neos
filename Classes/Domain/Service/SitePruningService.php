@@ -28,7 +28,7 @@ use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
 use Neos\Neos\Domain\Pruning\ContentRepositoryPruningProcessor;
 use Neos\Neos\Domain\Pruning\RoleAndMetadataPruningProcessor;
-use Neos\Neos\Domain\Pruning\SitePruningProcessorFactory;
+use Neos\Neos\Domain\Pruning\SitePruningProcessor;
 use Neos\Neos\Domain\Repository\DomainRepository;
 use Neos\Neos\Domain\Repository\SiteRepository;
 
@@ -54,16 +54,16 @@ final readonly class SitePruningService
         $filesystem = new Filesystem(new LocalFilesystemAdapter('.'));
         $context = new ProcessingContext($filesystem, $onMessage);
 
-        /** @var array<string, ProcessorInterface> $processors */
+        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
+
+            /** @var array<string, ProcessorInterface> $processors */
         $processors = [
-            'Remove site nodes' => $this->contentRepositoryRegistry->buildService(
-                $contentRepositoryId,
-                new SitePruningProcessorFactory(
-                    WorkspaceName::forLive(),
-                    $this->siteRepository,
-                    $this->domainRepository,
-                    $this->persistenceManager
-                )
+            'Remove site nodes' => new SitePruningProcessor(
+                $contentRepository,
+                WorkspaceName::forLive(),
+                $this->siteRepository,
+                $this->domainRepository,
+                $this->persistenceManager
             ),
             'Prune content repository' => new ContentRepositoryPruningProcessor(
                 $this->contentRepositoryRegistry->buildService(
