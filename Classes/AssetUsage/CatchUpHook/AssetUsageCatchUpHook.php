@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Neos\Neos\AssetUsage\CatchUpHook;
 
-use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
 use Neos\ContentRepository\Core\EventStore\EventInterface;
@@ -21,9 +20,11 @@ use Neos\ContentRepository\Core\Feature\WorkspacePublication\Dto\NodeIdsToPublis
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Event\WorkspaceWasDiscarded;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Event\WorkspaceWasPartiallyDiscarded;
 use Neos\ContentRepository\Core\Projection\CatchUpHookInterface;
+use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindDescendantNodesFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
+use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
@@ -36,7 +37,8 @@ use Neos\Neos\AssetUsage\Service\AssetUsageIndexingService;
 class AssetUsageCatchUpHook implements CatchUpHookInterface
 {
     public function __construct(
-        private readonly ContentRepository $contentRepository,
+        private readonly ContentRepositoryId $contentRepositoryId,
+        private readonly ContentGraphReadModelInterface $contentGraphReadModel,
         private readonly AssetUsageIndexingService $assetUsageIndexingService
     ) {
     }
@@ -50,7 +52,7 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
         if ($eventInstance instanceof EmbedsWorkspaceName) {
             try {
                 // Skip if the workspace does not exist: "The source workspace missing does not exist" https://github.com/neos/neos-development-collection/pull/5270
-                $this->contentRepository->getContentGraph($eventInstance->getWorkspaceName());
+                $this->contentGraphReadModel->getContentGraph($eventInstance->getWorkspaceName());
             } catch (WorkspaceDoesNotExist) {
                 return;
             }
@@ -68,7 +70,7 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
         if ($eventInstance instanceof EmbedsWorkspaceName) {
             try {
                 // Skip if the workspace does not exist: "The source workspace missing does not exist" https://github.com/neos/neos-development-collection/pull/5270
-                $this->contentRepository->getContentGraph($eventInstance->getWorkspaceName());
+                $this->contentGraphReadModel->getContentGraph($eventInstance->getWorkspaceName());
             } catch (WorkspaceDoesNotExist) {
                 return;
             }
@@ -97,7 +99,7 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
 
     private function updateNode(WorkspaceName $workspaceName, NodeAggregateId $nodeAggregateId, DimensionSpacePoint $dimensionSpacePoint): void
     {
-        $contentGraph = $this->contentRepository->getContentGraph($workspaceName);
+        $contentGraph = $this->contentGraphReadModel->getContentGraph($workspaceName);
         $node = $contentGraph->getSubgraph($dimensionSpacePoint, VisibilityConstraints::withoutRestrictions())->findNodeById($nodeAggregateId);
 
         if ($node === null) {
@@ -106,14 +108,14 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
         }
 
         $this->assetUsageIndexingService->updateIndex(
-            $this->contentRepository->id,
+            $this->contentRepositoryId,
             $node
         );
     }
 
     private function removeNodes(WorkspaceName $workspaceName, NodeAggregateId $nodeAggregateId, DimensionSpacePointSet $dimensionSpacePoints): void
     {
-        $contentGraph = $this->contentRepository->getContentGraph($workspaceName);
+        $contentGraph = $this->contentGraphReadModel->getContentGraph($workspaceName);
 
         foreach ($dimensionSpacePoints as $dimensionSpacePoint) {
             $subgraph = $contentGraph->getSubgraph($dimensionSpacePoint, VisibilityConstraints::withoutRestrictions());
@@ -125,7 +127,7 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
             /** @var Node $node */
             foreach ($nodes as $node) {
                 $this->assetUsageIndexingService->removeIndexForNode(
-                    $this->contentRepository->id,
+                    $this->contentRepositoryId,
                     $node
                 );
             }
@@ -134,7 +136,7 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
 
     private function discardWorkspace(WorkspaceName $workspaceName): void
     {
-        $this->assetUsageIndexingService->removeIndexForWorkspace($this->contentRepository->id, $workspaceName);
+        $this->assetUsageIndexingService->removeIndexForWorkspace($this->contentRepositoryId, $workspaceName);
     }
 
     private function discardNodes(WorkspaceName $workspaceName, NodeIdsToPublishOrDiscard $nodeIds): void
@@ -145,7 +147,7 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
                 continue;
             }
             $this->assetUsageIndexingService->removeIndexForWorkspaceNameNodeAggregateIdAndDimensionSpacePoint(
-                $this->contentRepository->id,
+                $this->contentRepositoryId,
                 $workspaceName,
                 $nodeId->nodeAggregateId,
                 $nodeId->dimensionSpacePoint
@@ -155,6 +157,6 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
 
     private function updateDimensionSpacePoint(WorkspaceName $workspaceName, DimensionSpacePoint $source, DimensionSpacePoint $target): void
     {
-        $this->assetUsageIndexingService->updateDimensionSpacePointInIndex($this->contentRepository->id, $workspaceName, $source, $target);
+        $this->assetUsageIndexingService->updateDimensionSpacePointInIndex($this->contentRepositoryId, $workspaceName, $source, $target);
     }
 }
