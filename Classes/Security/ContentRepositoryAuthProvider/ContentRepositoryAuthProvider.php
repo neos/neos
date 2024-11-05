@@ -60,9 +60,6 @@ use Neos\Neos\Security\Authorization\ContentRepositoryAuthorizationService;
  */
 final readonly class ContentRepositoryAuthProvider implements AuthProviderInterface
 {
-    private const WORKSPACE_PERMISSION_WRITE = 'write';
-    private const WORKSPACE_PERMISSION_MANAGE = 'manage';
-
     public function __construct(
         private ContentRepositoryId $contentRepositoryId,
         private UserService $userService,
@@ -171,20 +168,29 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
             DiscardIndividualNodesFromWorkspace::class,
             PublishWorkspace::class,
             PublishIndividualNodesFromWorkspace::class,
-            RebaseWorkspace::class => $this->requireWorkspacePermission($command->workspaceName, self::WORKSPACE_PERMISSION_WRITE),
-            CreateWorkspace::class => $this->requireWorkspacePermission($command->baseWorkspaceName, self::WORKSPACE_PERMISSION_WRITE),
-            DeleteWorkspace::class => $this->requireWorkspacePermission($command->workspaceName, self::WORKSPACE_PERMISSION_MANAGE),
+            RebaseWorkspace::class => $this->requireWorkspaceWritePermission($command->workspaceName),
+            CreateWorkspace::class => $this->requireWorkspaceWritePermission($command->baseWorkspaceName),
+            DeleteWorkspace::class => $this->requireWorkspaceManagePermission($command->workspaceName),
             default => Privilege::granted('Command not restricted'),
         };
     }
 
-    private function requireWorkspacePermission(WorkspaceName $workspaceName, string $permission): Privilege
+    private function requireWorkspaceWritePermission(WorkspaceName $workspaceName): Privilege
     {
         $workspacePermissions = $this->getWorkspacePermissionsForCurrentUser($workspaceName);
-        if (!$workspacePermissions->{$permission}) {
-            return Privilege::denied("Missing '{$permission}' permissions for workspace '{$workspaceName->value}': {$workspacePermissions->getReason()}");
+        if (!$workspacePermissions->write) {
+            return Privilege::denied("Missing 'write' permissions for workspace '{$workspaceName->value}': {$workspacePermissions->getReason()}");
         }
-        return Privilege::granted("User has '{$permission}' permissions for workspace '{$workspaceName->value}'");
+        return Privilege::granted("User has 'write' permissions for workspace '{$workspaceName->value}'");
+    }
+
+    private function requireWorkspaceManagePermission(WorkspaceName $workspaceName): Privilege
+    {
+        $workspacePermissions = $this->getWorkspacePermissionsForCurrentUser($workspaceName);
+        if (!$workspacePermissions->manage) {
+            return Privilege::denied("Missing 'manage' permissions for workspace '{$workspaceName->value}': {$workspacePermissions->getReason()}");
+        }
+        return Privilege::granted("User has 'manage' permissions for workspace '{$workspaceName->value}'");
     }
 
     private function getWorkspacePermissionsForCurrentUser(WorkspaceName $workspaceName): WorkspacePermissions
