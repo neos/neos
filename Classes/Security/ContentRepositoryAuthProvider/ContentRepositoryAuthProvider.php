@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Neos\Neos\Security\ContentRepositoryAuthProvider;
 
 use Neos\ContentRepository\Core\CommandHandler\CommandInterface;
-use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
-use Neos\ContentRepository\Core\Feature\Common\RebasableToOtherWorkspaceInterface;
 use Neos\ContentRepository\Core\Feature\DimensionSpaceAdjustment\Command\AddDimensionShineThrough;
 use Neos\ContentRepository\Core\Feature\DimensionSpaceAdjustment\Command\MoveDimensionSpacePoint;
 use Neos\ContentRepository\Core\Feature\NodeCreation\Command\CreateNodeAggregateWithNode;
@@ -39,13 +37,12 @@ use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\DiscardWork
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishIndividualNodesFromWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Command\RebaseWorkspace;
+use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
-use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
-use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Security\Context as SecurityContext;
 use Neos\Neos\Domain\Model\NodePermissions;
 use Neos\Neos\Domain\Model\WorkspacePermissions;
@@ -63,7 +60,7 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
     public function __construct(
         private ContentRepositoryId $contentRepositoryId,
         private UserService $userService,
-        private ContentRepositoryRegistry $contentRepositoryRegistry,
+        private ContentGraphReadModelInterface $contentGraphReadModel,
         private ContentRepositoryAuthorizationService $authorizationService,
         private SecurityContext $securityContext,
     ) {
@@ -130,7 +127,7 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
             if (!$workspacePermissions->write) {
                 return Privilege::denied(sprintf('No write permissions on workspace "%s": %s', $nodeThatRequiresEditPrivilege->workspaceName->value, $workspacePermissions->getReason()));
             }
-            $node = $this->contentRepositoryRegistry->get($this->contentRepositoryId)
+            $node = $this->contentGraphReadModel
                 ->getContentGraph($nodeThatRequiresEditPrivilege->workspaceName)
                 ->getSubgraph($nodeThatRequiresEditPrivilege->dimensionSpacePoint, VisibilityConstraints::withoutRestrictions())
                 ->findNodeById($nodeThatRequiresEditPrivilege->aggregateId);
