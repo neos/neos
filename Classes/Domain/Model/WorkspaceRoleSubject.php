@@ -50,9 +50,4 @@ final readonly class WorkspaceRoleSubject
     {
         return $this->type === $other->type && $this->value === $other->value;
     }
-
-    public function __toString(): string
-    {
-        return "{$this->type->value}: {$this->value}";
-    }
 }
