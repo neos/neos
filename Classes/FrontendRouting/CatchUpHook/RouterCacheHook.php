@@ -10,8 +10,9 @@ use Neos\ContentRepository\Core\Feature\NodeModification\Event\NodePropertiesWer
 use Neos\ContentRepository\Core\Feature\NodeMove\Event\NodeAggregateWasMoved;
 use Neos\ContentRepository\Core\Feature\NodeRemoval\Event\NodeAggregateWasRemoved;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasTagged;
-use Neos\ContentRepository\Core\Projection\CatchUpHookInterface;
+use Neos\ContentRepository\Core\Projection\CatchUpHook\CatchUpHookInterface;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
+use Neos\ContentRepository\Core\Subscription\SubscriptionStatus;
 use Neos\EventStore\Model\EventEnvelope;
 use Neos\Flow\Mvc\Routing\RouterCachingService;
 use Neos\Neos\FrontendRouting\Exception\NodeNotFoundException;
@@ -32,7 +33,7 @@ final class RouterCacheHook implements CatchUpHookInterface
     ) {
     }
 
-    public function onBeforeCatchUp(): void
+    public function onBeforeCatchUp(SubscriptionStatus $subscriptionStatus): void
     {
         // Nothing to do here
     }
@@ -57,11 +58,6 @@ final class RouterCacheHook implements CatchUpHookInterface
             SubtreeWasTagged::class => $this->flushAllCollectedTags(),
             default => null
         };
-    }
-
-    public function onBeforeBatchCompleted(): void
-    {
-        // Nothing to do here
     }
 
     public function onAfterCatchUp(): void
