@@ -14,7 +14,6 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Security\Authorization\Privilege;
 
-use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTags;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\Flow\Security\Authorization\Privilege\PrivilegeSubjectInterface;
@@ -28,14 +27,5 @@ final readonly class SubtreeTagPrivilegeSubject implements PrivilegeSubjectInter
         public SubtreeTags $subTreeTags,
         public ContentRepositoryId|null $contentRepositoryId = null,
     ) {
-    }
-
-    public function __toString(): string
-    {
-        $label = 'tag' . ($this->subTreeTags->count() > 1 ? 's' : '') . ' "' . implode('", "', $this->subTreeTags->toStringArray()) . '"';
-        if ($this->contentRepositoryId !== null) {
-            $label .= ' in Content Repository "' . $this->contentRepositoryId->value . '"';
-        }
-        return $label;
     }
 }
