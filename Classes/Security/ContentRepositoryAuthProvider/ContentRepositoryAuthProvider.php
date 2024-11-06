@@ -48,6 +48,7 @@ use Neos\Neos\Domain\Model\NodePermissions;
 use Neos\Neos\Domain\Model\WorkspacePermissions;
 use Neos\Neos\Domain\Service\UserService;
 use Neos\Neos\Security\Authorization\ContentRepositoryAuthorizationService;
+use Neos\Neos\Security\Authorization\Privilege\EditNodePrivilege;
 
 /**
  * Implementation of Content Repository {@see AuthProviderInterface} which ties the authorization
@@ -103,25 +104,7 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
         if ($this->securityContext->areAuthorizationChecksDisabled()) {
             return Privilege::granted('Authorization checks are disabled');
         }
-
-        /** @var NodeAddress|null $nodeThatRequiresEditPrivilege */
-        $nodeThatRequiresEditPrivilege = match ($command::class) {
-            CopyNodesRecursively::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->targetDimensionSpacePoint->toDimensionSpacePoint(), $command->targetParentNodeAggregateId),
-            CreateNodeAggregateWithNode::class,
-            CreateNodeAggregateWithNodeAndSerializedProperties::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->originDimensionSpacePoint->toDimensionSpacePoint(), $command->parentNodeAggregateId),
-            CreateNodeVariant::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->sourceOrigin->toDimensionSpacePoint(), $command->nodeAggregateId),
-            DisableNodeAggregate::class,
-            EnableNodeAggregate::class,
-            RemoveNodeAggregate::class,
-            TagSubtree::class,
-            UntagSubtree::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->coveredDimensionSpacePoint, $command->nodeAggregateId),
-            MoveNodeAggregate::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->dimensionSpacePoint, $command->nodeAggregateId),
-            SetNodeProperties::class,
-            SetSerializedNodeProperties::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->originDimensionSpacePoint->toDimensionSpacePoint(), $command->nodeAggregateId),
-            SetNodeReferences::class,
-            SetSerializedNodeReferences::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->sourceOriginDimensionSpacePoint->toDimensionSpacePoint(), $command->sourceNodeAggregateId),
-            default => null,
-        };
+        $nodeThatRequiresEditPrivilege = $this->nodeThatRequiresEditPrivilegeForCommand($command);
         if ($nodeThatRequiresEditPrivilege !== null) {
             $workspacePermissions = $this->getWorkspacePermissionsForCurrentUser($nodeThatRequiresEditPrivilege->workspaceName);
             if (!$workspacePermissions->write) {
@@ -169,6 +152,30 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
             CreateWorkspace::class => $this->requireWorkspaceWritePermission($command->baseWorkspaceName),
             DeleteWorkspace::class => $this->requireWorkspaceManagePermission($command->workspaceName),
             default => Privilege::granted('Command not restricted'),
+        };
+    }
+
+    /**
+     * For a given command, determine the node (represented as {@see NodeAddress}) that needs {@see EditNodePrivilege} to be granted
+     */
+    private function nodeThatRequiresEditPrivilegeForCommand(CommandInterface $command): ?NodeAddress
+    {
+        return match ($command::class) {
+            CopyNodesRecursively::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->targetDimensionSpacePoint->toDimensionSpacePoint(), $command->targetParentNodeAggregateId),
+            CreateNodeAggregateWithNode::class,
+            CreateNodeAggregateWithNodeAndSerializedProperties::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->originDimensionSpacePoint->toDimensionSpacePoint(), $command->parentNodeAggregateId),
+            CreateNodeVariant::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->sourceOrigin->toDimensionSpacePoint(), $command->nodeAggregateId),
+            DisableNodeAggregate::class,
+            EnableNodeAggregate::class,
+            RemoveNodeAggregate::class,
+            TagSubtree::class,
+            UntagSubtree::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->coveredDimensionSpacePoint, $command->nodeAggregateId),
+            MoveNodeAggregate::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->dimensionSpacePoint, $command->nodeAggregateId),
+            SetNodeProperties::class,
+            SetSerializedNodeProperties::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->originDimensionSpacePoint->toDimensionSpacePoint(), $command->nodeAggregateId),
+            SetNodeReferences::class,
+            SetSerializedNodeReferences::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->sourceOriginDimensionSpacePoint->toDimensionSpacePoint(), $command->sourceNodeAggregateId),
+            default => null,
         };
     }
 
