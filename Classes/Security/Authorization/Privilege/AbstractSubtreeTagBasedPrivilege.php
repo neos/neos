@@ -30,6 +30,7 @@ abstract class AbstractSubtreeTagBasedPrivilege extends AbstractPrivilege
     private SubtreeTags|null $subtreeTagsRuntimeCache = null;
     private ContentRepositoryId|null $contentRepositoryIdRuntimeCache = null;
 
+    /** @phpstan-assert !null $this->subtreeTagsRuntimeCache */
     private function initialize(): void
     {
         if ($this->initialized) {
@@ -66,7 +67,6 @@ abstract class AbstractSubtreeTagBasedPrivilege extends AbstractPrivilege
     public function getSubtreeTags(): SubtreeTags
     {
         $this->initialize();
-        assert($this->subtreeTagsRuntimeCache !== null);
         return $this->subtreeTagsRuntimeCache;
     }
 
