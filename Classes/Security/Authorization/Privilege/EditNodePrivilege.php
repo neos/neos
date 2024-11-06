@@ -14,14 +14,9 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Security\Authorization\Privilege;
 
-use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
-use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
-use Neos\Flow\Security\Authorization\Privilege\AbstractPrivilege;
-use Neos\Flow\Security\Authorization\Privilege\PrivilegeSubjectInterface;
-use Neos\Flow\Security\Exception\InvalidPrivilegeTypeException;
-
 /**
- * TODO docs
+ * The privilege to edit any matching node in the Content Repository.
+ * This includes creation, setting properties or references, disabling/enabling, tagging and moving corresponding nodes
  */
 class EditNodePrivilege extends AbstractSubtreeTagBasedPrivilege
 {

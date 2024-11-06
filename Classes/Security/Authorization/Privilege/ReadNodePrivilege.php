@@ -14,14 +14,9 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Security\Authorization\Privilege;
 
-use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
-use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
-use Neos\Flow\Security\Authorization\Privilege\AbstractPrivilege;
-use Neos\Flow\Security\Authorization\Privilege\PrivilegeSubjectInterface;
-use Neos\Flow\Security\Exception\InvalidPrivilegeTypeException;
-
 /**
- * TODO docs
+ * The privilege to read any matching node from the Content Repository.
+ * This includes all properties, references and metadata
  */
 class ReadNodePrivilege extends AbstractSubtreeTagBasedPrivilege
 {
