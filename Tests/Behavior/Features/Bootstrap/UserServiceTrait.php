@@ -16,8 +16,10 @@ use Behat\Gherkin\Node\TableNode;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
 use Neos\Flow\Security\AccountFactory;
 use Neos\Flow\Security\Cryptography\HashService;
+use Neos\Flow\Security\Policy\PolicyService;
 use Neos\Neos\Domain\Model\User;
 use Neos\Neos\Domain\Service\UserService;
+use Neos\Neos\Security\Authorization\Privilege\ReadNodePrivilege;
 use Neos\Party\Domain\Model\PersonName;
 use Neos\Utility\ObjectAccess;
 

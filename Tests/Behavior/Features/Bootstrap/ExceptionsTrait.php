@@ -47,6 +47,15 @@ trait ExceptionsTrait
     }
 
     /**
+     * @Then no exception should be thrown
+     */
+    public function noExceptionShouldBeThrown(): void
+    {
+        Assert::assertNull($this->lastCaughtException, 'Expected no exception but one was thrown');
+        $this->lastCaughtException = null;
+    }
+
+    /**
      * @BeforeScenario
      * @AfterScenario
      */
