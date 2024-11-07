@@ -146,6 +146,7 @@ trait ContentRepositorySecurityTrait
      */
     public function contentRepositorySecurityIsEnabled(): void
     {
+        $this->enableFlowSecurity();
         $this->enableContentRepositorySecurity();
     }
 
@@ -168,39 +169,42 @@ trait ContentRepositorySecurityTrait
     }
 
     /**
-     * @When the user :username accesses the content graph for workspace :workspaceName
+     * @When the user :username is authenticated
      */
-    public function theUserAccessesTheContentGraphForWorkspace(string $username, string $workspaceName): void
+    public function theUserIsAuthenticated(string $username): void
     {
-        $this->enableContentRepositorySecurity();
         $user = $this->getObject(UserService::class)->getUser($username);
         $this->authenticateAccount($user->getAccounts()->first());
+    }
+
+
+    /**
+     * @When the current user accesses the content graph for workspace :workspaceName
+     */
+    public function theCurrentUserAccessesTheContentGraphForWorkspace(string $workspaceName): void
+    {
         $this->tryCatchingExceptions(fn () => $this->currentContentRepository->getContentGraph(WorkspaceName::fromString($workspaceName)));
     }
 
     /**
-     * @Then The user :username should not be able to read node :nodeAggregateId
+     * @Then The current user should not be able to read node :nodeAggregateId
      */
-    public function theUserShouldNotBeAbleToReadNode(string $username, string $nodeAggregateId): void
+    public function theCurrentUserShouldNotBeAbleToReadNode(string $nodeAggregateId): void
     {
-        $user = $this->getObject(UserService::class)->getUser($username);
-        $this->authenticateAccount($user->getAccounts()->first());
         $node = $this->currentContentRepository->getContentSubgraph($this->currentWorkspaceName, $this->currentDimensionSpacePoint)->findNodeById(NodeAggregateId::fromString($nodeAggregateId));
         if ($node !== null) {
-            Assert::fail(sprintf('Expected node "%s" to be inaccessible to user "%s" but it was loaded', $nodeAggregateId, $username));
+            Assert::fail(sprintf('Expected node "%s" to be inaccessible but it was loaded', $nodeAggregateId));
         }
     }
 
     /**
-     * @Then The user :username should be able to read node :nodeAggregateId
+     * @Then The current user should be able to read node :nodeAggregateId
      */
-    public function theUserShouldBeAbleToReadNode(string $username, string $nodeAggregateId): void
+    public function theCurrentUserShouldBeAbleToReadNode(string $nodeAggregateId): void
     {
-        $user = $this->getObject(UserService::class)->getUser($username);
-        $this->authenticateAccount($user->getAccounts()->first());
         $node = $this->currentContentRepository->getContentSubgraph($this->currentWorkspaceName, $this->currentDimensionSpacePoint)->findNodeById(NodeAggregateId::fromString($nodeAggregateId));
         if ($node === null) {
-            Assert::fail(sprintf('Expected node "%s" to be accessible to user "%s" but it could not be loaded', $nodeAggregateId, $username));
+            Assert::fail(sprintf('Expected node "%s" to be accessible but it could not be loaded', $nodeAggregateId));
         }
     }
 }

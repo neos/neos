@@ -14,10 +14,12 @@ declare(strict_types=1);
 
 use Behat\Gherkin\Node\TableNode;
 use Neos\ContentRepository\BehavioralTests\TestSuite\Behavior\CRBehavioralTestsSubjectProvider;
+use Neos\ContentRepository\Core\CommandHandler\CommandInterface;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateRootWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateWorkspace;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
+use Neos\Flow\Reflection\ReflectionService;
 use Neos\Neos\Domain\Model\UserId;
 use Neos\Neos\Domain\Model\WorkspaceDescription;
 use Neos\Neos\Domain\Model\WorkspaceRole;
@@ -166,15 +168,20 @@ trait WorkspaceServiceTrait
 
     /**
      * @When the role :role is assigned to workspace :workspaceName for group :groupName
-     * @When the role :role is assigned to workspace :workspaceName for user :userId
+     * @When the role :role is assigned to workspace :workspaceName for user :username
      */
-    public function theRoleIsAssignedToWorkspaceForGroupOrUser(string $role, string $workspaceName, string $groupName = null, string $userId = null): void
+    public function theRoleIsAssignedToWorkspaceForGroupOrUser(string $role, string $workspaceName, string $groupName = null, string $username = null): void
     {
+        if ($groupName !== null) {
+            $subject = WorkspaceRoleSubject::createForGroup($groupName);
+        } else {
+            $subject = WorkspaceRoleSubject::createForUser($this->userIdForUsername($username));
+        }
         $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->assignWorkspaceRole(
             $this->currentContentRepository->id,
             WorkspaceName::fromString($workspaceName),
             WorkspaceRoleAssignment::create(
-                $groupName !== null ? WorkspaceRoleSubject::createForGroup($groupName) : WorkspaceRoleSubject::createForUser(UserId::fromString($userId)),
+                $subject,
                 WorkspaceRole::from($role)
             )
         ));
@@ -182,14 +189,19 @@ trait WorkspaceServiceTrait
 
     /**
      * @When the role for group :groupName is unassigned from workspace :workspaceName
-     * @When the role for user :userId is unassigned from workspace :workspaceName
+     * @When the role for user :username is unassigned from workspace :workspaceName
      */
-    public function theRoleIsUnassignedFromWorkspace(string $workspaceName, string $groupName = null, string $userId = null): void
+    public function theRoleIsUnassignedFromWorkspace(string $workspaceName, string $groupName = null, string $username = null): void
     {
+        if ($groupName !== null) {
+            $subject = WorkspaceRoleSubject::createForGroup($groupName);
+        } else {
+            $subject = WorkspaceRoleSubject::createForUser($this->userIdForUsername($username));
+        }
         $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->unassignWorkspaceRole(
             $this->currentContentRepository->id,
             WorkspaceName::fromString($workspaceName),
-            $groupName !== null ? WorkspaceRoleSubject::createForGroup($groupName) : WorkspaceRoleSubject::createForUser(UserId::fromString($userId)),
+            $subject,
         ));
     }
 
@@ -241,5 +253,12 @@ trait WorkspaceServiceTrait
         Assert::assertFalse($permissions->read);
         Assert::assertFalse($permissions->write);
         Assert::assertFalse($permissions->manage);
+    }
+
+    private function userIdForUsername(string $username): UserId
+    {
+        $user = $this->getObject(UserService::class)->getUser($username);
+        Assert::assertNotNull($user);
+        return $user->getId();
     }
 }
