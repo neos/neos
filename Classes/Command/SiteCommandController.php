@@ -161,12 +161,12 @@ class SiteCommandController extends CommandController
      * This command allows importing sites from the given path/package. The format must
      * be identical to that produced by the exportAll command.
      *
-     * !!! The live workspace has to be empty prior to importing. !!!
-     *
      * If a path is specified, this command expects the corresponding directory to contain the exported files
      *
      * If a package key is specified, this command expects the export files to be located in the private resources
      * directory of the given package (Resources/Private/Content).
+     *
+     * **Note that the live workspace has to be empty prior to importing.**
      *
      * @param string|null $packageKey Package key specifying the package containing the sites content
      * @param string|null $path relative or absolute path and filename to the export files
@@ -199,7 +199,7 @@ class SiteCommandController extends CommandController
      * Export sites
      *
      * This command exports all sites of the content repository.
-     **
+     *
      * If a path is specified, this command creates the directory if needed and exports into that.
      *
      * If a package key is specified, this command exports to the private resources
