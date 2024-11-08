@@ -76,7 +76,8 @@ final readonly class SitePruningService
                 $this->contentRepositoryRegistry->buildService(
                     $contentRepositoryId,
                     new ProjectionServiceFactory()
-                ))
+                )
+            )
         ]);
 
         foreach ($processors as $processorLabel => $processor) {
