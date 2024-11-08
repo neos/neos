@@ -60,6 +60,14 @@ class FusionSourceCodeFactory
     }
 
     /**
+     * @deprecated with Neos 9 - YAGNI from the start :)
+     */
+    public function createFromSite(Site $site): FusionSourceCodeCollection
+    {
+        return FusionSourceCodeCollection::tryFromPackageRootFusion($site->getSiteResourcesPackageKey());
+    }
+
+    /**
      * Generate Fusion prototype definitions for all node types
      *
      * Only fully qualified node types (e.g. MyVendor.MyPackage:NodeType) will be considered.
