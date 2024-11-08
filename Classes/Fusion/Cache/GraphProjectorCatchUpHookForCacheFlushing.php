@@ -14,9 +14,7 @@ namespace Neos\Neos\Fusion\Cache;
  * source code.
  */
 
-use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\EventStore\EventInterface;
-use Neos\ContentRepository\Core\Feature\Common\EmbedsContentStreamId;
 use Neos\ContentRepository\Core\Feature\Common\EmbedsNodeAggregateId;
 use Neos\ContentRepository\Core\Feature\Common\EmbedsWorkspaceName;
 use Neos\ContentRepository\Core\Feature\NodeCreation\Event\NodeAggregateWithNodeWasCreated;
@@ -37,9 +35,10 @@ use Neos\ContentRepository\Core\Feature\WorkspacePublication\Event\WorkspaceWasD
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Event\WorkspaceWasPartiallyDiscarded;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Event\WorkspaceWasRebased;
 use Neos\ContentRepository\Core\Projection\CatchUpHookInterface;
+use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregate;
+use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
-use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateIds;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\EventStore\Model\EventEnvelope;
@@ -49,9 +48,7 @@ use Neos\EventStore\Model\EventEnvelope;
  * is not needed:
  *
  * By calling {@see self::disabled(\Closure)} in your code, all projection updates
- * will never trigger catch up hooks. This will only work when
- * {@see CatchUpTriggerWithSynchronousOption::synchronously()} is called,
- * as otherwise this subprocess won't be called.
+ * will never trigger catch up hooks.
  *
  *
  *                                                  projection update
@@ -109,7 +106,8 @@ class GraphProjectorCatchUpHookForCacheFlushing implements CatchUpHookInterface
 
 
     public function __construct(
-        private readonly ContentRepository $contentRepository,
+        private readonly ContentRepositoryId $contentRepositoryId,
+        private readonly ContentGraphReadModelInterface $contentGraphReadModel,
         private readonly ContentCacheFlusher $contentCacheFlusher
     ) {
     }
@@ -161,19 +159,18 @@ class GraphProjectorCatchUpHookForCacheFlushing implements CatchUpHookInterface
             || $eventInstance instanceof NodeAggregateWasMoved
         ) {
             try {
-                $contentGraph = $this->contentRepository->getContentGraph($eventInstance->workspaceName);
+                $contentGraph = $this->contentGraphReadModel->getContentGraph($eventInstance->workspaceName);
             } catch (WorkspaceDoesNotExist) {
                 return;
             }
-
             $nodeAggregate = $contentGraph->findNodeAggregateById(
                 $eventInstance->getNodeAggregateId()
             );
             if ($nodeAggregate) {
                 $this->scheduleCacheFlushJobForNodeAggregate(
-                    $this->contentRepository,
-                    $eventInstance->workspaceName,
-                    $nodeAggregate
+                    $this->contentRepositoryId,
+                    $nodeAggregate,
+                    $contentGraph->findAncestorNodeAggregateIds($eventInstance->getNodeAggregateId()),
                 );
             }
         }
@@ -196,74 +193,55 @@ class GraphProjectorCatchUpHookForCacheFlushing implements CatchUpHookInterface
             || $eventInstance instanceof WorkspaceWasPartiallyDiscarded
             || $eventInstance instanceof WorkspaceWasRebased
         ) {
-            $this->scheduleCacheFlushJobForWorkspaceName($this->contentRepository, $eventInstance->workspaceName);
+            $this->scheduleCacheFlushJobForWorkspaceName($this->contentRepositoryId, $eventInstance->workspaceName);
         } elseif (
             !($eventInstance instanceof NodeAggregateWasRemoved)
             && $eventInstance instanceof EmbedsNodeAggregateId
-            && $eventInstance instanceof EmbedsContentStreamId
             && $eventInstance instanceof EmbedsWorkspaceName
         ) {
             try {
-                $nodeAggregate = $this->contentRepository->getContentGraph($eventInstance->getWorkspaceName())->findNodeAggregateById(
-                    $eventInstance->getNodeAggregateId()
-                );
+                $contentGraph = $this->contentGraphReadModel->getContentGraph($eventInstance->getWorkspaceName());
             } catch (WorkspaceDoesNotExist) {
                 return;
             }
+            $nodeAggregate = $contentGraph->findNodeAggregateById(
+                $eventInstance->getNodeAggregateId()
+            );
 
             if ($nodeAggregate) {
                 $this->scheduleCacheFlushJobForNodeAggregate(
-                    $this->contentRepository,
-                    $eventInstance->getWorkspaceName(),
-                    $nodeAggregate
+                    $this->contentRepositoryId,
+                    $nodeAggregate,
+                    $contentGraph->findAncestorNodeAggregateIds($eventInstance->getNodeAggregateId())
                 );
             }
         }
     }
 
     private function scheduleCacheFlushJobForNodeAggregate(
-        ContentRepository $contentRepository,
-        WorkspaceName $workspaceName,
-        NodeAggregate $nodeAggregate
+        ContentRepositoryId $contentRepositoryId,
+        NodeAggregate $nodeAggregate,
+        NodeAggregateIds $ancestorNodeAggregateIds
     ): void {
         // we store this in an associative array deduplicate.
-        $this->flushNodeAggregateRequestsOnAfterCatchUp[$workspaceName->value . '__' . $nodeAggregate->nodeAggregateId->value] = FlushNodeAggregateRequest::create(
-            $contentRepository->id,
-            $workspaceName,
+        $this->flushNodeAggregateRequestsOnAfterCatchUp[$nodeAggregate->workspaceName->value . '__' . $nodeAggregate->nodeAggregateId->value] = FlushNodeAggregateRequest::create(
+            $contentRepositoryId,
+            $nodeAggregate->workspaceName,
             $nodeAggregate->nodeAggregateId,
             $nodeAggregate->nodeTypeName,
-            $this->determineAncestorNodeAggregateIds($workspaceName, $nodeAggregate->nodeAggregateId)
+            $ancestorNodeAggregateIds
         );
     }
 
     private function scheduleCacheFlushJobForWorkspaceName(
-        ContentRepository $contentRepository,
+        ContentRepositoryId $contentRepositoryId,
         WorkspaceName $workspaceName
     ): void {
         // we store this in an associative array deduplicate.
         $this->flushWorkspaceRequestsOnAfterCatchUp[$workspaceName->value] = FlushWorkspaceRequest::create(
-            $contentRepository->id,
+            $contentRepositoryId,
             $workspaceName,
         );
-    }
-
-    private function determineAncestorNodeAggregateIds(WorkspaceName $workspaceName, NodeAggregateId $childNodeAggregateId): NodeAggregateIds
-    {
-        $contentGraph = $this->contentRepository->getContentGraph($workspaceName);
-        $stack = iterator_to_array($contentGraph->findParentNodeAggregates($childNodeAggregateId));
-
-        $ancestorNodeAggregateIds = [];
-        while ($stack !== []) {
-            $nodeAggregate = array_shift($stack);
-
-            // Prevent infinite loops
-            if (!in_array($nodeAggregate->nodeAggregateId, $ancestorNodeAggregateIds, false)) {
-                $ancestorNodeAggregateIds[] = $nodeAggregate->nodeAggregateId;
-                array_push($stack, ...iterator_to_array($contentGraph->findParentNodeAggregates($nodeAggregate->nodeAggregateId)));
-            }
-        }
-
-        return NodeAggregateIds::fromArray($ancestorNodeAggregateIds);
     }
 
     public function onBeforeBatchCompleted(): void
