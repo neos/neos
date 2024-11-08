@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Neos\Neos\FrontendRouting\CatchUpHook;
 
-use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\EventStore\EventInterface;
 use Neos\ContentRepository\Core\Feature\NodeModification\Event\NodePropertiesWereSet;
@@ -28,7 +27,7 @@ final class RouterCacheHook implements CatchUpHookInterface
     private array $tagsToFlush = [];
 
     public function __construct(
-        private readonly ContentRepository $contentRepository,
+        private readonly DocumentUriPathFinder $documentUriPathFinder,
         private readonly RouterCachingService $routerCachingService,
     ) {
     }
@@ -85,7 +84,7 @@ final class RouterCacheHook implements CatchUpHookInterface
 
             $this->collectTagsToFlush($node);
 
-            $descendantsOfNode = $this->getState()->getDescendantsOfNode($node);
+            $descendantsOfNode = $this->documentUriPathFinder->getDescendantsOfNode($node);
             array_map($this->collectTagsToFlush(...), iterator_to_array($descendantsOfNode));
         }
     }
@@ -105,7 +104,7 @@ final class RouterCacheHook implements CatchUpHookInterface
 
             $this->collectTagsToFlush($node);
 
-            $descendantsOfNode = $this->getState()->getDescendantsOfNode($node);
+            $descendantsOfNode = $this->documentUriPathFinder->getDescendantsOfNode($node);
             array_map($this->collectTagsToFlush(...), iterator_to_array($descendantsOfNode));
         }
     }
@@ -130,7 +129,7 @@ final class RouterCacheHook implements CatchUpHookInterface
 
             $this->collectTagsToFlush($node);
 
-            $descendantsOfNode = $this->getState()->getDescendantsOfNode($node);
+            $descendantsOfNode = $this->documentUriPathFinder->getDescendantsOfNode($node);
             array_map($this->collectTagsToFlush(...), iterator_to_array($descendantsOfNode));
         }
     }
@@ -153,7 +152,7 @@ final class RouterCacheHook implements CatchUpHookInterface
 
             $this->collectTagsToFlush($node);
 
-            $descendantsOfNode = $this->getState()->getDescendantsOfNode($node);
+            $descendantsOfNode = $this->documentUriPathFinder->getDescendantsOfNode($node);
             array_map($this->collectTagsToFlush(...), iterator_to_array($descendantsOfNode));
         }
     }
@@ -173,15 +172,10 @@ final class RouterCacheHook implements CatchUpHookInterface
         $this->tagsToFlush = [];
     }
 
-    private function getState(): DocumentUriPathFinder
-    {
-        return $this->contentRepository->projectionState(DocumentUriPathFinder::class);
-    }
-
     private function findDocumentNodeInfoByIdAndDimensionSpacePoint(NodeAggregateId $nodeAggregateId, DimensionSpacePoint $dimensionSpacePoint): ?DocumentNodeInfo
     {
         try {
-            return $this->getState()->getByIdAndDimensionSpacePointHash(
+            return $this->documentUriPathFinder->getByIdAndDimensionSpacePointHash(
                 $nodeAggregateId,
                 $dimensionSpacePoint->hash
             );

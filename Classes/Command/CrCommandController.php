@@ -165,8 +165,7 @@ class CrCommandController extends CommandController
         $this->workspaceService->pruneWorkspaceMetadata($contentRepositoryId);
 
         // reset the events table
-        $contentStreamPruner->pruneAll();
-        $workspaceMaintenanceService->pruneAll();
+        $contentStreamPruner->pruneAllWorkspacesAndContentStreamsFromEventStream();
 
         // reset the projections state
         $projectionService->resetAllProjections();
