@@ -14,11 +14,12 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Domain\Service;
 
+use Doctrine\DBAL\Exception as DBALException;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Local\LocalFilesystemAdapter;
+use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
-use Neos\ContentRepository\Export\Factory\ContentRepositorySetupProcessorFactory;
 use Neos\ContentRepository\Export\Factory\EventStoreImportProcessorFactory;
 use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
@@ -34,7 +35,6 @@ use Neos\Flow\Persistence\PersistenceManagerInterface;
 use Neos\Flow\ResourceManagement\ResourceManager;
 use Neos\Flow\ResourceManagement\ResourceRepository;
 use Neos\Media\Domain\Repository\AssetRepository;
-use Neos\Neos\Domain\Import\DoctrineMigrateProcessor;
 use Neos\Neos\Domain\Import\LiveWorkspaceCreationProcessor;
 use Neos\Neos\Domain\Import\SiteCreationProcessor;
 use Neos\Neos\Domain\Repository\DomainRepository;
@@ -65,13 +65,15 @@ final readonly class SiteImportService
         if (!is_dir($path)) {
             throw new \InvalidArgumentException(sprintf('Path "%s" is not a directory', $path), 1729593802);
         }
-        $filesystem = new Filesystem(new LocalFilesystemAdapter($path));
-        $context = new ProcessingContext($filesystem, $onMessage);
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
 
+        $this->requireDataBaseSchemaToBeSetup();
+        $this->requireContentRepositoryToBeSetup($contentRepository);
+
+        $filesystem = new Filesystem(new LocalFilesystemAdapter($path));
+        $context = new ProcessingContext($filesystem, $onMessage);
+
         $processors = Processors::fromArray([
-            'Run doctrine migrations' => new DoctrineMigrateProcessor($this->doctrineService),
-            'Setup content repository' => $this->contentRepositoryRegistry->buildService($contentRepositoryId, new ContentRepositorySetupProcessorFactory()),
             'Create Live workspace' => new LiveWorkspaceCreationProcessor($contentRepository, $this->workspaceService),
             'Create Neos sites' => new SiteCreationProcessor($this->siteRepository, $this->domainRepository, $this->persistenceManager),
             'Import events' => $this->contentRepositoryRegistry->buildService($contentRepositoryId, new EventStoreImportProcessorFactory(WorkspaceName::forLive(), keepEventIds: true)),
@@ -82,6 +84,31 @@ final readonly class SiteImportService
         foreach ($processors as $processorLabel => $processor) {
             ($onProcessor)($processorLabel);
             $processor->run($context);
+        }
+    }
+
+    private function requireContentRepositoryToBeSetup(ContentRepository $contentRepository): void
+    {
+        $status = $contentRepository->status();
+        if (!$status->isOk()) {
+            throw new \RuntimeException(sprintf('Content repository %s is not setup correctly, please run `./flow cr:setup`', $contentRepository->id->value));
+        }
+    }
+
+    private function requireDataBaseSchemaToBeSetup(): void
+    {
+        try {
+            [
+                'new' => $_newMigrationCount,
+                'executed' => $executedMigrationCount,
+                'available' => $availableMigrationCount
+            ] = $this->doctrineService->getMigrationStatus();
+        } catch (DBALException | \PDOException) {
+            throw new \RuntimeException('Not database connected. Please check your database connection settings or run `./flow setup` for further information.', 1684075689386);
+        }
+
+        if ($executedMigrationCount === 0 && $availableMigrationCount > 0) {
+            throw new \RuntimeException('No doctrine migrations have been executed. Please run `./flow doctrine:migrate`');
         }
     }
 }
