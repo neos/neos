@@ -65,17 +65,18 @@ trait WorkspaceServiceTrait
     }
 
     /**
-     * @When the personal workspace :workspaceName is created with the target workspace :targetWorkspace for user :ownerUserId
+     * @When the personal workspace :workspaceName is created with the target workspace :targetWorkspace for user :username
      */
-    public function thePersonalWorkspaceIsCreatedWithTheTargetWorkspace(string $workspaceName, string $targetWorkspace, string $ownerUserId): void
+    public function thePersonalWorkspaceIsCreatedWithTheTargetWorkspace(string $workspaceName, string $targetWorkspace, string $username): void
     {
+        $ownerUserId = $this->userIdForUsername($username);
         $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->createPersonalWorkspace(
             $this->currentContentRepository->id,
             WorkspaceName::fromString($workspaceName),
             WorkspaceTitle::fromString($workspaceName),
             WorkspaceDescription::fromString(''),
             WorkspaceName::fromString($targetWorkspace),
-            UserId::fromString($ownerUserId),
+            $ownerUserId,
         ));
     }
 
@@ -258,7 +259,7 @@ trait WorkspaceServiceTrait
     private function userIdForUsername(string $username): UserId
     {
         $user = $this->getObject(UserService::class)->getUser($username);
-        Assert::assertNotNull($user);
+        Assert::assertNotNull($user, sprintf('The user "%s" does not exist', $username));
         return $user->getId();
     }
 }

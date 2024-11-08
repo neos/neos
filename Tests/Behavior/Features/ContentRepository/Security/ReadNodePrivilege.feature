@@ -62,7 +62,7 @@ Feature: ReadNodePrivilege related features
       | tag                          | "blog"               |
     And the role VIEWER is assigned to workspace "live" for group "Neos.Flow:Everybody"
     When content repository security is enabled
-    And the user "john.doe" is authenticated
-    Then The current user should not be able to read node "a1"
-    When the user "jane.doe" is authenticated
-    Then The current user should be able to read node "a1"
+    And I am authenticated as "john.doe"
+    Then I should not be able to read node "a1"
+    When I am authenticated as "jane.doe"
+    Then I should be able to read node "a1"

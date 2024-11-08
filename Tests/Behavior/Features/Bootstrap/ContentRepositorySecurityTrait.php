@@ -169,9 +169,9 @@ trait ContentRepositorySecurityTrait
     }
 
     /**
-     * @When the user :username is authenticated
+     * @When I am authenticated as :username
      */
-    public function theUserIsAuthenticated(string $username): void
+    public function iAmAuthenticatedAs(string $username): void
     {
         $user = $this->getObject(UserService::class)->getUser($username);
         $this->authenticateAccount($user->getAccounts()->first());
@@ -179,17 +179,17 @@ trait ContentRepositorySecurityTrait
 
 
     /**
-     * @When the current user accesses the content graph for workspace :workspaceName
+     * @When I access the content graph for workspace :workspaceName
      */
-    public function theCurrentUserAccessesTheContentGraphForWorkspace(string $workspaceName): void
+    public function iAccessesTheContentGraphForWorkspace(string $workspaceName): void
     {
         $this->tryCatchingExceptions(fn () => $this->currentContentRepository->getContentGraph(WorkspaceName::fromString($workspaceName)));
     }
 
     /**
-     * @Then The current user should not be able to read node :nodeAggregateId
+     * @Then I should not be able to read node :nodeAggregateId
      */
-    public function theCurrentUserShouldNotBeAbleToReadNode(string $nodeAggregateId): void
+    public function iShouldNotBeAbleToReadNode(string $nodeAggregateId): void
     {
         $node = $this->currentContentRepository->getContentSubgraph($this->currentWorkspaceName, $this->currentDimensionSpacePoint)->findNodeById(NodeAggregateId::fromString($nodeAggregateId));
         if ($node !== null) {
@@ -198,9 +198,9 @@ trait ContentRepositorySecurityTrait
     }
 
     /**
-     * @Then The current user should be able to read node :nodeAggregateId
+     * @Then I should be able to read node :nodeAggregateId
      */
-    public function theCurrentUserShouldBeAbleToReadNode(string $nodeAggregateId): void
+    public function iShouldBeAbleToReadNode(string $nodeAggregateId): void
     {
         $node = $this->currentContentRepository->getContentSubgraph($this->currentWorkspaceName, $this->currentDimensionSpacePoint)->findNodeById(NodeAggregateId::fromString($nodeAggregateId));
         if ($node === null) {

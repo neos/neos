@@ -65,7 +65,7 @@ trait UserServiceTrait
                 username: $userData['Username'],
                 firstName: $userData['First name'] ?? null,
                 lastName: $userData['Last name'] ?? null,
-                roleIdentifiers: isset($userData['Roles']) ? explode(',', $userData['Roles']) : null,
+                roleIdentifiers: !empty($userData['Roles']) ? explode(',', $userData['Roles']) : null,
                 id: $userData['Id'] ?? null,
             );
         }

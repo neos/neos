@@ -18,7 +18,6 @@ Feature: EditNodePrivilege related features
     """
     And using identifier "default", I define a content repository
     And I am in content repository "default"
-    And I am user identified by "initiating-user-identifier"
     And the command CreateRootWorkspace is executed with payload:
       | Key                | Value           |
       | workspaceName      | "live"          |
@@ -42,10 +41,10 @@ Feature: EditNodePrivilege related features
       | b               | Neos.Neos:Document | root                  | b        | {"language":"de"}         |
       | b1              | Neos.Neos:Document | b                     | b1       | {"language":"de"}         |
     And the following Neos users exist:
-      | Id      | Username | First name | Last name | Roles                                            |
-      | janedoe | jane.doe | Jane       | Doe       | Neos.Neos:Administrator                          |
-      | johndoe | john.doe | John       | Doe       | Neos.Neos:RestrictedEditor,Neos.Neos:UserManager |
-      | editor  | editor   | Edward     | Editor    | Neos.Neos:Editor                                 |
+      | Username | First name | Last name | Roles                                            |
+      | jane.doe | Jane       | Doe       | Neos.Neos:Administrator                          |
+      | john.doe | John       | Doe       | Neos.Neos:RestrictedEditor,Neos.Neos:UserManager |
+      | editor   | Edward     | Editor    | Neos.Neos:Editor                                 |
 
   Scenario: TODO
     Given I am in workspace "live"
@@ -57,9 +56,19 @@ Feature: EditNodePrivilege related features
       | tag                          | "blog"               |
     And the role MANAGER is assigned to workspace "live" for user "jane.doe"
     When content repository security is enabled
-    And the user "jane.doe" is authenticated
+    And I am authenticated as "jane.doe"
     When the command DisableNodeAggregate is executed with payload and exceptions are caught:
       | Key                          | Value         |
       | nodeAggregateId              | "a1a"         |
       | nodeVariantSelectionStrategy | "allVariants" |
-    Then the last command should have thrown an exception of type "AccessDenied"
+    Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
+#    Then the last command should have thrown an exception of type "AccessDenied" with message:
+#    """
+#    Command "Neos\ContentRepository\Core\Feature\NodeDisabling\Command\DisableNodeAggregate" was denied: No edit permissions for node "a1a" in workspace "live": Evaluated following 2 privilege target(s):
+#    "Neos.Neos:ReadBlog": ABSTAIN
+#    "Neos.Neos:ReadBlog": GRANT
+#    (1 granted, 0 denied, 1 abstained)
+#    Evaluated following 1 privilege target(s):
+#    "Neos.Neos:EditBlog": ABSTAIN
+#    (0 granted, 0 denied, 1 abstained)
+#    """
