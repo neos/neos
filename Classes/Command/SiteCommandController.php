@@ -213,9 +213,7 @@ class SiteCommandController extends CommandController
     {
         $path = $this->determineTargetPath($packageKey, $path);
         $contentRepositoryId = ContentRepositoryId::fromString($contentRepository);
-        if (file_exists($path) === false) {
-            Files::createDirectoryRecursively($path);
-        }
+        Files::createDirectoryRecursively($path);
         $this->siteExportService->exportToPath(
             $contentRepositoryId,
             $path,
