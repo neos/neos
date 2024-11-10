@@ -14,7 +14,6 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Domain\Import;
 
-use JsonException;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeName;
 use Neos\ContentRepository\Export\Event\ValueObject\ExportedEvent;
 use Neos\ContentRepository\Export\ProcessingContext;
@@ -49,7 +48,7 @@ final readonly class SiteCreationProcessor implements ProcessorInterface
             $sitesJson = $context->files->read('sites.json');
             try {
                 $sites = json_decode($sitesJson, true, 512, JSON_THROW_ON_ERROR);
-            } catch (JsonException $e) {
+            } catch (\JsonException $e) {
                 throw new \RuntimeException("Failed to decode sites.json: {$e->getMessage()}", 1729506117, $e);
             }
         } else {
@@ -59,11 +58,11 @@ final readonly class SiteCreationProcessor implements ProcessorInterface
 
         /** @var SiteShape $site */
         foreach ($sites as $site) {
-            $context->dispatch(Severity::NOTICE, "Creating site \"{$site['name']}\"");
+            $context->dispatch(Severity::NOTICE, sprintf('Creating site "%s"', $site['name']));
 
             $siteNodeName = !empty($site['nodeName']) ? NodeName::fromString($site['nodeName']) : NodeName::transliterateFromString($site['name']);
             if ($this->siteRepository->findOneByNodeName($siteNodeName->value)) {
-                $context->dispatch(Severity::NOTICE, "Site for node name \"{$siteNodeName->value}\" already exists, skipping");
+                $context->dispatch(Severity::NOTICE, sprintf('Site for node name "%s" already exists, skipping', $siteNodeName->value));
                 continue;
             }
             $siteInstance = new Site($siteNodeName->value);
@@ -73,13 +72,18 @@ final readonly class SiteCreationProcessor implements ProcessorInterface
             $this->siteRepository->add($siteInstance);
             $this->persistenceManager->persistAll();
             foreach ($site['domains'] ?? [] as $domain) {
-                $domainInstance = new Domain();
-                $domainInstance->setSite($siteInstance);
-                $domainInstance->setHostname($domain['hostname']);
-                $domainInstance->setPort($domain['port'] ?? null);
-                $domainInstance->setScheme($domain['scheme'] ?? null);
-                $domainInstance->setActive($domain['active'] ?? false);
-                $this->domainRepository->add($domainInstance);
+                $domainInstance = $this->domainRepository->findOneByHost($domain['hostname']);
+                if ($domainInstance) {
+                    $context->dispatch(Severity::NOTICE, sprintf('Domain "%s" already exists. Adding it to site "%s".', $domain['hostname'], $site['name']));
+                } else {
+                    $domainInstance = new Domain();
+                    $domainInstance->setSite($siteInstance);
+                    $domainInstance->setHostname($domain['hostname']);
+                    $domainInstance->setPort($domain['port'] ?? null);
+                    $domainInstance->setScheme($domain['scheme'] ?? null);
+                    $domainInstance->setActive($domain['active'] ?? false);
+                    $this->domainRepository->add($domainInstance);
+                }
                 if ($domain['primary'] ?? false) {
                     $siteInstance->setPrimaryDomain($domainInstance);
                     $this->siteRepository->update($siteInstance);
