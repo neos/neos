@@ -67,7 +67,7 @@ final readonly class SiteCreationProcessor implements ProcessorInterface
             }
             $siteInstance = new Site($siteNodeName->value);
             $siteInstance->setSiteResourcesPackageKey($site['siteResourcesPackageKey']);
-            $siteInstance->setState(($site['online'] ?? false) ? Site::STATE_OFFLINE : Site::STATE_ONLINE);
+            $siteInstance->setState($site['online'] ? Site::STATE_ONLINE : Site::STATE_OFFLINE);
             $siteInstance->setName($site['name']);
             $this->siteRepository->add($siteInstance);
             $this->persistenceManager->persistAll();
