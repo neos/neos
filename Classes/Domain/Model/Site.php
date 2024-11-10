@@ -331,11 +331,15 @@ class Site
     /**
      * Returns the primary domain, if one has been defined.
      *
+     * @param boolean $fallbackToActive if true falls back to the first active domain instead returning null if no primary domain was explicitly set
      * @return ?Domain The primary domain or NULL
      * @api
      */
-    public function getPrimaryDomain(): ?Domain
+    public function getPrimaryDomain(bool $fallbackToActive = true): ?Domain
     {
+        if (!$fallbackToActive) {
+            return $this->primaryDomain;
+        }
         return $this->primaryDomain instanceof Domain && $this->primaryDomain->getActive()
             ? $this->primaryDomain
             : $this->getFirstActiveDomain();

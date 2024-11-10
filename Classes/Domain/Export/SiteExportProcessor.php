@@ -67,7 +67,7 @@ final readonly class SiteExportProcessor implements ProcessorInterface
                         'scheme' => $domain->getScheme(),
                         'port' => $domain->getPort(),
                         'active' => $domain->getActive(),
-                        'primary' => $domain === $site->getPrimaryDomain(),
+                        'primary' => $domain === $site->getPrimaryDomain(fallbackToActive: false),
                     ],
                     $site->getDomains()->toArray()
                 )
