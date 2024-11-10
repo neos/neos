@@ -174,10 +174,11 @@ class SiteCommandController extends CommandController
      */
     public function importAllCommand(string $packageKey = null, string $path = null, string $contentRepository = 'default', bool $verbose = false): void
     {
+        // TODO check if this warning is still necessary with Neos 9
         // Since this command uses a lot of memory when large sites are imported, we warn the user to watch for
         // the confirmation of a successful import.
         $this->outputLine('<b>This command can use a lot of memory when importing sites with many resources.</b>');
-        $this->outputLine('If the import is successful, you will see a message saying "Import of site ... finished".');
+        $this->outputLine('If the import is successful, you will see a message saying "Import finished".');
         $this->outputLine('If you do not see this message, the import failed, most likely due to insufficient memory.');
         $this->outputLine('Increase the <b>memory_limit</b> configuration parameter of your php CLI to attempt to fix this.');
         $this->outputLine('Starting import...');
@@ -193,6 +194,8 @@ class SiteCommandController extends CommandController
             $this->createOnProcessorClosure(),
             $this->createOnMessageClosure($verbose)
         );
+
+        $this->outputLine('Import finished.');
     }
 
     /**
@@ -230,7 +233,7 @@ class SiteCommandController extends CommandController
      */
     public function pruneAllCommand(string $contentRepository = 'default', bool $force = false, bool $verbose = false): void
     {
-        if (!$force && !$this->output->askConfirmation(sprintf('> This will prune your content repository "%s". Are you sure to proceed? (y/n) ', $contentRepository), false)) {
+        if (!$force && !$this->output->askConfirmation(sprintf('> This will prune your content repository "%s" and all its attached sites. Are you sure to proceed? (y/n) ', $contentRepository), false)) {
             $this->outputLine('<comment>Abort.</comment>');
             return;
         }
@@ -367,7 +370,7 @@ class SiteCommandController extends CommandController
             }
             $this->outputLine(match ($severity) {
                 Severity::NOTICE => $message,
-                Severity::WARNING => sprintf('<error>Warning: %s</error>', $message),
+                Severity::WARNING => sprintf('<comment>Warning: %s</comment>', $message),
                 Severity::ERROR => sprintf('<error>Error: %s</error>', $message),
             });
         };
