@@ -72,8 +72,8 @@ final readonly class SiteCreationProcessor implements ProcessorInterface
             $this->siteRepository->add($siteInstance);
             $this->persistenceManager->persistAll();
             foreach ($site['domains'] ?? [] as $domain) {
-                $domainInstance = $this->domainRepository->findOneByHost($domain['hostname']);
-                if ($domainInstance) {
+                $domainInstance = $this->domainRepository->findByHostname($domain['hostname'])->getFirst();
+                if ($domainInstance instanceof Domain) {
                     $context->dispatch(Severity::NOTICE, sprintf('Domain "%s" already exists. Adding it to site "%s".', $domain['hostname'], $site['name']));
                 } else {
                     $domainInstance = new Domain();
