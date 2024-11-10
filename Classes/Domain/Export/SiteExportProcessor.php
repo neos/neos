@@ -27,7 +27,7 @@ use Neos\Neos\Domain\Service\NodeTypeNameFactory;
  * Export processor exports Neos {@see Site} instances as json
  *
  * @phpstan-type DomainShape array{hostname: string, scheme?: ?string, port?: ?int, active?: ?bool, primary?: ?bool }
- * @phpstan-type SiteShape array{name:string, siteResourcesPackageKey:string, nodeName?: string, online?:bool, domains?: ?DomainShape[] }
+ * @phpstan-type SiteShape array{name:string, siteResourcesPackageKey:string, nodeName: string, online:bool, domains: DomainShape[] }
  *
  */
 final readonly class SiteExportProcessor implements ProcessorInterface

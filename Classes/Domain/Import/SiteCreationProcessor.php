@@ -60,7 +60,7 @@ final readonly class SiteCreationProcessor implements ProcessorInterface
         foreach ($sites as $site) {
             $context->dispatch(Severity::NOTICE, sprintf('Creating site "%s"', $site['name']));
 
-            $siteNodeName = !empty($site['nodeName']) ? NodeName::fromString($site['nodeName']) : NodeName::transliterateFromString($site['name']);
+            $siteNodeName = NodeName::fromString($site['nodeName']);
             if ($this->siteRepository->findOneByNodeName($siteNodeName->value)) {
                 $context->dispatch(Severity::NOTICE, sprintf('Site for node name "%s" already exists, skipping', $siteNodeName->value));
                 continue;
@@ -71,7 +71,7 @@ final readonly class SiteCreationProcessor implements ProcessorInterface
             $siteInstance->setName($site['name']);
             $this->siteRepository->add($siteInstance);
             $this->persistenceManager->persistAll();
-            foreach ($site['domains'] ?? [] as $domain) {
+            foreach ($site['domains'] as $domain) {
                 $domainInstance = $this->domainRepository->findByHostname($domain['hostname'])->getFirst();
                 if ($domainInstance instanceof Domain) {
                     $context->dispatch(Severity::NOTICE, sprintf('Domain "%s" already exists. Adding it to site "%s".', $domain['hostname'], $site['name']));
@@ -109,11 +109,16 @@ final readonly class SiteCreationProcessor implements ProcessorInterface
                 continue;
             }
             if ($event->type === 'NodeAggregateWithNodeWasCreated' && $event->payload['parentNodeAggregateId'] === $siteRooNodeAggregateId) {
+                if (!isset($event->payload['nodeName'])) {
+                    throw new \RuntimeException(sprintf('The nodeName of the site node "%s" must not be empty', $event->payload['nodeAggregateId']), 1731236316);
+                }
                 $sites[] = [
                     'siteResourcesPackageKey' => self::extractPackageKeyFromNodeTypeName($event->payload['nodeTypeName']),
                     'name' => $event->payload['initialPropertyValues']['title']['value'] ?? $event->payload['nodeTypeName'],
                     'nodeTypeName' => $event->payload['nodeTypeName'],
-                    'nodeName' => $event->payload['nodeName'] ?? null,
+                    'nodeName' => $event->payload['nodeName'],
+                    'domains' => [],
+                    'online' => true
                 ];
             }
         };
