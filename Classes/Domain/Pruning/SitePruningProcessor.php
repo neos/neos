@@ -15,9 +15,12 @@ declare(strict_types=1);
 namespace Neos\Neos\Domain\Pruning;
 
 use Neos\ContentRepository\Core\ContentRepository;
+use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
+use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
+use Neos\ContentRepository\Export\Severity;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
 use Neos\Neos\Domain\Model\Site;
 use Neos\Neos\Domain\Repository\DomainRepository;
@@ -40,7 +43,13 @@ final readonly class SitePruningProcessor implements ProcessorInterface
 
     public function run(ProcessingContext $context): void
     {
-        $sites = $this->findAllSites();
+        try {
+            $contentGraph = $this->contentRepository->getContentGraph($this->workspaceName);
+        } catch (WorkspaceDoesNotExist) {
+            $context->dispatch(Severity::NOTICE, sprintf('Could not find any matching sites, because the workspace "%s" does not exist.', $this->workspaceName->value));
+            return;
+        }
+        $sites = $this->findAllSites($contentGraph);
         foreach ($sites as $site) {
             $domains = $site->getDomains();
             if ($site->getPrimaryDomain() !== null) {
@@ -59,9 +68,8 @@ final readonly class SitePruningProcessor implements ProcessorInterface
     /**
      * @return Site[]
      */
-    protected function findAllSites(): array
+    protected function findAllSites(ContentGraphInterface $contentGraph): array
     {
-        $contentGraph = $this->contentRepository->getContentGraph($this->workspaceName);
         $sitesNodeAggregate = $contentGraph->findRootNodeAggregateByType(NodeTypeNameFactory::forSites());
         if ($sitesNodeAggregate === null) {
             return [];
