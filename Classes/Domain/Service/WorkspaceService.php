@@ -246,22 +246,6 @@ final readonly class WorkspaceService
         throw new \RuntimeException(sprintf('Failed to find unique workspace name for "%s" after %d attempts.', $candidate, $attempt - 1), 1725975479);
     }
 
-    /**
-     * Removes all workspace metadata records for the specified content repository id
-     */
-    public function pruneWorkspaceMetadata(ContentRepositoryId $contentRepositoryId): void
-    {
-        $this->metadataAndRoleRepository->pruneWorkspaceMetadata($contentRepositoryId);
-    }
-
-    /**
-     * Removes all workspace role assignments for the specified content repository id
-     */
-    public function pruneRoleAssignments(ContentRepositoryId $contentRepositoryId): void
-    {
-        $this->metadataAndRoleRepository->pruneRoleAssignments($contentRepositoryId);
-    }
-
     // ------------------
 
     private function createWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName, UserId|null $ownerId, WorkspaceClassification $classification): void

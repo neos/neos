@@ -27,6 +27,7 @@ use Neos\Neos\AssetUsage\AssetUsageService;
 use Neos\Neos\Domain\Model\WorkspaceRole;
 use Neos\Neos\Domain\Model\WorkspaceRoleAssignment;
 use Neos\Neos\Domain\Model\WorkspaceTitle;
+use Neos\Neos\Domain\Repository\WorkspaceMetadataAndRoleRepository;
 use Neos\Neos\Domain\Service\WorkspaceService;
 use Neos\Utility\Files;
 
@@ -41,6 +42,7 @@ class CrCommandController extends CommandController
         private readonly ProjectionReplayServiceFactory $projectionReplayServiceFactory,
         private readonly AssetUsageService $assetUsageService,
         private readonly WorkspaceService $workspaceService,
+        private readonly WorkspaceMetadataAndRoleRepository $workspaceMetadataAndRoleRepository,
         private readonly ProjectionReplayServiceFactory $projectionServiceFactory,
     ) {
         parent::__construct();
@@ -162,8 +164,8 @@ class CrCommandController extends CommandController
         );
 
         // remove the workspace metadata and role assignments for this cr
-        $this->workspaceService->pruneRoleAssignments($contentRepositoryId);
-        $this->workspaceService->pruneWorkspaceMetadata($contentRepositoryId);
+        $this->workspaceMetadataAndRoleRepository->pruneRoleAssignments($contentRepositoryId);
+        $this->workspaceMetadataAndRoleRepository->pruneWorkspaceMetadata($contentRepositoryId);
 
         // reset the events table
         $contentStreamPruner->pruneAllWorkspacesAndContentStreamsFromEventStream();
