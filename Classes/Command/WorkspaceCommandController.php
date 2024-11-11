@@ -299,7 +299,7 @@ class WorkspaceCommandController extends CommandController
                 $workspaceRole
             )
         );
-        $this->outputLine('<success>Assigned role "%s" to subject "%s" for workspace "%s"</success>', [$workspaceRole->value, $roleSubject, $workspaceName->value]);
+        $this->outputLine('<success>Assigned role "%s" to subject "%s" for workspace "%s"</success>', [$workspaceRole->value, $roleSubject->value, $workspaceName->value]);
     }
 
     /**
