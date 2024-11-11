@@ -76,8 +76,6 @@ final readonly class WorkspaceService
 
     /**
      * Update/set title metadata for the specified workspace
-     *
-     * NOTE: The workspace privileges are not evaluated for this interaction, this should be done in the calling side if needed
      */
     public function setWorkspaceTitle(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $newWorkspaceTitle): void
     {
@@ -88,8 +86,6 @@ final readonly class WorkspaceService
 
     /**
      * Update/set description metadata for the specified workspace
-     *
-     * NOTE: The workspace privileges are not evaluated for this interaction, this should be done in the calling side if needed
      */
     public function setWorkspaceDescription(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceDescription $newWorkspaceDescription): void
     {
