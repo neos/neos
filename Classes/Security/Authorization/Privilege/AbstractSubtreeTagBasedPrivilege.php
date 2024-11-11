@@ -22,7 +22,7 @@ use Neos\Flow\Security\Exception\InvalidPrivilegeTypeException;
 
 /**
  * Common base class for privileges that evaluate {@see SubtreeTagPrivilegeSubject}s
- * @see ReadNodePrivilege, EditNodePrivilege
+ * @internal the public API is {@see ReadNodePrivilege, EditNodePrivilege}
  */
 abstract class AbstractSubtreeTagBasedPrivilege extends AbstractPrivilege
 {
