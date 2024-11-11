@@ -14,7 +14,7 @@ use Neos\Neos\Security\Authorization\ContentRepositoryAuthorizationService;
  * - write: Permission to write to the corresponding workspace, including publishing a derived workspace to it
  * - manage: Permission to change the metadata and roles of the corresponding workspace (e.g. change description/title or add/remove workspace roles)
  *
- * @internal
+ * @api because it is returned by the {@see ContentRepositoryAuthorizationService}
  */
 #[Flow\Proxy(false)]
 final readonly class WorkspacePermissions
