@@ -23,6 +23,8 @@ use Neos\ContentRepository\Core\SharedModel\Workspace\Workspace;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
+use Neos\Flow\Security\Context as SecurityContext;
+use Neos\Flow\Security\Exception\AccessDeniedException;
 use Neos\Neos\Domain\Model\User;
 use Neos\Neos\Domain\Model\UserId;
 use Neos\Neos\Domain\Model\WorkspaceClassification;
@@ -46,7 +48,10 @@ final readonly class WorkspaceService
 {
     public function __construct(
         private ContentRepositoryRegistry $contentRepositoryRegistry,
-        private WorkspaceMetadataAndRoleRepository $metadataAndRoleRepository
+        private WorkspaceMetadataAndRoleRepository $metadataAndRoleRepository,
+        private UserService $userService,
+        private ContentRepositoryAuthorizationService $authorizationService,
+        private SecurityContext $securityContext,
     ) {
     }
 
@@ -76,6 +81,7 @@ final readonly class WorkspaceService
      */
     public function setWorkspaceTitle(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $newWorkspaceTitle): void
     {
+        $this->requireManagementWorkspacePermission($contentRepositoryId, $workspaceName);
         $workspace = $this->requireWorkspace($contentRepositoryId, $workspaceName);
         $this->metadataAndRoleRepository->updateWorkspaceMetadata($contentRepositoryId, $workspace, title: $newWorkspaceTitle->value, description: null);
     }
@@ -87,6 +93,7 @@ final readonly class WorkspaceService
      */
     public function setWorkspaceDescription(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceDescription $newWorkspaceDescription): void
     {
+        $this->requireManagementWorkspacePermission($contentRepositoryId, $workspaceName);
         $workspace = $this->requireWorkspace($contentRepositoryId, $workspaceName);
         $this->metadataAndRoleRepository->updateWorkspaceMetadata($contentRepositoryId, $workspace, title: null, description: $newWorkspaceDescription->value);
     }
@@ -184,6 +191,7 @@ final readonly class WorkspaceService
      */
     public function assignWorkspaceRole(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceRoleAssignment $assignment): void
     {
+        $this->requireManagementWorkspacePermission($contentRepositoryId, $workspaceName);
         $this->requireWorkspace($contentRepositoryId, $workspaceName);
         $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, $assignment);
     }
@@ -195,6 +203,7 @@ final readonly class WorkspaceService
      */
     public function unassignWorkspaceRole(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceRoleSubject $subject): void
     {
+        $this->requireManagementWorkspacePermission($contentRepositoryId, $workspaceName);
         $this->requireWorkspace($contentRepositoryId, $workspaceName);
         $this->metadataAndRoleRepository->unassignWorkspaceRole($contentRepositoryId, $workspaceName, $subject);
     }
@@ -277,5 +286,21 @@ final readonly class WorkspaceService
             throw new \RuntimeException(sprintf('Failed to find workspace with name "%s" for content repository "%s"', $workspaceName->value, $contentRepositoryId->value), 1718379722);
         }
         return $workspace;
+    }
+
+    private function requireManagementWorkspacePermission(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
+    {
+        if ($this->securityContext->areAuthorizationChecksDisabled()) {
+            return;
+        }
+        $workspacePermissions = $this->authorizationService->getWorkspacePermissions(
+            $contentRepositoryId,
+            $workspaceName,
+            $this->securityContext->getRoles(),
+            $this->userService->getCurrentUser()?->getId()
+        );
+        if (!$workspacePermissions->manage) {
+            throw new AccessDeniedException(sprintf('The current user does not have manage permissions for workspace "%s" in content repository "%s"', $workspaceName->value, $contentRepositoryId->value), 1731343473);
+        }
     }
 }

@@ -18,13 +18,12 @@ use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateRootWork
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateWorkspace;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
-use Neos\Flow\Security\Context;
+use Neos\Flow\Security\Context as SecurityContext;
 use Neos\Neos\Domain\Model\UserId;
 use Neos\Neos\Domain\Model\WorkspaceDescription;
 use Neos\Neos\Domain\Model\WorkspaceRole;
 use Neos\Neos\Domain\Model\WorkspaceRoleAssignment;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubject;
-use Neos\Neos\Domain\Model\WorkspaceRoleSubjectType;
 use Neos\Neos\Domain\Model\WorkspaceTitle;
 use Neos\Neos\Domain\Service\UserService;
 use Neos\Neos\Domain\Service\WorkspaceService;
@@ -132,11 +131,13 @@ trait WorkspaceServiceTrait
      */
     public function theTitleOfWorkspaceIsSetTo(string $workspaceName, string $newTitle): void
     {
-        $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->setWorkspaceTitle(
-            $this->currentContentRepository->id,
-            WorkspaceName::fromString($workspaceName),
-            WorkspaceTitle::fromString($newTitle),
-        ));
+        $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
+            $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->setWorkspaceTitle(
+                $this->currentContentRepository->id,
+                WorkspaceName::fromString($workspaceName),
+                WorkspaceTitle::fromString($newTitle),
+            ))
+        );
     }
 
     /**
@@ -144,11 +145,13 @@ trait WorkspaceServiceTrait
      */
     public function theDescriptionOfWorkspaceIsSetTo(string $workspaceName, string $newDescription): void
     {
-        $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->setWorkspaceDescription(
-            $this->currentContentRepository->id,
-            WorkspaceName::fromString($workspaceName),
-            WorkspaceDescription::fromString($newDescription),
-        ));
+        $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
+            $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->setWorkspaceDescription(
+                $this->currentContentRepository->id,
+                WorkspaceName::fromString($workspaceName),
+                WorkspaceDescription::fromString($newDescription),
+            ))
+        );
     }
 
     /**
@@ -171,14 +174,16 @@ trait WorkspaceServiceTrait
      */
     public function theRoleIsAssignedToWorkspaceForGroupOrUser(string $role, string $workspaceName, string $groupName = null, string $userId = null): void
     {
-        $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->assignWorkspaceRole(
-            $this->currentContentRepository->id,
-            WorkspaceName::fromString($workspaceName),
-            WorkspaceRoleAssignment::create(
-                $groupName !== null ? WorkspaceRoleSubject::createForGroup($groupName) : WorkspaceRoleSubject::createForUser(UserId::fromString($userId)),
-                WorkspaceRole::from($role)
-            )
-        ));
+        $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
+            $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->assignWorkspaceRole(
+                $this->currentContentRepository->id,
+                WorkspaceName::fromString($workspaceName),
+                WorkspaceRoleAssignment::create(
+                    $groupName !== null ? WorkspaceRoleSubject::createForGroup($groupName) : WorkspaceRoleSubject::createForUser(UserId::fromString($userId)),
+                    WorkspaceRole::from($role)
+                )
+            ))
+        );
     }
 
     /**
@@ -187,11 +192,13 @@ trait WorkspaceServiceTrait
      */
     public function theRoleIsUnassignedFromWorkspace(string $workspaceName, string $groupName = null, string $userId = null): void
     {
-        $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->unassignWorkspaceRole(
-            $this->currentContentRepository->id,
-            WorkspaceName::fromString($workspaceName),
-            $groupName !== null ? WorkspaceRoleSubject::createForGroup($groupName) : WorkspaceRoleSubject::createForUser(UserId::fromString($userId)),
-        ));
+        $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
+            $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->unassignWorkspaceRole(
+                $this->currentContentRepository->id,
+                WorkspaceName::fromString($workspaceName),
+                $groupName !== null ? WorkspaceRoleSubject::createForGroup($groupName) : WorkspaceRoleSubject::createForUser(UserId::fromString($userId)),
+            ))
+        );
     }
 
     /**
