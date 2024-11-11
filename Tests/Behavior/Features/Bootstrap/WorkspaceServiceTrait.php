@@ -14,18 +14,15 @@ declare(strict_types=1);
 
 use Behat\Gherkin\Node\TableNode;
 use Neos\ContentRepository\BehavioralTests\TestSuite\Behavior\CRBehavioralTestsSubjectProvider;
-use Neos\ContentRepository\Core\CommandHandler\CommandInterface;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateRootWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateWorkspace;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
-use Neos\Flow\Reflection\ReflectionService;
 use Neos\Neos\Domain\Model\UserId;
 use Neos\Neos\Domain\Model\WorkspaceDescription;
 use Neos\Neos\Domain\Model\WorkspaceRole;
 use Neos\Neos\Domain\Model\WorkspaceRoleAssignment;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubject;
-use Neos\Neos\Domain\Model\WorkspaceRoleSubjectType;
 use Neos\Neos\Domain\Model\WorkspaceTitle;
 use Neos\Neos\Domain\Service\UserService;
 use Neos\Neos\Domain\Service\WorkspaceService;
@@ -225,14 +222,15 @@ trait WorkspaceServiceTrait
      */
     public function theNeosUserShouldHaveThePermissionsForWorkspace(string $username, string $expectedPermissions, string $workspaceName): void
     {
-        $user = $this->getObject(UserService::class)->getUser($username);
+        $userService = $this->getObject(UserService::class);
+        $user = $userService->getUser($username);
         Assert::assertNotNull($user);
-        $account = $user->getAccounts()->first();
-        Assert::assertNotNull($account);
-        $permissions = $this->getObject(ContentRepositoryAuthorizationService::class)->getWorkspacePermissionsForAccount(
+        $roles = $userService->getAllRoles($user);
+        $permissions = $this->getObject(ContentRepositoryAuthorizationService::class)->getWorkspacePermissions(
             $this->currentContentRepository->id,
             WorkspaceName::fromString($workspaceName),
-            $account,
+            $roles,
+            $user->getId(),
         );
         Assert::assertSame($expectedPermissions, implode(',', array_keys(array_filter(get_object_vars($permissions)))));
     }
@@ -242,14 +240,15 @@ trait WorkspaceServiceTrait
      */
     public function theNeosUserShouldHaveNoPermissionsForWorkspace(string $username, string $workspaceName): void
     {
-        $user = $this->getObject(UserService::class)->getUser($username);
+        $userService = $this->getObject(UserService::class);
+        $user = $userService->getUser($username);
         Assert::assertNotNull($user);
-        $account = $user->getAccounts()->first();
-        Assert::assertNotNull($account);
-        $permissions = $this->getObject(ContentRepositoryAuthorizationService::class)->getWorkspacePermissionsForAccount(
+        $roles = $userService->getAllRoles($user);
+        $permissions = $this->getObject(ContentRepositoryAuthorizationService::class)->getWorkspacePermissions(
             $this->currentContentRepository->id,
             WorkspaceName::fromString($workspaceName),
-            $account,
+            $roles,
+            $user->getId(),
         );
         Assert::assertFalse($permissions->read);
         Assert::assertFalse($permissions->write);

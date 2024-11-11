@@ -78,11 +78,7 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
 
     public function getVisibilityConstraints(WorkspaceName $workspaceName): VisibilityConstraints
     {
-        $authenticatedAccount = $this->securityContext->getAccount();
-        if ($authenticatedAccount) {
-            return $this->authorizationService->getVisibilityConstraintsForAccount($this->contentRepositoryId, $authenticatedAccount);
-        }
-        return $this->authorizationService->getVisibilityConstraintsForAnonymousUser($this->contentRepositoryId);
+        return $this->authorizationService->getVisibilityConstraints($this->contentRepositoryId, $this->securityContext->getRoles());
     }
 
     public function canReadNodesFromWorkspace(WorkspaceName $workspaceName): Privilege
@@ -90,12 +86,12 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
         if ($this->securityContext->areAuthorizationChecksDisabled()) {
             return Privilege::granted('Authorization checks are disabled');
         }
-        $authenticatedAccount = $this->securityContext->getAccount();
-        if ($authenticatedAccount === null) {
-            $workspacePermissions = $this->authorizationService->getWorkspacePermissionsForAnonymousUser($this->contentRepositoryId, $workspaceName);
-        } else {
-            $workspacePermissions = $this->authorizationService->getWorkspacePermissionsForAccount($this->contentRepositoryId, $workspaceName, $authenticatedAccount);
-        }
+        $workspacePermissions = $this->authorizationService->getWorkspacePermissions(
+            $this->contentRepositoryId,
+            $workspaceName,
+            $this->securityContext->getRoles(),
+            $this->userService->getCurrentUser()?->getId(),
+        );
         return $workspacePermissions->read ? Privilege::granted($workspacePermissions->getReason()) : Privilege::denied($workspacePermissions->getReason());
     }
 
@@ -117,7 +113,7 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
             if ($node === null) {
                 return Privilege::denied(sprintf('Failed to load node "%s" in workspace "%s"', $nodeThatRequiresEditPrivilege->aggregateId->value, $nodeThatRequiresEditPrivilege->workspaceName->value));
             }
-            $nodePermissions = $this->getNodePermissionsForCurrentUser($node);
+            $nodePermissions = $this->authorizationService->getNodePermissions($node, $this->securityContext->getRoles());
             if (!$nodePermissions->edit) {
                 return Privilege::denied(sprintf('No edit permissions for node "%s" in workspace "%s": %s', $nodeThatRequiresEditPrivilege->aggregateId->value, $nodeThatRequiresEditPrivilege->workspaceName->value, $nodePermissions->getReason()));
             }
@@ -199,19 +195,11 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
 
     private function getWorkspacePermissionsForCurrentUser(WorkspaceName $workspaceName): WorkspacePermissions
     {
-        $authenticatedAccount = $this->securityContext->getAccount();
-        if ($authenticatedAccount === null) {
-            return $this->authorizationService->getWorkspacePermissionsForAnonymousUser($this->contentRepositoryId, $workspaceName);
-        }
-        return $this->authorizationService->getWorkspacePermissionsForAccount($this->contentRepositoryId, $workspaceName, $authenticatedAccount);
-    }
-
-    private function getNodePermissionsForCurrentUser(Node $node): NodePermissions
-    {
-        $authenticatedAccount = $this->securityContext->getAccount();
-        if ($authenticatedAccount === null) {
-            return $this->authorizationService->getNodePermissionsForAnonymousUser($node);
-        }
-        return $this->authorizationService->getNodePermissionsForAccount($node, $authenticatedAccount);
+        return $this->authorizationService->getWorkspacePermissions(
+            $this->contentRepositoryId,
+            $workspaceName,
+            $this->securityContext->getRoles(),
+            $this->userService->getCurrentUser()?->getId(),
+        );
     }
 }
