@@ -20,7 +20,7 @@ use Neos\Neos\Domain\Model\WorkspacePermissions;
 use Neos\Neos\Domain\Model\WorkspaceRole;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubject;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubjects;
-use Neos\Neos\Domain\Service\WorkspaceService;
+use Neos\Neos\Domain\Repository\WorkspaceMetadataAndRoleRepository;
 use Neos\Neos\Security\Authorization\Privilege\EditNodePrivilege;
 use Neos\Neos\Security\Authorization\Privilege\ReadNodePrivilege;
 use Neos\Neos\Security\Authorization\Privilege\SubtreeTagPrivilegeSubject;
@@ -36,7 +36,7 @@ final readonly class ContentRepositoryAuthorizationService
     private const ROLE_NEOS_ADMINISTRATOR = 'Neos.Neos:Administrator';
 
     public function __construct(
-        private WorkspaceService $workspaceService,
+        private WorkspaceMetadataAndRoleRepository $metadataAndRoleRepository,
         private PolicyService $policyService,
         private PrivilegeManagerInterface $privilegeManager,
     ) {
@@ -50,8 +50,8 @@ final readonly class ContentRepositoryAuthorizationService
      */
     public function getWorkspacePermissions(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, array $roles, UserId|null $userId): WorkspacePermissions
     {
-        $workspaceMetadata = $this->workspaceService->getWorkspaceMetadata($contentRepositoryId, $workspaceName);
-        if ($userId !== null && $workspaceMetadata->ownerUserId !== null && $userId->equals($workspaceMetadata->ownerUserId)) {
+        $workspaceMetadata = $this->metadataAndRoleRepository->loadWorkspaceMetadata($contentRepositoryId, $workspaceName);
+        if ($userId !== null && $workspaceMetadata?->ownerUserId !== null && $userId->equals($workspaceMetadata->ownerUserId)) {
             return WorkspacePermissions::all(sprintf('User with id "%s" is the owner of workspace "%s"', $userId->value, $workspaceName->value));
         }
         $roleIdentifiers = array_map(static fn (Role $role) => $role->getIdentifier(), array_values($roles));
@@ -60,7 +60,7 @@ final readonly class ContentRepositoryAuthorizationService
             $subjects[] = WorkspaceRoleSubject::createForUser($userId);
         }
         $userIsAdministrator = in_array(self::ROLE_NEOS_ADMINISTRATOR, $roleIdentifiers, true);
-        $userWorkspaceRole = $this->workspaceService->getMostPrivilegedWorkspaceRoleForSubjects($contentRepositoryId, $workspaceName, WorkspaceRoleSubjects::fromArray($subjects));
+        $userWorkspaceRole = $this->metadataAndRoleRepository->getMostPrivilegedWorkspaceRoleForSubjects($contentRepositoryId, $workspaceName, WorkspaceRoleSubjects::fromArray($subjects));
         if ($userWorkspaceRole === null) {
             if ($userIsAdministrator) {
                 return WorkspacePermissions::manage(sprintf('User is a Neos Administrator without explicit role for workspace "%s"', $workspaceName->value));
