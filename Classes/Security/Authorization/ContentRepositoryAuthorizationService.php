@@ -10,12 +10,12 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\Flow\Annotations as Flow;
-use Neos\Flow\Security\Account;
 use Neos\Flow\Security\Authorization\PrivilegeManagerInterface;
+use Neos\Flow\Security\Context;
 use Neos\Flow\Security\Policy\PolicyService;
 use Neos\Flow\Security\Policy\Role;
 use Neos\Neos\Domain\Model\NodePermissions;
-use Neos\Neos\Domain\Model\User;
+use Neos\Neos\Domain\Model\UserId;
 use Neos\Neos\Domain\Model\WorkspacePermissions;
 use Neos\Neos\Domain\Model\WorkspaceRole;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubject;
@@ -24,7 +24,6 @@ use Neos\Neos\Domain\Service\WorkspaceService;
 use Neos\Neos\Security\Authorization\Privilege\EditNodePrivilege;
 use Neos\Neos\Security\Authorization\Privilege\ReadNodePrivilege;
 use Neos\Neos\Security\Authorization\Privilege\SubtreeTagPrivilegeSubject;
-use Neos\Party\Domain\Service\PartyService;
 
 /**
  * Central point which does ContentRepository authorization decisions within Neos.
@@ -34,13 +33,9 @@ use Neos\Party\Domain\Service\PartyService;
 #[Flow\Scope('singleton')]
 final readonly class ContentRepositoryAuthorizationService
 {
-    private const FLOW_ROLE_EVERYBODY = 'Neos.Flow:Everybody';
-    private const FLOW_ROLE_ANONYMOUS = 'Neos.Flow:Anonymous';
-    private const FLOW_ROLE_AUTHENTICATED_USER = 'Neos.Flow:AuthenticatedUser';
-    private const FLOW_ROLE_NEOS_ADMINISTRATOR = 'Neos.Neos:Administrator';
+    private const ROLE_NEOS_ADMINISTRATOR = 'Neos.Neos:Administrator';
 
     public function __construct(
-        private PartyService $partyService,
         private WorkspaceService $workspaceService,
         private PolicyService $policyService,
         private PrivilegeManagerInterface $privilegeManager,
@@ -48,119 +43,61 @@ final readonly class ContentRepositoryAuthorizationService
     }
 
     /**
-     * Determines the {@see WorkspacePermissions} an anonymous user has for the specified workspace (aka "public access")
+     * Determines the {@see WorkspacePermissions} a user with the specified {@see Role}s has for the specified workspace
+     *
+     * @param array<Role> $roles The {@see Role} instances to check access for. Note: These have to be the expanded roles auf the authenticated tokens {@see Context::getRoles()}
+     * @param UserId|null $userId Optional ID of the authenticated Neos user. If set the workspace owner is evaluated since owners always have all permissions on their workspace
      */
-    public function getWorkspacePermissionsForAnonymousUser(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): WorkspacePermissions
-    {
-        $subjects = [WorkspaceRoleSubject::createForGroup(self::FLOW_ROLE_EVERYBODY), WorkspaceRoleSubject::createForGroup(self::FLOW_ROLE_ANONYMOUS)];
-        $userWorkspaceRole = $this->workspaceService->getMostPrivilegedWorkspaceRoleForSubjects($contentRepositoryId, $workspaceName, WorkspaceRoleSubjects::fromArray($subjects));
-        if ($userWorkspaceRole === null) {
-            return WorkspacePermissions::none(sprintf('Anonymous user has no explicit role for workspace "%s"', $workspaceName->value));
-        }
-        return WorkspacePermissions::create(
-            read: $userWorkspaceRole->isAtLeast(WorkspaceRole::VIEWER),
-            write: $userWorkspaceRole->isAtLeast(WorkspaceRole::COLLABORATOR),
-            manage: $userWorkspaceRole->isAtLeast(WorkspaceRole::MANAGER),
-            reason: sprintf('Anonymous user has role "%s" for workspace "%s"', $userWorkspaceRole->value, $workspaceName->value),
-        );
-    }
-
-    /**
-     * Determines the {@see WorkspacePermissions} the given user has for the specified workspace
-     */
-    public function getWorkspacePermissionsForAccount(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, Account $account): WorkspacePermissions
+    public function getWorkspacePermissions(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, array $roles, UserId|null $userId): WorkspacePermissions
     {
         $workspaceMetadata = $this->workspaceService->getWorkspaceMetadata($contentRepositoryId, $workspaceName);
-        $neosUser = $this->neosUserFromAccount($account);
-        if ($workspaceMetadata->ownerUserId !== null && $neosUser !== null && $neosUser->getId()->equals($workspaceMetadata->ownerUserId)) {
-            return WorkspacePermissions::all(sprintf('User "%s" (id: %s is the owner of workspace "%s"', $neosUser->getLabel(), $neosUser->getId()->value, $workspaceName->value));
+        if ($userId !== null && $workspaceMetadata->ownerUserId !== null && $userId->equals($workspaceMetadata->ownerUserId)) {
+            return WorkspacePermissions::all(sprintf('User with id "%s" is the owner of workspace "%s"', $userId->value, $workspaceName->value));
         }
-        $userRoles = $this->expandAccountRoles($account);
-        $userIsAdministrator = array_key_exists(self::FLOW_ROLE_NEOS_ADMINISTRATOR, $userRoles);
-        $subjects = array_map(WorkspaceRoleSubject::createForGroup(...), array_keys($userRoles));
+        $roleIdentifiers = array_map(static fn (Role $role) => $role->getIdentifier(), $roles);
+        $subjects = array_map(WorkspaceRoleSubject::createForGroup(...), $roleIdentifiers);
+        if ($userId !== null) {
+            $subjects[] = WorkspaceRoleSubject::createForUser($userId);
+        }
+        $userIsAdministrator = array_key_exists(self::ROLE_NEOS_ADMINISTRATOR, $roleIdentifiers);
 
-        if ($neosUser !== null) {
-            $subjects[] = WorkspaceRoleSubject::createForUser($neosUser->getId());
-        }
         $userWorkspaceRole = $this->workspaceService->getMostPrivilegedWorkspaceRoleForSubjects($contentRepositoryId, $workspaceName, WorkspaceRoleSubjects::fromArray($subjects));
         if ($userWorkspaceRole === null) {
             if ($userIsAdministrator) {
-                return WorkspacePermissions::manage(sprintf('Account "%s" is a Neos Administrator without explicit role for workspace "%s"', $account->getAccountIdentifier(), $workspaceName->value));
+                return WorkspacePermissions::manage(sprintf('User is a Neos Administrator without explicit role for workspace "%s"', $workspaceName->value));
             }
-            return WorkspacePermissions::none(sprintf('Account "%s" is no Neos Administrator and has no explicit role for workspace "%s"', $account->getAccountIdentifier(), $workspaceName->value));
+            return WorkspacePermissions::none(sprintf('User is no Neos Administrator and has no explicit role for workspace "%s"', $workspaceName->value));
         }
         return WorkspacePermissions::create(
             read: $userWorkspaceRole->isAtLeast(WorkspaceRole::VIEWER),
             write: $userWorkspaceRole->isAtLeast(WorkspaceRole::COLLABORATOR),
             manage: $userIsAdministrator || $userWorkspaceRole->isAtLeast(WorkspaceRole::MANAGER),
-            reason: sprintf('Account "%s" is %s Neos Administrator and has role "%s" for workspace "%s"', $account->getAccountIdentifier(), $userIsAdministrator ? 'a' : 'no', $userWorkspaceRole->value, $workspaceName->value),
+            reason: sprintf('User is %s Neos Administrator and has role "%s" for workspace "%s"', $userIsAdministrator ? 'a' : 'no', $userWorkspaceRole->value, $workspaceName->value),
         );
     }
 
-    public function getNodePermissionsForAnonymousUser(Node $node): NodePermissions
+    /**
+     * Determines the {@see NodePermissions} a user with the specified {@see Role}s has on the given {@see Node}
+     *
+     * @param array<Role> $roles
+     */
+    public function getNodePermissions(Node $node, array $roles): NodePermissions
     {
-        $roles = $this->rolesOfAnonymousUser();
-        return $this->nodePermissionsForRoles($node, $roles);
-    }
-
-    public function getNodePermissionsForAccount(Node $node, Account $account): NodePermissions
-    {
-        $roles = $this->expandAccountRoles($account);
         return $this->nodePermissionsForRoles($node, $roles);
     }
 
     /**
-     * Determines the default {@see VisibilityConstraints} for an anonymous user (aka "public access")
+     * Determines the default {@see VisibilityConstraints} for the specified {@see Role}s
+     *
+     * @param array<Role> $roles
      */
-    public function getVisibilityConstraintsForAnonymousUser(ContentRepositoryId $contentRepositoryId): VisibilityConstraints
+    public function getVisibilityConstraints(ContentRepositoryId $contentRepositoryId, array $roles): VisibilityConstraints
     {
-        $roles = $this->rolesOfAnonymousUser();
-        return VisibilityConstraints::fromTagConstraints($this->tagConstraintsForRoles($contentRepositoryId, $roles));
-    }
-
-    /**
-     * Determines the default {@see VisibilityConstraints} for the specified account
-     */
-    public function getVisibilityConstraintsForAccount(ContentRepositoryId $contentRepositoryId, Account $account): VisibilityConstraints
-    {
-        $roles = $this->expandAccountRoles($account);
         return VisibilityConstraints::fromTagConstraints($this->tagConstraintsForRoles($contentRepositoryId, $roles));
     }
 
     // ------------------------------
 
-    /**
-     * @return array<Role>
-     */
-    private function rolesOfAnonymousUser(): array
-    {
-        return [
-            self::FLOW_ROLE_EVERYBODY => $this->policyService->getRole(self::FLOW_ROLE_EVERYBODY),
-            self::FLOW_ROLE_ANONYMOUS => $this->policyService->getRole(self::FLOW_ROLE_ANONYMOUS),
-        ];
-    }
-
-    /**
-     * @return array<Role>
-     */
-    private function expandAccountRoles(Account $account): array
-    {
-        $roles = [
-            self::FLOW_ROLE_EVERYBODY => $this->policyService->getRole(self::FLOW_ROLE_EVERYBODY),
-            self::FLOW_ROLE_AUTHENTICATED_USER => $this->policyService->getRole(self::FLOW_ROLE_AUTHENTICATED_USER),
-        ];
-        foreach ($account->getRoles() as $currentRole) {
-            if (!array_key_exists($currentRole->getIdentifier(), $roles)) {
-                $roles[$currentRole->getIdentifier()] = $currentRole;
-            }
-            foreach ($currentRole->getAllParentRoles() as $currentParentRole) {
-                if (!array_key_exists($currentParentRole->getIdentifier(), $roles)) {
-                    $roles[$currentParentRole->getIdentifier()] = $currentParentRole;
-                }
-            }
-        }
-        return $roles;
-    }
 
     /**
      * @param array<Role> $roles
@@ -175,12 +112,6 @@ final readonly class ContentRepositoryAuthorizationService
             }
         }
         return $restrictedSubtreeTags;
-    }
-
-    private function neosUserFromAccount(Account $account): ?User
-    {
-        $user = $this->partyService->getAssignedPartyOfAccount($account);
-        return $user instanceof User ? $user : null;
     }
 
     /**

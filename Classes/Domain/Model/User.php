@@ -93,20 +93,12 @@ class User extends Person
      */
     public function isActive()
     {
-        return $this->getFirstActiveAccount() !== null;
-    }
-
-    /**
-     * @api
-     */
-    public function getFirstActiveAccount(): ?Account
-    {
         foreach ($this->accounts as $account) {
             /** @var Account $account */
             if ($account->isActive()) {
-                return $account;
+                return true;
             }
         }
-        return null;
+        return false;
     }
 }
