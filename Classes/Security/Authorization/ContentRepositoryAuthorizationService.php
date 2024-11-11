@@ -82,7 +82,14 @@ final readonly class ContentRepositoryAuthorizationService
      */
     public function getNodePermissions(Node $node, array $roles): NodePermissions
     {
-        return $this->nodePermissionsForRoles($node, $roles);
+        $subtreeTagPrivilegeSubject = new SubtreeTagPrivilegeSubject($node->tags->all(), $node->contentRepositoryId);
+        $readGranted = $this->privilegeManager->isGrantedForRoles($roles, ReadNodePrivilege::class, $subtreeTagPrivilegeSubject, $readReason);
+        $writeGranted = $this->privilegeManager->isGrantedForRoles($roles, EditNodePrivilege::class, $subtreeTagPrivilegeSubject, $writeReason);
+        return NodePermissions::create(
+            read: $readGranted,
+            edit: $writeGranted,
+            reason: $readReason . "\n" . $writeReason,
+        );
     }
 
     /**
@@ -92,17 +99,6 @@ final readonly class ContentRepositoryAuthorizationService
      */
     public function getVisibilityConstraints(ContentRepositoryId $contentRepositoryId, array $roles): VisibilityConstraints
     {
-        return VisibilityConstraints::fromTagConstraints($this->tagConstraintsForRoles($contentRepositoryId, $roles));
-    }
-
-    // ------------------------------
-
-
-    /**
-     * @param array<Role> $roles
-     */
-    private function tagConstraintsForRoles(ContentRepositoryId $contentRepositoryId, array $roles): SubtreeTags
-    {
         $restrictedSubtreeTags = SubtreeTags::createEmpty();
         /** @var ReadNodePrivilege $privilege */
         foreach ($this->policyService->getAllPrivilegesByType(ReadNodePrivilege::class) as $privilege) {
@@ -110,21 +106,6 @@ final readonly class ContentRepositoryAuthorizationService
                 $restrictedSubtreeTags = $restrictedSubtreeTags->merge($privilege->getSubtreeTags());
             }
         }
-        return $restrictedSubtreeTags;
-    }
-
-    /**
-     * @param array<Role> $roles
-     */
-    private function nodePermissionsForRoles(Node $node, array $roles): NodePermissions
-    {
-        $subtreeTagPrivilegeSubject = new SubtreeTagPrivilegeSubject($node->tags->all(), $node->contentRepositoryId);
-        $readGranted = $this->privilegeManager->isGrantedForRoles($roles, ReadNodePrivilege::class, $subtreeTagPrivilegeSubject, $readReason);
-        $writeGranted = $this->privilegeManager->isGrantedForRoles($roles, EditNodePrivilege::class, $subtreeTagPrivilegeSubject, $writeReason);
-        return NodePermissions::create(
-            read: $readGranted,
-            edit: $writeGranted,
-            reason: $readReason . "\n" . $writeReason,
-        );
+        return VisibilityConstraints::fromTagConstraints($restrictedSubtreeTags);
     }
 }
