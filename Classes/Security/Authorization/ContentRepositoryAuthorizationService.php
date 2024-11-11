@@ -54,13 +54,12 @@ final readonly class ContentRepositoryAuthorizationService
         if ($userId !== null && $workspaceMetadata->ownerUserId !== null && $userId->equals($workspaceMetadata->ownerUserId)) {
             return WorkspacePermissions::all(sprintf('User with id "%s" is the owner of workspace "%s"', $userId->value, $workspaceName->value));
         }
-        $roleIdentifiers = array_map(static fn (Role $role) => $role->getIdentifier(), $roles);
+        $roleIdentifiers = array_map(static fn (Role $role) => $role->getIdentifier(), array_values($roles));
         $subjects = array_map(WorkspaceRoleSubject::createForGroup(...), $roleIdentifiers);
         if ($userId !== null) {
             $subjects[] = WorkspaceRoleSubject::createForUser($userId);
         }
-        $userIsAdministrator = array_key_exists(self::ROLE_NEOS_ADMINISTRATOR, $roleIdentifiers);
-
+        $userIsAdministrator = in_array(self::ROLE_NEOS_ADMINISTRATOR, $roleIdentifiers, true);
         $userWorkspaceRole = $this->workspaceService->getMostPrivilegedWorkspaceRoleForSubjects($contentRepositoryId, $workspaceName, WorkspaceRoleSubjects::fromArray($subjects));
         if ($userWorkspaceRole === null) {
             if ($userIsAdministrator) {
