@@ -15,7 +15,7 @@ final readonly class UserId implements \JsonSerializable
         public string $value
     ) {
         if (!preg_match('/^([a-z0-9\-]{1,40})$/', $value)) {
-            throw new \InvalidArgumentException(sprintf('Invalid user id "%s" (a user id must only contain lowercase characters, numbers and the "-" sign).', 1718293224));
+            throw new \InvalidArgumentException(sprintf('Invalid user id "%s" (a user id must only contain lowercase characters, numbers and the "-" sign).', $this->value), 1718293224);
         }
     }
 
