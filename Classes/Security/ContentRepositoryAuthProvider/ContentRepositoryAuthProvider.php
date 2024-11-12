@@ -158,8 +158,7 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
     {
         return match ($command::class) {
             CopyNodesRecursively::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->targetDimensionSpacePoint->toDimensionSpacePoint(), $command->targetParentNodeAggregateId),
-            CreateNodeAggregateWithNode::class,
-            CreateNodeAggregateWithNodeAndSerializedProperties::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->originDimensionSpacePoint->toDimensionSpacePoint(), $command->parentNodeAggregateId),
+            CreateNodeAggregateWithNode::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->originDimensionSpacePoint->toDimensionSpacePoint(), $command->parentNodeAggregateId),
             CreateNodeVariant::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->sourceOrigin->toDimensionSpacePoint(), $command->nodeAggregateId),
             DisableNodeAggregate::class,
             EnableNodeAggregate::class,
@@ -167,10 +166,8 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
             TagSubtree::class,
             UntagSubtree::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->coveredDimensionSpacePoint, $command->nodeAggregateId),
             MoveNodeAggregate::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->dimensionSpacePoint, $command->nodeAggregateId),
-            SetNodeProperties::class,
-            SetSerializedNodeProperties::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->originDimensionSpacePoint->toDimensionSpacePoint(), $command->nodeAggregateId),
-            SetNodeReferences::class,
-            SetSerializedNodeReferences::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->sourceOriginDimensionSpacePoint->toDimensionSpacePoint(), $command->sourceNodeAggregateId),
+            SetNodeProperties::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->originDimensionSpacePoint->toDimensionSpacePoint(), $command->nodeAggregateId),
+            SetNodeReferences::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->sourceOriginDimensionSpacePoint->toDimensionSpacePoint(), $command->sourceNodeAggregateId),
             default => null,
         };
     }
