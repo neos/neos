@@ -109,12 +109,11 @@ Feature: Tests for the "Neos.Neos:ContentCollection" Fusion prototype
     """
 
   Scenario:
-    When the command CreateNodeAggregateWithNodeAndSerializedProperties is executed with payload:
+    When the command CreateNodeAggregateWithNode is executed with payload:
       | Key                                | Value                         |
       | nodeAggregateId                    | "a1"                          |
       | nodeTypeName                       | "Neos.Neos:Test.DocumentType" |
       | parentNodeAggregateId              | "a"                           |
-      | initialPropertyValues              | {}                            |
       | tetheredDescendantNodeAggregateIds | { "main": "a1-main"}          |
     When the following CreateNodeAggregateWithNode commands are executed:
       | nodeAggregateId | parentNodeAggregateId | nodeTypeName               |
