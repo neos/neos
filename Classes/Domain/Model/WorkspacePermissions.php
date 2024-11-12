@@ -23,7 +23,6 @@ final readonly class WorkspacePermissions
      * @param bool $read Permission to read data from the corresponding workspace (e.g. get hold of and traverse the content graph)
      * @param bool $write Permission to write to the corresponding workspace, including publishing a derived workspace to it
      * @param bool $manage Permission to change the metadata and roles of the corresponding workspace (e.g. change description/title or add/remove workspace roles)
-     * @param string $reason Human-readable explanation for why this permission was evaluated {@see getReason()}
      */
     private function __construct(
         public bool $read,
@@ -63,6 +62,9 @@ final readonly class WorkspacePermissions
         return new self(false, false, false, $reason);
     }
 
+    /**
+     * Human-readable explanation for why this permission was evaluated
+     */
     public function getReason(): string
     {
         return $this->reason;

@@ -18,6 +18,7 @@ use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateRootWork
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateWorkspace;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
+use Neos\Flow\Security\Context as SecurityContext;
 use Neos\Neos\Domain\Model\UserId;
 use Neos\Neos\Domain\Model\WorkspaceDescription;
 use Neos\Neos\Domain\Model\WorkspaceRole;
@@ -131,11 +132,13 @@ trait WorkspaceServiceTrait
      */
     public function theTitleOfWorkspaceIsSetTo(string $workspaceName, string $newTitle): void
     {
-        $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->setWorkspaceTitle(
-            $this->currentContentRepository->id,
-            WorkspaceName::fromString($workspaceName),
-            WorkspaceTitle::fromString($newTitle),
-        ));
+        $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
+            $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->setWorkspaceTitle(
+                $this->currentContentRepository->id,
+                WorkspaceName::fromString($workspaceName),
+                WorkspaceTitle::fromString($newTitle),
+            ))
+        );
     }
 
     /**
@@ -143,11 +146,13 @@ trait WorkspaceServiceTrait
      */
     public function theDescriptionOfWorkspaceIsSetTo(string $workspaceName, string $newDescription): void
     {
-        $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->setWorkspaceDescription(
-            $this->currentContentRepository->id,
-            WorkspaceName::fromString($workspaceName),
-            WorkspaceDescription::fromString($newDescription),
-        ));
+        $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
+            $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->setWorkspaceDescription(
+                $this->currentContentRepository->id,
+                WorkspaceName::fromString($workspaceName),
+                WorkspaceDescription::fromString($newDescription),
+            ))
+        );
     }
 
     /**
@@ -175,14 +180,16 @@ trait WorkspaceServiceTrait
         } else {
             $subject = WorkspaceRoleSubject::createForUser($this->userIdForUsername($username));
         }
-        $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->assignWorkspaceRole(
-            $this->currentContentRepository->id,
-            WorkspaceName::fromString($workspaceName),
-            WorkspaceRoleAssignment::create(
-                $subject,
-                WorkspaceRole::from($role)
-            )
-        ));
+        $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
+            $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->assignWorkspaceRole(
+                $this->currentContentRepository->id,
+                WorkspaceName::fromString($workspaceName),
+                WorkspaceRoleAssignment::create(
+                    $subject,
+                    WorkspaceRole::from($role)
+                )
+            ))
+        );
     }
 
     /**
@@ -196,11 +203,13 @@ trait WorkspaceServiceTrait
         } else {
             $subject = WorkspaceRoleSubject::createForUser($this->userIdForUsername($username));
         }
-        $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->unassignWorkspaceRole(
-            $this->currentContentRepository->id,
-            WorkspaceName::fromString($workspaceName),
-            $subject,
-        ));
+        $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
+            $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->unassignWorkspaceRole(
+                $this->currentContentRepository->id,
+                WorkspaceName::fromString($workspaceName),
+                $subject,
+            ))
+        );
     }
 
     /**

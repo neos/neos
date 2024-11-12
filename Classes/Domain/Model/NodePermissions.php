@@ -21,7 +21,6 @@ final readonly class NodePermissions
     /**
      * @param bool $read Permission to read data from the corresponding node
      * @param bool $edit Permission to edit the corresponding node
-     * @param string $reason Human-readable explanation for why this permission was evaluated {@see getReason()}
      */
     private function __construct(
         public bool $read,
@@ -53,6 +52,9 @@ final readonly class NodePermissions
         return new self(false, false, $reason);
     }
 
+    /**
+     * Human-readable explanation for why this permission was evaluated
+     */
     public function getReason(): string
     {
         return $this->reason;
