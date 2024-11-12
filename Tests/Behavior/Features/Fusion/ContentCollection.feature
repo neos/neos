@@ -114,7 +114,6 @@ Feature: Tests for the "Neos.Neos:ContentCollection" Fusion prototype
       | nodeAggregateId                    | "a1"                          |
       | nodeTypeName                       | "Neos.Neos:Test.DocumentType" |
       | parentNodeAggregateId              | "a"                           |
-      | initialPropertyValues              | {}                            |
       | tetheredDescendantNodeAggregateIds | { "main": "a1-main"}          |
     When the following CreateNodeAggregateWithNode commands are executed:
       | nodeAggregateId | parentNodeAggregateId | nodeTypeName               |
