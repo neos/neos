@@ -167,13 +167,12 @@ class SiteService
         ?string $nodeName = null,
         bool $inactive = false
     ): Site {
-        $siteNodeName = NodeName::fromString($nodeName ?: $siteName);
+        $siteNodeName = NodeName::transliterateFromString($nodeName ?: $siteName);
 
         if ($this->siteRepository->findOneByNodeName($siteNodeName->value)) {
             throw SiteNodeNameIsAlreadyInUseByAnotherSite::butWasAttemptedToBeClaimed($siteNodeName);
         }
 
-        // @todo use node aggregate identifier instead of node name
         $site = new Site($siteNodeName->value);
         $site->setSiteResourcesPackageKey($packageKey);
         $site->setState($inactive ? Site::STATE_OFFLINE : Site::STATE_ONLINE);
