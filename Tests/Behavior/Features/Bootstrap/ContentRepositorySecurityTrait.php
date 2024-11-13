@@ -54,14 +54,14 @@ trait ContentRepositorySecurityTrait
     use CRBehavioralTestsSubjectProvider;
     use ExceptionsTrait;
 
-    private bool $flowSecurityEnabled = false;
-    private bool $contentRepositorySecurityEnabled = false;
+    private bool $crSecurity_flowSecurityEnabled = false;
+    private bool $crSecurity_contentRepositorySecurityEnabled = false;
 
-    private ?TestingProvider $testingProvider = null;
+    private ?TestingProvider $crSecurity_testingProvider = null;
 
-    private ?ActionRequest $mockActionRequest = null;
+    private ?ActionRequest $crSecurity_mockActionRequest = null;
 
-    private static ?string $testingPolicyPathAndFilename = null;
+    private static ?string $crSecurity_testingPolicyPathAndFilename = null;
 
     /**
      * @template T of object
@@ -74,40 +74,40 @@ trait ContentRepositorySecurityTrait
     public function resetContentRepositorySecurity(): void
     {
         TestingAuthProvider::resetAuthProvider();
-        $this->contentRepositorySecurityEnabled = false;
+        $this->crSecurity_contentRepositorySecurityEnabled = false;
     }
 
     #[BeforeFeature]
     #[AfterFeature]
     public static function resetPolicies(): void
     {
-        if (self::$testingPolicyPathAndFilename !== null && file_exists(self::$testingPolicyPathAndFilename)) {
-            unlink(self::$testingPolicyPathAndFilename);
+        if (self::$crSecurity_testingPolicyPathAndFilename !== null && file_exists(self::$crSecurity_testingPolicyPathAndFilename)) {
+            unlink(self::$crSecurity_testingPolicyPathAndFilename);
         }
     }
 
     private function enableFlowSecurity(): void
     {
-        if ($this->flowSecurityEnabled === true) {
+        if ($this->crSecurity_flowSecurityEnabled === true) {
             return;
         }
         $this->getObject(PrivilegeManagerInterface::class)->reset();
 
         $tokenAndProviderFactory = $this->getObject(TokenAndProviderFactoryInterface::class);
 
-        $this->testingProvider = $tokenAndProviderFactory->getProviders()['TestingProvider'];
+        $this->crSecurity_testingProvider = $tokenAndProviderFactory->getProviders()['TestingProvider'];
 
         $securityContext = $this->getObject(SecurityContext::class);
         $securityContext->clearContext();
         $httpRequest = $this->getObject(ServerRequestFactoryInterface::class)->createServerRequest('GET', 'http://localhost/');
-        $this->mockActionRequest = ActionRequest::fromHttpRequest($httpRequest);
-        $securityContext->setRequest($this->mockActionRequest);
-        $this->flowSecurityEnabled = true;
+        $this->crSecurity_mockActionRequest = ActionRequest::fromHttpRequest($httpRequest);
+        $securityContext->setRequest($this->crSecurity_mockActionRequest);
+        $this->crSecurity_flowSecurityEnabled = true;
     }
 
     private function enableContentRepositorySecurity(): void
     {
-        if ($this->contentRepositorySecurityEnabled === true) {
+        if ($this->crSecurity_contentRepositorySecurityEnabled === true) {
             return;
         }
         $contentRepositoryAuthProviderFactory = $this->getObject(ContentRepositoryAuthProviderFactory::class);
@@ -126,18 +126,18 @@ trait ContentRepositorySecurityTrait
         $contentRepositoryAuthProvider = $contentRepositoryAuthProviderFactory->build($this->currentContentRepository->id, $contentGraphProjection->getState());
 
         TestingAuthProvider::replaceAuthProvider($contentRepositoryAuthProvider);
-        $this->contentRepositorySecurityEnabled = true;
+        $this->crSecurity_contentRepositorySecurityEnabled = true;
     }
 
     private function authenticateAccount(Account $account): void
     {
         $this->enableFlowSecurity();
-        $this->testingProvider->setAuthenticationStatus(TokenInterface::AUTHENTICATION_SUCCESSFUL);
-        $this->testingProvider->setAccount($account);
+        $this->crSecurity_testingProvider->setAuthenticationStatus(TokenInterface::AUTHENTICATION_SUCCESSFUL);
+        $this->crSecurity_testingProvider->setAccount($account);
 
         $securityContext = $this->getObject(SecurityContext::class);
         $securityContext->clearContext();
-        $securityContext->setRequest($this->mockActionRequest);
+        $securityContext->setRequest($this->crSecurity_mockActionRequest);
         $this->getObject(AuthenticationProviderManager::class)->authenticate();
     }
 
@@ -161,8 +161,8 @@ trait ContentRepositorySecurityTrait
         $policyConfiguration = ObjectAccess::getProperty($policyService, 'policyConfiguration', true);
         $mergedPolicyConfiguration = Arrays::arrayMergeRecursiveOverrule($policyConfiguration, Yaml::parse($policies->getRaw()));
 
-        self::$testingPolicyPathAndFilename = $this->getObject(Environment::class)->getPathToTemporaryDirectory() . 'Policy.yaml';
-        file_put_contents(self::$testingPolicyPathAndFilename, Yaml::dump($mergedPolicyConfiguration));
+        self::$crSecurity_testingPolicyPathAndFilename = $this->getObject(Environment::class)->getPathToTemporaryDirectory() . 'Policy.yaml';
+        file_put_contents(self::$crSecurity_testingPolicyPathAndFilename, Yaml::dump($mergedPolicyConfiguration));
 
         ObjectAccess::setProperty($policyService, 'initialized', false, true);
         $this->getObject(ConfigurationManager::class)->flushConfigurationCache();
