@@ -6,12 +6,13 @@ Feature: ReadNodePrivilege related features
       """
       privilegeTargets:
         'Neos\Neos\Security\Authorization\Privilege\ReadNodePrivilege':
-          'Neos.Neos:ReadBlog':
-            matcher: 'blog'
+          'Neos.Neos:ReadSubtreeA':
+            matcher: 'subtree_a'
       roles:
-        'Neos.Neos:Administrator':
+        'Neos.Neos:RoleWithPrivilegeToReadSubtree':
           privileges:
-            - privilegeTarget: 'Neos.Neos:ReadBlog'
+            -
+              privilegeTarget: 'Neos.Neos:ReadSubtreeA'
               permission: GRANT
       """
     And using the following content dimensions:
@@ -19,11 +20,15 @@ Feature: ReadNodePrivilege related features
       | language   | mul, de, en, gsw, ltz | ltz->de->mul, gsw->de->mul, en->mul |
     And using the following node types:
     """yaml
-    'Neos.Neos:Document': {}
+    'Neos.Neos:Document':
+      properties:
+        foo:
+          type: string
+      references:
+        ref: []
     """
     And using identifier "default", I define a content repository
     And I am in content repository "default"
-    And I am user identified by "initiating-user-identifier"
     And the command CreateRootWorkspace is executed with payload:
       | Key                | Value           |
       | workspaceName      | "live"          |
@@ -47,22 +52,36 @@ Feature: ReadNodePrivilege related features
       | b               | Neos.Neos:Document | root                  | b        | {"language":"de"}         |
       | b1              | Neos.Neos:Document | b                     | b1       | {"language":"de"}         |
     And the following Neos users exist:
-      | Id      | Username | First name | Last name | Roles                                            |
-      | janedoe | jane.doe | Jane       | Doe       | Neos.Neos:Administrator                          |
-      | johndoe | john.doe | John       | Doe       | Neos.Neos:RestrictedEditor,Neos.Neos:UserManager |
-      | editor  | editor   | Edward     | Editor    | Neos.Neos:Editor                                 |
-
-  Scenario: TODO
-    Given I am in workspace "live"
+      | Username              | First name | Last name  | Roles                                                     |
+      | admin                 | Armin      | Admin      | Neos.Neos:Administrator                                   |
+      | restricted_editor     | Rich       | Restricted | Neos.Neos:RestrictedEditor                                |
+      | editor                | Edward     | Editor     | Neos.Neos:Editor                                          |
+      | editor_with_privilege | Pete       | Privileged | Neos.Neos:Editor,Neos.Neos:RoleWithPrivilegeToReadSubtree |
+    And I am in workspace "live"
     And I am in dimension space point {"language":"de"}
     And the command TagSubtree is executed with payload:
       | Key                          | Value                |
       | nodeAggregateId              | "a"                  |
       | nodeVariantSelectionStrategy | "allSpecializations" |
-      | tag                          | "blog"               |
+      | tag                          | "subtree_a"          |
     And the role VIEWER is assigned to workspace "live" for group "Neos.Flow:Everybody"
-    When content repository security is enabled
-    And I am authenticated as "john.doe"
+    When a personal workspace for user "editor" is created
+    And content repository security is enabled
+
+  Scenario Outline: Read tagged node as user without corresponding ReadNodePrivilege
+    And I am authenticated as "<user>"
     Then I should not be able to read node "a1"
-    When I am authenticated as "jane.doe"
+
+    Examples:
+      | user              |
+      | admin             |
+      | restricted_editor |
+      | editor            |
+
+  Scenario Outline: Read tagged node as user with corresponding ReadNodePrivilege
+    And I am authenticated as "<user>"
     Then I should be able to read node "a1"
+
+    Examples:
+      | user                  |
+      | editor_with_privilege |
