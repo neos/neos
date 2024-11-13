@@ -63,17 +63,18 @@ trait WorkspaceServiceTrait
     }
 
     /**
-     * @When the personal workspace :workspaceName is created with the target workspace :targetWorkspace for user :ownerUserId
+     * @When the personal workspace :workspaceName is created with the target workspace :targetWorkspace for user :username
      */
-    public function thePersonalWorkspaceIsCreatedWithTheTargetWorkspace(string $workspaceName, string $targetWorkspace, string $ownerUserId): void
+    public function thePersonalWorkspaceIsCreatedWithTheTargetWorkspace(string $workspaceName, string $targetWorkspace, string $username): void
     {
+        $ownerUserId = $this->userIdForUsername($username);
         $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->createPersonalWorkspace(
             $this->currentContentRepository->id,
             WorkspaceName::fromString($workspaceName),
             WorkspaceTitle::fromString($workspaceName),
             WorkspaceDescription::fromString(''),
             WorkspaceName::fromString($targetWorkspace),
-            UserId::fromString($ownerUserId),
+            $ownerUserId,
         ));
     }
 
@@ -170,16 +171,21 @@ trait WorkspaceServiceTrait
 
     /**
      * @When the role :role is assigned to workspace :workspaceName for group :groupName
-     * @When the role :role is assigned to workspace :workspaceName for user :userId
+     * @When the role :role is assigned to workspace :workspaceName for user :username
      */
-    public function theRoleIsAssignedToWorkspaceForGroupOrUser(string $role, string $workspaceName, string $groupName = null, string $userId = null): void
+    public function theRoleIsAssignedToWorkspaceForGroupOrUser(string $role, string $workspaceName, string $groupName = null, string $username = null): void
     {
+        if ($groupName !== null) {
+            $subject = WorkspaceRoleSubject::createForGroup($groupName);
+        } else {
+            $subject = WorkspaceRoleSubject::createForUser($this->userIdForUsername($username));
+        }
         $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
             $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->assignWorkspaceRole(
                 $this->currentContentRepository->id,
                 WorkspaceName::fromString($workspaceName),
                 WorkspaceRoleAssignment::create(
-                    $groupName !== null ? WorkspaceRoleSubject::createForGroup($groupName) : WorkspaceRoleSubject::createForUser(UserId::fromString($userId)),
+                    $subject,
                     WorkspaceRole::from($role)
                 )
             ))
@@ -188,15 +194,20 @@ trait WorkspaceServiceTrait
 
     /**
      * @When the role for group :groupName is unassigned from workspace :workspaceName
-     * @When the role for user :userId is unassigned from workspace :workspaceName
+     * @When the role for user :username is unassigned from workspace :workspaceName
      */
-    public function theRoleIsUnassignedFromWorkspace(string $workspaceName, string $groupName = null, string $userId = null): void
+    public function theRoleIsUnassignedFromWorkspace(string $workspaceName, string $groupName = null, string $username = null): void
     {
+        if ($groupName !== null) {
+            $subject = WorkspaceRoleSubject::createForGroup($groupName);
+        } else {
+            $subject = WorkspaceRoleSubject::createForUser($this->userIdForUsername($username));
+        }
         $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
             $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->unassignWorkspaceRole(
                 $this->currentContentRepository->id,
                 WorkspaceName::fromString($workspaceName),
-                $groupName !== null ? WorkspaceRoleSubject::createForGroup($groupName) : WorkspaceRoleSubject::createForUser(UserId::fromString($userId)),
+                $subject,
             ))
         );
     }
@@ -251,5 +262,12 @@ trait WorkspaceServiceTrait
         Assert::assertFalse($permissions->read);
         Assert::assertFalse($permissions->write);
         Assert::assertFalse($permissions->manage);
+    }
+
+    private function userIdForUsername(string $username): UserId
+    {
+        $user = $this->getObject(UserService::class)->getUser($username);
+        Assert::assertNotNull($user, sprintf('The user "%s" does not exist', $username));
+        return $user->getId();
     }
 }
