@@ -61,8 +61,6 @@ trait ContentRepositorySecurityTrait
 
     private ?ActionRequest $crSecurity_mockActionRequest = null;
 
-    private static ?string $crSecurity_testingPolicyPathAndFilename = null;
-
     /**
      * @template T of object
      * @param class-string<T> $className
@@ -75,15 +73,14 @@ trait ContentRepositorySecurityTrait
     {
         TestingAuthProvider::resetAuthProvider();
         $this->crSecurity_contentRepositorySecurityEnabled = false;
-    }
+        $this->crSecurity_flowSecurityEnabled = false;
 
-    #[BeforeFeature]
-    #[AfterFeature]
-    public static function resetPolicies(): void
-    {
-        if (self::$crSecurity_testingPolicyPathAndFilename !== null && file_exists(self::$crSecurity_testingPolicyPathAndFilename)) {
-            unlink(self::$crSecurity_testingPolicyPathAndFilename);
-        }
+        $policyService = $this->getObject(PolicyService::class);
+        // reset the $policyConfiguration to the default (fetched from the original ConfigurationManager)
+        $this->getObject(PolicyService::class)->reset(); // TODO also reset privilegeTargets in ->reset()
+        ObjectAccess::setProperty($policyService, 'privilegeTargets', [], true);
+        $policyService->injectConfigurationManager($this->getObject(ConfigurationManager::class));
+
     }
 
     private function enableFlowSecurity(): void
@@ -157,15 +154,30 @@ trait ContentRepositorySecurityTrait
     public function theFollowingAdditionalPoliciesAreConfigured(PyStringNode $policies): void
     {
         $policyService = $this->getObject(PolicyService::class);
-        $policyService->getRoles(); // force initialization
-        $policyConfiguration = ObjectAccess::getProperty($policyService, 'policyConfiguration', true);
-        $mergedPolicyConfiguration = Arrays::arrayMergeRecursiveOverrule($policyConfiguration, Yaml::parse($policies->getRaw()));
 
-        self::$crSecurity_testingPolicyPathAndFilename = $this->getObject(Environment::class)->getPathToTemporaryDirectory() . 'Policy.yaml';
-        file_put_contents(self::$crSecurity_testingPolicyPathAndFilename, Yaml::dump($mergedPolicyConfiguration));
+        $mergedPolicyConfiguration = Arrays::arrayMergeRecursiveOverrule(
+            $this->getObject(ConfigurationManager::class)->getConfiguration(ConfigurationManager::CONFIGURATION_TYPE_POLICY),
+            Yaml::parse($policies->getRaw())
+        );
 
-        ObjectAccess::setProperty($policyService, 'initialized', false, true);
-        $this->getObject(ConfigurationManager::class)->flushConfigurationCache();
+        // if we de-initialise the PolicyService and set a new $policyConfiguration (by injecting a stub ConfigurationManager which will be used)
+        // we can change the roles and privileges at runtime :D
+        $policyService->reset(); // TODO also reset privilegeTargets in ->reset()
+        ObjectAccess::setProperty($policyService, 'privilegeTargets', [], true);
+        $policyService->injectConfigurationManager(new class ($mergedPolicyConfiguration) extends ConfigurationManager
+        {
+            public function __construct(
+                private array $mergedPolicyConfiguration
+            ) {
+            }
+
+            public function getConfiguration(string $configurationType, string $configurationPath = null)
+            {
+                Assert::assertSame(ConfigurationManager::CONFIGURATION_TYPE_POLICY, $configurationType);
+                Assert::assertSame(null, $configurationPath);
+                return $this->mergedPolicyConfiguration;
+            }
+        });
     }
 
     /**
