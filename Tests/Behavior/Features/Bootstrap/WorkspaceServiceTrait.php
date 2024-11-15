@@ -132,13 +132,11 @@ trait WorkspaceServiceTrait
      */
     public function theTitleOfWorkspaceIsSetTo(string $workspaceName, string $newTitle): void
     {
-        $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
-            $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->setWorkspaceTitle(
-                $this->currentContentRepository->id,
-                WorkspaceName::fromString($workspaceName),
-                WorkspaceTitle::fromString($newTitle),
-            ))
-        );
+        $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->setWorkspaceTitle(
+            $this->currentContentRepository->id,
+            WorkspaceName::fromString($workspaceName),
+            WorkspaceTitle::fromString($newTitle),
+        ));
     }
 
     /**
@@ -146,13 +144,11 @@ trait WorkspaceServiceTrait
      */
     public function theDescriptionOfWorkspaceIsSetTo(string $workspaceName, string $newDescription): void
     {
-        $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
-            $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->setWorkspaceDescription(
-                $this->currentContentRepository->id,
-                WorkspaceName::fromString($workspaceName),
-                WorkspaceDescription::fromString($newDescription),
-            ))
-        );
+        $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->setWorkspaceDescription(
+            $this->currentContentRepository->id,
+            WorkspaceName::fromString($workspaceName),
+            WorkspaceDescription::fromString($newDescription),
+        ));
     }
 
     /**
@@ -180,16 +176,14 @@ trait WorkspaceServiceTrait
         } else {
             $subject = WorkspaceRoleSubject::createForUser($this->userIdForUsername($username));
         }
-        $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
-            $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->assignWorkspaceRole(
-                $this->currentContentRepository->id,
-                WorkspaceName::fromString($workspaceName),
-                WorkspaceRoleAssignment::create(
-                    $subject,
-                    WorkspaceRole::from($role)
-                )
-            ))
-        );
+        $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->assignWorkspaceRole(
+            $this->currentContentRepository->id,
+            WorkspaceName::fromString($workspaceName),
+            WorkspaceRoleAssignment::create(
+                $subject,
+                WorkspaceRole::from($role)
+            )
+        ));
     }
 
     /**
@@ -203,13 +197,11 @@ trait WorkspaceServiceTrait
         } else {
             $subject = WorkspaceRoleSubject::createForUser($this->userIdForUsername($username));
         }
-        $this->getObject(SecurityContext::class)->withoutAuthorizationChecks(fn () =>
-            $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->unassignWorkspaceRole(
-                $this->currentContentRepository->id,
-                WorkspaceName::fromString($workspaceName),
-                $subject,
-            ))
-        );
+        $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->unassignWorkspaceRole(
+            $this->currentContentRepository->id,
+            WorkspaceName::fromString($workspaceName),
+            $subject,
+        ));
     }
 
     /**

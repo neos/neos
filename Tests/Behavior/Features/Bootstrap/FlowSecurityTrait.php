@@ -65,7 +65,10 @@ trait FlowSecurityTrait
         ObjectAccess::setProperty($policyService, 'privilegeTargets', [], true);
         $policyService->injectConfigurationManager($this->getObject(ConfigurationManager::class));
 
-        $this->getObject(SecurityContext::class)->clearContext();
+        $securityContext = $this->getObject(SecurityContext::class);
+        $securityContext->clearContext();
+        // todo add setter! Also used in FunctionalTestCase https://github.com/neos/flow-development-collection/commit/b9c89e3e08649cbb5366cb769b2f79b0f13bd68e
+        ObjectAccess::setProperty($securityContext, 'authorizationChecksDisabled', true, true);
         $this->getObject(PrivilegeManagerInterface::class)->reset();
     }
 
