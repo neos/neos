@@ -67,4 +67,4 @@
           group: 'visibility'
           position: 40
   options:
-    nodeMoveStrategy: STRATEGY_GATHER_ALL
+    moveNodeStrategy: STRATEGY_GATHER_ALL
