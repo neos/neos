@@ -82,6 +82,35 @@ Feature: Workspace permission related features
       | admin             |
       | editor            |
       | restricted_editor |
+      | owner             |
+      | collaborator      |
+      | uninvolved        |
+
+  Scenario Outline: Creating a base workspace without WRITE permissions
+    Given I am authenticated as <user>
+    And the shared workspace "some-shared-workspace" is created with the target workspace "workspace"
+    Then an exception of type "AccessDenied" should be thrown with code 1729086686
+
+    And the personal workspace "some-other-personal-workspace" is created with the target workspace "workspace" for user <user>
+    Then an exception of type "AccessDenied" should be thrown with code 1729086686
+
+    Examples:
+      | user              |
+      | admin             |
+      | editor            |
+      | restricted_editor |
+      | uninvolved        |
+
+  Scenario Outline: Creating a base workspace with WRITE permissions
+    Given I am authenticated as <user>
+    And the shared workspace "some-shared-workspace" is created with the target workspace "workspace"
+
+    And the personal workspace "some-other-personal-workspace" is created with the target workspace "workspace" for user <user>
+
+    Examples:
+      | user         |
+      | collaborator |
+      | owner        |
 
   Scenario Outline: Deleting a workspace without MANAGE permissions
     Given I am authenticated as <user>
@@ -103,7 +132,43 @@ Feature: Workspace permission related features
       | manager |
       | owner   |
 
+  Scenario Outline: Managing metadata and roles of a workspace without MANAGE permissions
+    Given I am authenticated as <user>
+    And the title of workspace "workspace" is set to "Some new workspace title"
+    Then an exception of type "AccessDenied" should be thrown with code 1731654519
+
+    And the description of workspace "workspace" is set to "Some new workspace description"
+    Then an exception of type "AccessDenied" should be thrown with code 1731654519
+
+    When the role COLLABORATOR is assigned to workspace "workspace" for group "Neos.Neos:AbstractEditor"
+    Then an exception of type "AccessDenied" should be thrown with code 1731654519
+
+    When the role for group "Neos.Neos:AbstractEditor" is unassigned from workspace "workspace"
+    Then an exception of type "AccessDenied" should be thrown with code 1731654519
+
+    Examples:
+      | user         |
+      | collaborator |
+      | uninvolved   |
+
+  Scenario Outline: Managing metadata and roles of a workspace with MANAGE permissions
+    Given I am authenticated as <user>
+    And the title of workspace "workspace" is set to "Some new workspace title"
+    And the description of workspace "workspace" is set to "Some new workspace description"
+    When the role COLLABORATOR is assigned to workspace "workspace" for group "Neos.Neos:AbstractEditor"
+    When the role for group "Neos.Neos:AbstractEditor" is unassigned from workspace "workspace"
+
+    Examples:
+      | user    |
+      | admin   |
+      | manager |
+      | owner   |
+
   Scenario Outline: Handling commands that require WRITE permissions on the workspace
+    When I am authenticated as "uninvolved"
+    And the command <command> is executed with payload '<command payload>' and exceptions are caught
+    Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
+
     When I am authenticated as "editor"
     And the command <command> is executed with payload '<command payload>' and exceptions are caught
     Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
@@ -118,6 +183,10 @@ Feature: Workspace permission related features
 
     When I am authenticated as "owner"
     And the command <command> is executed with payload '<command payload>'
+
+    # todo test also collaborator, but cannot commands twice here:
+    # When I am authenticated as "collaborator"
+    # And the command <command> is executed with payload '<command payload>' and exceptions are caught
 
     Examples:
       | command                             | command payload                                                                                        |

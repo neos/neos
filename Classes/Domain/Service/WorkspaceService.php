@@ -280,7 +280,7 @@ final readonly class WorkspaceService
             $this->userService->getCurrentUser()?->getId()
         );
         if (!$workspacePermissions->manage) {
-            throw new AccessDenied(sprintf('The current user does not have manage permissions for workspace "%s" in content repository "%s"', $workspaceName->value, $contentRepositoryId->value), 1731654519);
+            throw new AccessDenied(sprintf('Managing workspace "%s" in "%s" was denied: %s', $workspaceName->value, $contentRepositoryId->value, $workspacePermissions->getReason()), 1731654519);
         }
     }
 }
