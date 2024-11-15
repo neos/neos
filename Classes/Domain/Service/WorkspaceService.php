@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Domain\Service;
 
+use Neos\ContentRepository\Core\Feature\Security\Exception\AccessDenied;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateRootWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Exception\WorkspaceAlreadyExists;
@@ -24,7 +25,6 @@ use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Security\Context as SecurityContext;
-use Neos\Flow\Security\Exception\AccessDeniedException;
 use Neos\Neos\Domain\Model\User;
 use Neos\Neos\Domain\Model\UserId;
 use Neos\Neos\Domain\Model\WorkspaceClassification;
@@ -280,7 +280,7 @@ final readonly class WorkspaceService
             $this->userService->getCurrentUser()?->getId()
         );
         if (!$workspacePermissions->manage) {
-            throw new AccessDeniedException(sprintf('The current user does not have manage permissions for workspace "%s" in content repository "%s"', $workspaceName->value, $contentRepositoryId->value), 1731343473);
+            throw new AccessDenied(sprintf('The current user does not have manage permissions for workspace "%s" in content repository "%s"', $workspaceName->value, $contentRepositoryId->value), 1731654519);
         }
     }
 }
