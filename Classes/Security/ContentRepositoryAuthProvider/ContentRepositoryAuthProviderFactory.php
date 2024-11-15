@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Security\ContentRepositoryAuthProvider;
 
-use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphProjectionInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepositoryRegistry\Factory\AuthProvider\AuthProviderFactoryInterface;
