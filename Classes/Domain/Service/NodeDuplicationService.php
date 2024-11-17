@@ -48,17 +48,56 @@ final class NodeDuplicationService
 
         $subtree = $subgraph->findSubtree($sourceNodeAggregateId, FindSubtreeFilter::create());
         $targetParentNode = $subgraph->findNodeById($targetParentNodeAggregateId);
+        if ($targetParentNode === null) {
+            // todo simple constraint checks
+            throw new \RuntimeException('todo');
+        }
 
-        $entryTransientNode = TransientNode::forRegular(
-            $targetParentNodeAggregateId,
+        $transientNode = TransientNode::forRegular(
+            $nodeAggregateIdMapping->getNewNodeAggregateId($subtree->node->aggregateId) ?? NodeAggregateId::create(),
             $workspaceName,
             $targetDimensionSpacePoint,
-            $targetParentNode->nodeTypeName,
+            $subtree->node->nodeTypeName,
             NodeAggregateIdsByNodePaths::createEmpty(),
             $contentRepository->getNodeTypeManager()
         );
 
-        $commands = $this->commandsForSubtreeRecursively($entryTransientNode, $subtree, $nodeAggregateIdMapping, Commands::createEmpty());
+        $createCopyOfNodeCommand = CreateNodeAggregateWithNode::create(
+            $workspaceName,
+            $transientNode->aggregateId,
+            $subtree->node->nodeTypeName,
+            $targetDimensionSpacePoint,
+            $targetParentNodeAggregateId,
+            succeedingSiblingNodeAggregateId: $targetSucceedingSiblingNodeAggregateId,
+            // todo skip properties not in schema
+            initialPropertyValues: PropertyValuesToWrite::fromArray(
+                iterator_to_array($subtree->node->properties)
+            ),
+        // todo references:
+        );
+
+        if ($targetNodeName) {
+            $createCopyOfNodeCommand = $createCopyOfNodeCommand->withNodeName($targetNodeName);
+        }
+
+        $tetheredDescendantNodeAggregateIds = $this->getTetheredDescendantNodeAggregateIds(
+            $subtree,
+            $nodeAggregateIdMapping,
+            NodePath::forRoot(),
+            NodeAggregateIdsByNodePaths::createEmpty()
+        );
+
+        $createCopyOfNodeCommand = $createCopyOfNodeCommand->withTetheredDescendantNodeAggregateIds(
+            $tetheredDescendantNodeAggregateIds
+        );
+
+        $transientNode = $transientNode->withTetheredNodeAggregateIds($tetheredDescendantNodeAggregateIds);
+
+        $commands = Commands::create($createCopyOfNodeCommand);
+
+        foreach ($subtree->children as $childSubtree) {
+            $commands = $this->commandsForSubtreeRecursively($transientNode, $childSubtree, $nodeAggregateIdMapping, $commands);
+        }
 
         foreach ($commands as $command) {
             $contentRepository->handle($command);
@@ -72,17 +111,20 @@ final class NodeDuplicationService
                 $subtree->node->name
             );
 
-            $setPropertiesOfTetheredNodeCommand = SetNodeProperties::create(
-                $transientParentNode->workspaceName,
-                $transientNode->aggregateId,
-                $transientParentNode->originDimensionSpacePoint,
-                PropertyValuesToWrite::fromArray(
-                    iterator_to_array($subtree->node->properties)
-                ),
-            );
-            // todo references:
+            if ($subtree->node->properties->count() !== 0) {
+                $setPropertiesOfTetheredNodeCommand = SetNodeProperties::create(
+                    $transientParentNode->workspaceName,
+                    $transientNode->aggregateId,
+                    $transientParentNode->originDimensionSpacePoint,
+                    PropertyValuesToWrite::fromArray(
+                        iterator_to_array($subtree->node->properties)
+                    ),
+                );
+                // todo references:
 
-            $commands = $commands->append($setPropertiesOfTetheredNodeCommand);
+                $commands = $commands->append($setPropertiesOfTetheredNodeCommand);
+            }
+
         } else {
             $transientNode = $transientParentNode->forRegularChildNode(
                 $nodeAggregateIdMapping->getNewNodeAggregateId($subtree->node->aggregateId) ?? NodeAggregateId::create(),
@@ -131,20 +173,18 @@ final class NodeDuplicationService
     private function getTetheredDescendantNodeAggregateIds(Subtree $subtree, NodeAggregateIdMapping $nodeAggregateIdMapping, NodePath $nodePath, NodeAggregateIdsByNodePaths $tetheredNodeAggregateIds): NodeAggregateIdsByNodePaths
     {
         foreach ($subtree->children as $childSubtree) {
-            if ($childSubtree->node->classification->isTethered()) {
-                return $tetheredNodeAggregateIds;
+            if (!$childSubtree->node->classification->isTethered()) {
+                continue;
             }
 
-            $deterministicCopyAggregateId = $nodeAggregateIdMapping->getNewNodeAggregateId($childSubtree->node->aggregateId);
+            $deterministicCopyAggregateId = $nodeAggregateIdMapping->getNewNodeAggregateId($childSubtree->node->aggregateId) ?? NodeAggregateId::create();
 
-            $childNodePath = $nodePath->appendPathSegment($subtree->node->name);
+            $childNodePath = $nodePath->appendPathSegment($childSubtree->node->name);
 
-            if ($deterministicCopyAggregateId) {
-                $tetheredNodeAggregateIds = $tetheredNodeAggregateIds->add(
-                    $childNodePath,
-                    $deterministicCopyAggregateId
-                );
-            }
+            $tetheredNodeAggregateIds = $tetheredNodeAggregateIds->add(
+                $childNodePath,
+                $deterministicCopyAggregateId
+            );
 
             $tetheredNodeAggregateIds = $this->getTetheredDescendantNodeAggregateIds($childSubtree, $nodeAggregateIdMapping, $childNodePath, $tetheredNodeAggregateIds);
         }

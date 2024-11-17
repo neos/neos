@@ -71,10 +71,14 @@ final readonly class TransientNode
     {
         $nodeAggregateId = $this->tetheredNodeAggregateIds->getNodeAggregateId(NodePath::fromNodeNames($nodeName));
 
+        if (!$nodeAggregateId) {
+            throw new \InvalidArgumentException(sprintf('Name "%s" doesnt seem to be a point to a tethered node of "%s", could not determine deterministic node aggregate id.', $nodeName->value, $this->aggregateId->value));
+        }
+
         $tetheredNodeTypeDefinition = $this->nodeType->tetheredNodeTypeDefinitions->get($nodeName);
 
-        if (!$nodeAggregateId || !$tetheredNodeTypeDefinition) {
-            throw new \InvalidArgumentException('forTetheredChildNode only works for tethered nodes.');
+        if (!$tetheredNodeTypeDefinition) {
+            throw new \InvalidArgumentException(sprintf('Name "%s" doesnt match any tethered node type definition in the schema. Parent node "%s"', $nodeName->value, $this->aggregateId->value));
         }
 
         $childNodeType = $this->nodeTypeManager->getNodeType($tetheredNodeTypeDefinition->nodeTypeName);
@@ -82,25 +86,12 @@ final readonly class TransientNode
             throw new \InvalidArgumentException(sprintf('NodeType "%s" for tethered node "%s" does not exist.', $tetheredNodeTypeDefinition->nodeTypeName->value, $nodeName->value), 1718950833);
         }
 
-        $descendantTetheredNodeAggregateIds = NodeAggregateIdsByNodePaths::createEmpty();
-        foreach ($this->tetheredNodeAggregateIds->getNodeAggregateIds() as $stringNodePath => $descendantNodeAggregateId) {
-            $nodePath = NodePath::fromString($stringNodePath);
-            $pathParts = $nodePath->getParts();
-            $firstPart = array_shift($pathParts);
-            if ($firstPart?->equals($nodeName) && count($pathParts)) {
-                $descendantTetheredNodeAggregateIds = $descendantTetheredNodeAggregateIds->add(
-                    NodePath::fromNodeNames(...$pathParts),
-                    $descendantNodeAggregateId
-                );
-            }
-        }
-
         return new self(
             $nodeAggregateId,
             $this->workspaceName,
             $this->originDimensionSpacePoint,
             $childNodeType,
-            $descendantTetheredNodeAggregateIds,
+            NodeAggregateIdsByNodePaths::createEmpty(),
             $nodeName,
             $this->nodeType,
             $this->nodeTypeManager
