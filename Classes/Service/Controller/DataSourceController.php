@@ -15,7 +15,6 @@ declare(strict_types=1);
 namespace Neos\Neos\Service\Controller;
 
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
-use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
@@ -68,12 +67,12 @@ class DataSourceController extends AbstractServiceController
         unset($arguments['dataSourceIdentifier']);
         unset($arguments['node']);
 
-        $values = $dataSource->getData($this->deserializeNodeFromLegacyAddress($node), $arguments);
+        $values = $dataSource->getData($this->deserializeNodeFromNodeAddress($node), $arguments);
 
         $this->view->assign('value', $values);
     }
 
-    private function deserializeNodeFromLegacyAddress(?string $stringFormattedNodeAddress): ?Node
+    private function deserializeNodeFromNodeAddress(?string $stringFormattedNodeAddress): ?Node
     {
         if (!$stringFormattedNodeAddress) {
             return null;
@@ -82,10 +81,8 @@ class DataSourceController extends AbstractServiceController
         $nodeAddress = NodeAddress::fromJsonString($stringFormattedNodeAddress);
 
         $contentRepository = $this->contentRepositoryRegistry->get($nodeAddress->contentRepositoryId);
-        return $contentRepository->getContentGraph($nodeAddress->workspaceName)->getSubgraph(
-            $nodeAddress->dimensionSpacePoint,
-            VisibilityConstraints::withoutRestrictions()
-        )->findNodeById($nodeAddress->aggregateId);
+        return $contentRepository->getContentSubgraph($nodeAddress->workspaceName, $nodeAddress->dimensionSpacePoint)
+            ->findNodeById($nodeAddress->aggregateId);
     }
 
     /**

@@ -13,6 +13,11 @@ namespace Neos\Neos\Domain\Model;
 enum WorkspaceRole : string
 {
     /**
+     * Can read from the workspace
+     */
+    case VIEWER = 'VIEWER';
+
+    /**
      * Can read from and write to the workspace
      */
     case COLLABORATOR = 'COLLABORATOR';
@@ -27,11 +32,12 @@ enum WorkspaceRole : string
         return $this->specificity() >= $role->specificity();
     }
 
-    private function specificity(): int
+    public function specificity(): int
     {
         return match ($this) {
-            self::COLLABORATOR => 1,
-            self::MANAGER => 2,
+            self::VIEWER => 1,
+            self::COLLABORATOR => 2,
+            self::MANAGER => 3,
         };
     }
 }

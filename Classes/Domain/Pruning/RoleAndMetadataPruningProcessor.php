@@ -17,7 +17,7 @@ namespace Neos\Neos\Domain\Pruning;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
-use Neos\Neos\Domain\Service\WorkspaceService;
+use Neos\Neos\Domain\Repository\WorkspaceMetadataAndRoleRepository;
 
 /**
  * Pruning processor that removes role and metadata for a specified content repository
@@ -26,13 +26,13 @@ final readonly class RoleAndMetadataPruningProcessor implements ProcessorInterfa
 {
     public function __construct(
         private ContentRepositoryId $contentRepositoryId,
-        private WorkspaceService $workspaceService,
+        private WorkspaceMetadataAndRoleRepository $workspaceMetadataAndRoleRepository,
     ) {
     }
 
     public function run(ProcessingContext $context): void
     {
-        $this->workspaceService->pruneRoleAssignments($this->contentRepositoryId);
-        $this->workspaceService->pruneWorkspaceMetadata($this->contentRepositoryId);
+        $this->workspaceMetadataAndRoleRepository->pruneRoleAssignments($this->contentRepositoryId);
+        $this->workspaceMetadataAndRoleRepository->pruneWorkspaceMetadata($this->contentRepositoryId);
     }
 }
