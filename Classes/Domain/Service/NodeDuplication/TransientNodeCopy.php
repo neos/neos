@@ -8,6 +8,7 @@ use Neos\ContentRepository\Core\DimensionSpace\OriginDimensionSpacePoint;
 use Neos\ContentRepository\Core\Feature\NodeCreation\Dto\NodeAggregateIdsByNodePaths;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodePath;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Subtree;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Subtrees;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\Flow\Annotations as Flow;
@@ -123,10 +124,7 @@ final readonly class TransientNodeCopy
         );
     }
 
-    /**
-     * @param array<Subtree> $subtreeChildren
-     */
-    private static function getTetheredDescendantNodeAggregateIds(array $subtreeChildren, NodeAggregateIdMapping $nodeAggregateIdMapping, NodePath $nodePath, NodeAggregateIdsByNodePaths $tetheredNodeAggregateIds): NodeAggregateIdsByNodePaths
+    private static function getTetheredDescendantNodeAggregateIds(Subtrees $subtreeChildren, NodeAggregateIdMapping $nodeAggregateIdMapping, NodePath $nodePath, NodeAggregateIdsByNodePaths $tetheredNodeAggregateIds): NodeAggregateIdsByNodePaths
     {
         foreach ($subtreeChildren as $childSubtree) {
             if (!$childSubtree->node->classification->isTethered() || !$childSubtree->node->name) {
