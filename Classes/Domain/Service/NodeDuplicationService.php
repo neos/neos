@@ -14,6 +14,7 @@ use Neos\ContentRepository\Core\Feature\NodeReferencing\Command\SetNodeReference
 use Neos\ContentRepository\Core\Feature\NodeReferencing\Dto\NodeReferencesForName;
 use Neos\ContentRepository\Core\Feature\NodeReferencing\Dto\NodeReferencesToWrite;
 use Neos\ContentRepository\Core\Feature\NodeReferencing\Dto\NodeReferenceToWrite;
+use Neos\ContentRepository\Core\Feature\SubtreeTagging\Command\TagSubtree;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentSubgraphInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindReferencesFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindSubtreeFilter;
@@ -23,6 +24,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateCurrentlyDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeVariantSelectionStrategy;
 use Neos\ContentRepository\Core\SharedModel\Node\ReferenceName;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
@@ -105,7 +107,7 @@ final class NodeDuplicationService
         );
 
         $createCopyOfNodeCommand = CreateNodeAggregateWithNode::create(
-            $workspaceName,
+            $transientNodeCopy->workspaceName,
             $transientNodeCopy->aggregateId,
             $subtree->node->nodeTypeName,
             $targetDimensionSpacePoint,
@@ -126,6 +128,18 @@ final class NodeDuplicationService
 
         $commands = Commands::create($createCopyOfNodeCommand);
 
+        foreach ($subtree->node->tags->withoutInherited() as $explicitTag) {
+            $commands = $commands->append(
+                TagSubtree::create(
+                    $transientNodeCopy->workspaceName,
+                    $transientNodeCopy->aggregateId,
+                    $transientNodeCopy->originDimensionSpacePoint->toDimensionSpacePoint(),
+                    NodeVariantSelectionStrategy::STRATEGY_ALL_VARIANTS,
+                    $explicitTag
+                )
+            );
+        }
+
         foreach ($subtree->children as $childSubtree) {
             if ($subtree->node->classification->isTethered() && $childSubtree->node->classification->isTethered()) {
                 // TODO we assume here that the child node is tethered because the grandparent specifies that.
@@ -143,14 +157,17 @@ final class NodeDuplicationService
     private function commandsForSubtreeRecursively(TransientNodeCopy $transientParentNode, Subtree $subtree, ContentSubgraphInterface $subgraph, Commands $commands): Commands
     {
         if ($subtree->node->classification->isTethered()) {
-            $transientNode = $transientParentNode->forTetheredChildNode(
+            /**
+             * Case Node is tethered
+             */
+            $transientNodeCopy = $transientParentNode->forTetheredChildNode(
                 $subtree
             );
 
             if ($subtree->node->properties->count() > 0) {
                 $setPropertiesOfTetheredNodeCommand = SetNodeProperties::create(
                     $transientParentNode->workspaceName,
-                    $transientNode->aggregateId,
+                    $transientNodeCopy->aggregateId,
                     $transientParentNode->originDimensionSpacePoint,
                     // todo skip properties not in schema
                     PropertyValuesToWrite::fromArray(
@@ -165,7 +182,7 @@ final class NodeDuplicationService
             if ($references->count() > 0) {
                 $setReferencesOfTetheredNodeCommand = SetNodeReferences::create(
                     $transientParentNode->workspaceName,
-                    $transientNode->aggregateId,
+                    $transientNodeCopy->aggregateId,
                     $transientParentNode->originDimensionSpacePoint,
                     $this->serializeProjectedReferences(
                         $references
@@ -175,13 +192,16 @@ final class NodeDuplicationService
                 $commands = $commands->append($setReferencesOfTetheredNodeCommand);
             }
         } else {
-            $transientNode = $transientParentNode->forRegularChildNode(
+            /**
+             * Case Node is a regular child
+             */
+            $transientNodeCopy = $transientParentNode->forRegularChildNode(
                 $subtree
             );
 
             $createCopyOfNodeCommand = CreateNodeAggregateWithNode::create(
                 $transientParentNode->workspaceName,
-                $transientNode->aggregateId,
+                $transientNodeCopy->aggregateId,
                 $subtree->node->nodeTypeName,
                 $transientParentNode->originDimensionSpacePoint,
                 $transientParentNode->aggregateId,
@@ -196,14 +216,30 @@ final class NodeDuplicationService
             );
 
             $createCopyOfNodeCommand = $createCopyOfNodeCommand->withTetheredDescendantNodeAggregateIds(
-                $transientNode->tetheredNodeAggregateIds
+                $transientNodeCopy->tetheredNodeAggregateIds
             );
 
             $commands = $commands->append($createCopyOfNodeCommand);
         }
 
+        /**
+         * common logic
+         */
+
+        foreach ($subtree->node->tags->withoutInherited() as $explicitTag) {
+            $commands = $commands->append(
+                TagSubtree::create(
+                    $transientNodeCopy->workspaceName,
+                    $transientNodeCopy->aggregateId,
+                    $transientNodeCopy->originDimensionSpacePoint->toDimensionSpacePoint(),
+                    NodeVariantSelectionStrategy::STRATEGY_ALL_VARIANTS,
+                    $explicitTag
+                )
+            );
+        }
+
         foreach ($subtree->children as $childSubtree) {
-            $commands = $this->commandsForSubtreeRecursively($transientNode, $childSubtree, $subgraph, $commands);
+            $commands = $this->commandsForSubtreeRecursively($transientNodeCopy, $childSubtree, $subgraph, $commands);
         }
 
         return $commands;

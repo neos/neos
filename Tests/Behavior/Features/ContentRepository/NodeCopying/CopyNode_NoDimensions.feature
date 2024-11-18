@@ -34,7 +34,8 @@ Feature: Copy nodes (without dimensions)
       | nodeAggregateId            | parentNodeAggregateId  | nodeTypeName                            |
       | sir-david-nodenborough     | lady-eleonode-rootford | Neos.ContentRepository.Testing:Document |
       | nody-mc-nodeface           | sir-david-nodenborough | Neos.ContentRepository.Testing:Document |
-      | sir-nodeward-nodington-iii | lady-eleonode-rootford | Neos.ContentRepository.Testing:Document |
+      | node-wan-kenodi            | lady-eleonode-rootford | Neos.ContentRepository.Testing:Document |
+      | sir-nodeward-nodington-iii | node-wan-kenodi        | Neos.ContentRepository.Testing:Document |
 
   Scenario: Simple singular node aggregate is copied
     When I am in workspace "live" and dimension space point {}
@@ -102,6 +103,49 @@ Feature: Copy nodes (without dimensions)
       | Name | Node                                    | Properties |
       | ref  | cs-identifier;sir-david-nodenborough;{} | null       |
 
+  Scenario: Singular node aggregate is copied with subtree tags (and disabled state)
+    When I am in workspace "live" and dimension space point {}
+
+    Given the command DisableNodeAggregate is executed with payload:
+      | Key                          | Value                        |
+      | nodeAggregateId              | "sir-nodeward-nodington-iii" |
+      | coveredDimensionSpacePoint   | {}                           |
+      | nodeVariantSelectionStrategy | "allVariants"                |
+
+    Given the command TagSubtree is executed with payload:
+      | Key                          | Value                        |
+      | nodeAggregateId              | "sir-nodeward-nodington-iii" |
+      | coveredDimensionSpacePoint   | {}                           |
+      | nodeVariantSelectionStrategy | "allVariants"                |
+      | tag                          | "tag1"                       |
+
+    Given the command TagSubtree is executed with payload:
+      | Key                          | Value             |
+      | nodeAggregateId              | "node-wan-kenodi" |
+      | coveredDimensionSpacePoint   | {}                |
+      | nodeVariantSelectionStrategy | "allVariants"     |
+      | tag                          | "parent-tag"      |
+
+    And VisibilityConstraints are set to "withoutRestrictions"
+
+    # we inherit the tag here but DONT copy it!
+    Then I expect the node with aggregate identifier "sir-nodeward-nodington-iii" to inherit the tag "parent-tag"
+
+    When copy nodes recursively is executed with payload:
+      | Key                                    | Value                                                             |
+      | sourceDimensionSpacePoint              | {}                                                                |
+      | sourceNodeAggregateId                  | "sir-nodeward-nodington-iii"                                      |
+      | targetDimensionSpacePoint              | {}                                                                |
+      | targetParentNodeAggregateId            | "nody-mc-nodeface"                                                |
+      | targetSucceedingSiblingnodeAggregateId | null                                                              |
+      | nodeAggregateIdMapping                 | {"sir-nodeward-nodington-iii": "sir-nodeward-nodington-iii-copy"} |
+
+    And I expect the node aggregate "sir-nodeward-nodington-iii-copy" to exist
+    And I expect this node aggregate to disable dimension space points [{}]
+
+    And I expect node aggregate identifier "sir-nodeward-nodington-iii-copy" to lead to node cs-identifier;sir-nodeward-nodington-iii-copy;{}
+    And I expect this node to be exactly explicitly tagged "disabled,tag1"
+
   Scenario: Node aggregate is copied children recursively
     When I am in workspace "live" and dimension space point {}
     When the following CreateNodeAggregateWithNode commands are executed:
@@ -151,3 +195,27 @@ Feature: Copy nodes (without dimensions)
     And I expect this node to have the following references:
       | Name | Node                                    | Properties |
       | ref  | cs-identifier;sir-david-nodenborough;{} | null       |
+
+  Scenario: Subtree tags are copied for child nodes
+    When I am in workspace "live" and dimension space point {}
+    When the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId | parentNodeAggregateId      | nodeTypeName                            |
+      | child-a         | sir-nodeward-nodington-iii | Neos.ContentRepository.Testing:Document |
+
+    Given the command TagSubtree is executed with payload:
+      | Key                          | Value         |
+      | nodeAggregateId              | "child-a"     |
+      | coveredDimensionSpacePoint   | {}            |
+      | nodeVariantSelectionStrategy | "allVariants" |
+      | tag                          | "tag1"        |
+
+    When copy nodes recursively is executed with payload:
+      | Key                                    | Value                                                                                        |
+      | sourceDimensionSpacePoint              | {}                                                                                           |
+      | sourceNodeAggregateId                  | "sir-nodeward-nodington-iii"                                                                 |
+      | targetDimensionSpacePoint              | {}                                                                                           |
+      | targetParentNodeAggregateId            | "nody-mc-nodeface"                                                                           |
+      | nodeAggregateIdMapping                 | {"sir-nodeward-nodington-iii": "sir-nodeward-nodington-iii-copy", "child-a": "child-a-copy"} |
+
+    And I expect node aggregate identifier "child-a-copy" to lead to node cs-identifier;child-a-copy;{}
+    And I expect this node to be exactly explicitly tagged "tag1"
