@@ -103,18 +103,17 @@ Feature: Copy nodes with tethered nodes
     And I expect this node aggregate to be of type "Neos.ContentRepository.Testing:RootDocument"
     And I expect this node aggregate to occupy dimension space points [[]]
     And I expect this node aggregate to disable dimension space points []
-    And I expect this node aggregate to have the child node aggregates ["tethered-document"]
+    And I expect this node aggregate to have the child node aggregates ["tethered-document-copy"]
     And I expect this node aggregate to have the parent node aggregates ["sir-david-nodenborough"]
 
     And I expect the node aggregate "tethered-document-copy" to exist
     And I expect this node aggregate to be classified as "tethered"
     And I expect this node aggregate to be named "tethered-document"
-    And I expect this node aggregate to be of type "Neos.ContentRepository.Testing:TetheredWithTethered"
+    And I expect this node aggregate to be of type "Neos.ContentRepository.Testing:DocumentWithTethered"
     And I expect this node aggregate to occupy dimension space points [[]]
     And I expect this node aggregate to disable dimension space points []
-    And I expect this node aggregate to have the parent node aggregates ["tethered-document-child-copy-copy"]
 
-    And I expect the node aggregate "tethered-document-child-copy-copy" to exist
+    And I expect the node aggregate "tethered-document-child-copy" to exist
     And I expect this node aggregate to be classified as "tethered"
     And I expect this node aggregate to be named "tethered"
     And I expect this node aggregate to be of type "Neos.ContentRepository.Testing:Tethered"

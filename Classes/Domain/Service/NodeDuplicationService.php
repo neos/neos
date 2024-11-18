@@ -7,7 +7,6 @@ namespace Neos\Neos\Domain\Service;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\DimensionSpace\OriginDimensionSpacePoint;
 use Neos\ContentRepository\Core\Feature\NodeCreation\Command\CreateNodeAggregateWithNode;
-use Neos\ContentRepository\Core\Feature\NodeCreation\Dto\NodeAggregateIdsByNodePaths;
 use Neos\ContentRepository\Core\Feature\NodeDuplication\Dto\NodeAggregateIdMapping;
 use Neos\ContentRepository\Core\Feature\NodeModification\Command\SetNodeProperties;
 use Neos\ContentRepository\Core\Feature\NodeModification\Dto\PropertyValuesToWrite;
@@ -16,7 +15,6 @@ use Neos\ContentRepository\Core\Feature\NodeReferencing\Dto\NodeReferencesToWrit
 use Neos\ContentRepository\Core\Feature\NodeReferencing\Dto\NodeReferenceToWrite;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindReferencesFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindSubtreeFilter;
-use Neos\ContentRepository\Core\Projection\ContentGraph\NodePath;
 use Neos\ContentRepository\Core\Projection\ContentGraph\References;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Subtree;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
@@ -28,7 +26,7 @@ use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Neos\Domain\Exception\TetheredNodesCannotBePartiallyCopied;
 use Neos\Neos\Domain\Service\NodeDuplication\Commands;
-use Neos\Neos\Domain\Service\NodeDuplication\TransientNode;
+use Neos\Neos\Domain\Service\NodeDuplication\TransientNodeCopy;
 
 final class NodeDuplicationService
 {
@@ -60,18 +58,17 @@ final class NodeDuplicationService
             throw new \RuntimeException('todo');
         }
 
-        $transientNode = TransientNode::forRegular(
-            $nodeAggregateIdMapping->getNewNodeAggregateId($subtree->node->aggregateId) ?? NodeAggregateId::create(),
+        $transientNodeCopy = TransientNodeCopy::forRegular(
+            $subtree,
             $workspaceName,
             $targetDimensionSpacePoint,
-            $subtree->node->nodeTypeName,
-            NodeAggregateIdsByNodePaths::createEmpty(),
+            $nodeAggregateIdMapping,
             $contentRepository->getNodeTypeManager()
         );
 
         $createCopyOfNodeCommand = CreateNodeAggregateWithNode::create(
             $workspaceName,
-            $transientNode->aggregateId,
+            $transientNodeCopy->aggregateId,
             $subtree->node->nodeTypeName,
             $targetDimensionSpacePoint,
             $targetParentNodeAggregateId,
@@ -89,18 +86,9 @@ final class NodeDuplicationService
             $createCopyOfNodeCommand = $createCopyOfNodeCommand->withNodeName($targetNodeName);
         }
 
-        $tetheredDescendantNodeAggregateIds = $this->getTetheredDescendantNodeAggregateIds(
-            $subtree,
-            $nodeAggregateIdMapping,
-            NodePath::forRoot(),
-            NodeAggregateIdsByNodePaths::createEmpty()
-        );
-
         $createCopyOfNodeCommand = $createCopyOfNodeCommand->withTetheredDescendantNodeAggregateIds(
-            $tetheredDescendantNodeAggregateIds
+            $transientNodeCopy->tetheredNodeAggregateIds
         );
-
-        $transientNode = $transientNode->withTetheredNodeAggregateIds($tetheredDescendantNodeAggregateIds);
 
         $commands = Commands::create($createCopyOfNodeCommand);
 
@@ -110,7 +98,7 @@ final class NodeDuplicationService
                 // this is not always fully correct and we could loosen the constraint by checking the node type schema
                 throw new TetheredNodesCannotBePartiallyCopied(sprintf('Cannot copy tethered node %s because child node %s is also tethered. Only standalone tethered nodes can be copied.', $subtree->node->aggregateId->value, $childSubtree->node->aggregateId->value), 1731264887);
             }
-            $commands = $this->commandsForSubtreeRecursively($transientNode, $childSubtree, $nodeAggregateIdMapping, $commands);
+            $commands = $this->commandsForSubtreeRecursively($transientNodeCopy, $childSubtree, $commands);
         }
 
         foreach ($commands as $command) {
@@ -118,11 +106,11 @@ final class NodeDuplicationService
         }
     }
 
-    private function commandsForSubtreeRecursively(TransientNode $transientParentNode, Subtree $subtree, NodeAggregateIdMapping $nodeAggregateIdMapping, Commands $commands): Commands
+    private function commandsForSubtreeRecursively(TransientNodeCopy $transientParentNode, Subtree $subtree, Commands $commands): Commands
     {
         if ($subtree->node->classification->isTethered()) {
             $transientNode = $transientParentNode->forTetheredChildNode(
-                $subtree->node->name
+                $subtree
             );
 
             if ($subtree->node->properties->count() !== 0) {
@@ -141,8 +129,7 @@ final class NodeDuplicationService
 
         } else {
             $transientNode = $transientParentNode->forRegularChildNode(
-                $nodeAggregateIdMapping->getNewNodeAggregateId($subtree->node->aggregateId) ?? NodeAggregateId::create(),
-                $subtree->node->nodeTypeName
+                $subtree
             );
 
             $createCopyOfNodeCommand = CreateNodeAggregateWithNode::create(
@@ -159,49 +146,18 @@ final class NodeDuplicationService
             // todo references:
             );
 
-            $tetheredDescendantNodeAggregateIds = $this->getTetheredDescendantNodeAggregateIds(
-                $subtree,
-                $nodeAggregateIdMapping,
-                NodePath::forRoot(),
-                NodeAggregateIdsByNodePaths::createEmpty()
-            );
-
             $createCopyOfNodeCommand = $createCopyOfNodeCommand->withTetheredDescendantNodeAggregateIds(
-                $tetheredDescendantNodeAggregateIds
+                $transientNode->tetheredNodeAggregateIds
             );
-
-            $transientNode = $transientNode->withTetheredNodeAggregateIds($tetheredDescendantNodeAggregateIds);
 
             $commands = $commands->append($createCopyOfNodeCommand);
         }
 
         foreach ($subtree->children as $childSubtree) {
-            $commands = $this->commandsForSubtreeRecursively($transientNode, $childSubtree, $nodeAggregateIdMapping, $commands);
+            $commands = $this->commandsForSubtreeRecursively($transientNode, $childSubtree, $commands);
         }
 
         return $commands;
-    }
-
-    private function getTetheredDescendantNodeAggregateIds(Subtree $subtree, NodeAggregateIdMapping $nodeAggregateIdMapping, NodePath $nodePath, NodeAggregateIdsByNodePaths $tetheredNodeAggregateIds): NodeAggregateIdsByNodePaths
-    {
-        foreach ($subtree->children as $childSubtree) {
-            if (!$childSubtree->node->classification->isTethered()) {
-                continue;
-            }
-
-            $deterministicCopyAggregateId = $nodeAggregateIdMapping->getNewNodeAggregateId($childSubtree->node->aggregateId) ?? NodeAggregateId::create();
-
-            $childNodePath = $nodePath->appendPathSegment($childSubtree->node->name);
-
-            $tetheredNodeAggregateIds = $tetheredNodeAggregateIds->add(
-                $childNodePath,
-                $deterministicCopyAggregateId
-            );
-
-            $tetheredNodeAggregateIds = $this->getTetheredDescendantNodeAggregateIds($childSubtree, $nodeAggregateIdMapping, $childNodePath, $tetheredNodeAggregateIds);
-        }
-
-        return $tetheredNodeAggregateIds;
     }
 
     private function serializeProjectedReferences(References $references): NodeReferencesToWrite

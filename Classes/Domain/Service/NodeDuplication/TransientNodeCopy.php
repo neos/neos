@@ -5,10 +5,12 @@ namespace Neos\Neos\Domain\Service\NodeDuplication;
 use Flowpack\NodeTemplates\Domain\NodeCreation\NodeConstraintException;
 use Neos\ContentRepository\Core\DimensionSpace\OriginDimensionSpacePoint;
 use Neos\ContentRepository\Core\Feature\NodeCreation\Dto\NodeAggregateIdsByNodePaths;
+use Neos\ContentRepository\Core\Feature\NodeDuplication\Dto\NodeAggregateIdMapping;
 use Neos\ContentRepository\Core\NodeType\NodeType;
 use Neos\ContentRepository\Core\NodeType\NodeTypeManager;
 use Neos\ContentRepository\Core\NodeType\NodeTypeName;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodePath;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Subtree;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeName;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
@@ -29,14 +31,21 @@ use Neos\Flow\Annotations as Flow;
  *
  * @Flow\Proxy(false)
  */
-final readonly class TransientNode
+final readonly class TransientNodeCopy
 {
     private function __construct(
         public NodeAggregateId $aggregateId,
         public WorkspaceName $workspaceName,
         public OriginDimensionSpacePoint $originDimensionSpacePoint,
         private NodeType $nodeType,
-        private NodeAggregateIdsByNodePaths $tetheredNodeAggregateIds,
+        /**
+         * @var NodeAggregateIdMapping An assignment of "old" to "new" NodeAggregateIds
+         */
+        private NodeAggregateIdMapping $nodeAggregateIdMapping,
+        /**
+         * @var NodeAggregateIdsByNodePaths Deterministic NodeAggregate ids for the creation of tethered nodes (empty if there are no tethered nodes)
+         */
+        public NodeAggregateIdsByNodePaths $tetheredNodeAggregateIds,
         private ?NodeName $tetheredNodeName,
         private ?NodeType $tetheredParentNodeType,
         private NodeTypeManager $nodeTypeManager
@@ -47,28 +56,29 @@ final readonly class TransientNode
     }
 
     public static function forRegular(
-        NodeAggregateId $nodeAggregateId,
-        WorkspaceName $workspaceName,
-        OriginDimensionSpacePoint $originDimensionSpacePoint,
-        NodeTypeName $nodeTypeName,
-        NodeAggregateIdsByNodePaths $tetheredNodeAggregateIds,
+        Subtree $subtree,
+        WorkspaceName $targetWorkspaceName,
+        OriginDimensionSpacePoint $targetOriginDimensionSpacePoint,
+        NodeAggregateIdMapping $nodeAggregateIdMapping,
         NodeTypeManager $nodeTypeManager
     ): self {
-        $nodeType = $nodeTypeManager->getNodeType($nodeTypeName);
+        $nodeType = $nodeTypeManager->getNodeType($subtree->node->nodeTypeName);
         return new self(
-            $nodeAggregateId,
-            $workspaceName,
-            $originDimensionSpacePoint,
+            $nodeAggregateIdMapping->getNewNodeAggregateId($subtree->node->aggregateId) ?? NodeAggregateId::create(),
+            $targetWorkspaceName,
+            $targetOriginDimensionSpacePoint,
             $nodeType,
-            $tetheredNodeAggregateIds,
+            $nodeAggregateIdMapping,
+            self::getTetheredDescendantNodeAggregateIds($subtree->children, $nodeAggregateIdMapping, NodePath::forRoot(), NodeAggregateIdsByNodePaths::createEmpty()),
             null,
             null,
             $nodeTypeManager
         );
     }
 
-    public function forTetheredChildNode(NodeName $nodeName): self
+    public function forTetheredChildNode(Subtree $subtree): self
     {
+        $nodeName = $subtree->node->name;
         $nodeAggregateId = $this->tetheredNodeAggregateIds->getNodeAggregateId(NodePath::fromNodeNames($nodeName));
 
         if (!$nodeAggregateId) {
@@ -86,46 +96,73 @@ final readonly class TransientNode
             throw new \InvalidArgumentException(sprintf('NodeType "%s" for tethered node "%s" does not exist.', $tetheredNodeTypeDefinition->nodeTypeName->value, $nodeName->value), 1718950833);
         }
 
+        // keep tethered node aggregate ids from parent
+        $descendantTetheredNodeAggregateIds = NodeAggregateIdsByNodePaths::createEmpty();
+        foreach ($this->tetheredNodeAggregateIds->getNodeAggregateIds() as $stringNodePath => $descendantNodeAggregateId) {
+            $nodePath = NodePath::fromString($stringNodePath);
+            $pathParts = $nodePath->getParts();
+            $firstPart = array_shift($pathParts);
+            if ($firstPart?->equals($nodeName) && count($pathParts)) {
+                $descendantTetheredNodeAggregateIds = $descendantTetheredNodeAggregateIds->add(
+                    NodePath::fromNodeNames(...$pathParts),
+                    $descendantNodeAggregateId
+                );
+            }
+        }
+
+
         return new self(
             $nodeAggregateId,
             $this->workspaceName,
             $this->originDimensionSpacePoint,
             $childNodeType,
-            NodeAggregateIdsByNodePaths::createEmpty(),
+            $this->nodeAggregateIdMapping,
+            self::getTetheredDescendantNodeAggregateIds($subtree->children, $this->nodeAggregateIdMapping, NodePath::forRoot(), $descendantTetheredNodeAggregateIds),
             $nodeName,
             $this->nodeType,
             $this->nodeTypeManager
         );
     }
 
-    public function forRegularChildNode(NodeAggregateId $nodeAggregateId, NodeTypeName $nodeTypeName): self
+    public function forRegularChildNode(Subtree $subtree): self
     {
-        $nodeType = $this->nodeTypeManager->getNodeType($nodeTypeName);
-        $tetheredNodeAggregateIds = NodeAggregateIdsByNodePaths::createForNodeType($nodeTypeName, $this->nodeTypeManager);
+        $nodeType = $this->nodeTypeManager->getNodeType($subtree->node->nodeTypeName);
         return new self(
-            $nodeAggregateId,
+            $this->nodeAggregateIdMapping->getNewNodeAggregateId($subtree->node->aggregateId) ?? NodeAggregateId::create(),
             $this->workspaceName,
             $this->originDimensionSpacePoint,
             $nodeType,
-            $tetheredNodeAggregateIds,
+            $this->nodeAggregateIdMapping,
+            self::getTetheredDescendantNodeAggregateIds($subtree->children, $this->nodeAggregateIdMapping, NodePath::forRoot(), NodeAggregateIdsByNodePaths::createEmpty()),
             null,
             null,
             $this->nodeTypeManager
         );
     }
 
-    public function withTetheredNodeAggregateIds(NodeAggregateIdsByNodePaths $nodeAggregateIdsByNodePaths): self
+    /**
+     * @param array<Subtree> $subtreeChildren
+     */
+    private static function getTetheredDescendantNodeAggregateIds(array $subtreeChildren, NodeAggregateIdMapping $nodeAggregateIdMapping, NodePath $nodePath, NodeAggregateIdsByNodePaths $tetheredNodeAggregateIds): NodeAggregateIdsByNodePaths
     {
-        return new self(
-            $this->aggregateId,
-            $this->workspaceName,
-            $this->originDimensionSpacePoint,
-            $this->nodeType,
-            $nodeAggregateIdsByNodePaths,
-            $this->tetheredNodeName,
-            $this->tetheredParentNodeType,
-            $this->nodeTypeManager
-        );
+        foreach ($subtreeChildren as $childSubtree) {
+            if (!$childSubtree->node->classification->isTethered()) {
+                continue;
+            }
+
+            $deterministicCopyAggregateId = $nodeAggregateIdMapping->getNewNodeAggregateId($childSubtree->node->aggregateId) ?? NodeAggregateId::create();
+
+            $childNodePath = $nodePath->appendPathSegment($childSubtree->node->name);
+
+            $tetheredNodeAggregateIds = $tetheredNodeAggregateIds->add(
+                $childNodePath,
+                $deterministicCopyAggregateId
+            );
+
+            $tetheredNodeAggregateIds = self::getTetheredDescendantNodeAggregateIds($childSubtree->children, $nodeAggregateIdMapping, $childNodePath, $tetheredNodeAggregateIds);
+        }
+
+        return $tetheredNodeAggregateIds;
     }
 
     /**
