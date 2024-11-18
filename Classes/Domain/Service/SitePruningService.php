@@ -33,6 +33,7 @@ use Neos\Neos\Domain\Pruning\RoleAndMetadataPruningProcessor;
 use Neos\Neos\Domain\Pruning\SitePruningProcessor;
 use Neos\Neos\Domain\Repository\DomainRepository;
 use Neos\Neos\Domain\Repository\SiteRepository;
+use Neos\Neos\Domain\Repository\WorkspaceMetadataAndRoleRepository;
 
 #[Flow\Scope('singleton')]
 final readonly class SitePruningService
@@ -42,7 +43,7 @@ final readonly class SitePruningService
         private SiteRepository $siteRepository,
         private DomainRepository $domainRepository,
         private PersistenceManagerInterface $persistenceManager,
-        private WorkspaceService $workspaceService,
+        private WorkspaceMetadataAndRoleRepository $workspaceMetadataAndRoleRepository,
     ) {
     }
 
@@ -71,7 +72,7 @@ final readonly class SitePruningService
                     new ContentStreamPrunerFactory()
                 )
             ),
-            'Prune roles and metadata' => new RoleAndMetadataPruningProcessor($contentRepositoryId, $this->workspaceService),
+            'Prune roles and metadata' => new RoleAndMetadataPruningProcessor($contentRepositoryId, $this->workspaceMetadataAndRoleRepository),
             'Reset all projections' => new ProjectionResetProcessor(
                 $this->contentRepositoryRegistry->buildService(
                     $contentRepositoryId,
