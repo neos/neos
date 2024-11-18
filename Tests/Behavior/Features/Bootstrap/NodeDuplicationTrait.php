@@ -74,7 +74,7 @@ trait NodeDuplicationTrait
                 $targetDimensionSpacePoint,
                 NodeAggregateId::fromString($commandArguments['targetParentNodeAggregateId']),
                 $targetSucceedingSiblingNodeAggregateId,
-                NodeAggregateIdMapping::fromArray($commandArguments['nodeAggregateIdMapping'])
+                NodeAggregateIdMapping::fromArray($commandArguments['nodeAggregateIdMapping'] ?? [])
             )
         );
     }

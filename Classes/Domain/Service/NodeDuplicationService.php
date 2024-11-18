@@ -26,10 +26,17 @@ use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Node\ReferenceName;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
+use Neos\Flow\Annotations as Flow;
 use Neos\Neos\Domain\Exception\TetheredNodesCannotBePartiallyCopied;
 use Neos\Neos\Domain\Service\NodeDuplication\NodeAggregateIdMapping;
 use Neos\Neos\Domain\Service\NodeDuplication\TransientNodeCopy;
 
+/**
+ * Service to copy node recursively - as there is no equivalent content repository core command.
+ *
+ * @Flow\Scope("singleton")
+ * @api
+ */
 final class NodeDuplicationService
 {
     public function __construct(
@@ -37,6 +44,35 @@ final class NodeDuplicationService
     ) {
     }
 
+    /**
+     * Copies the specified source node and its children to the target node
+     *
+     * Note about dimensions:
+     * ---------------------
+     *   Currently the copying is primitive as that we take the read-model of the dimension to copy (the subgraph). and paste that into the target dimension.
+     *   That means that the copy does not alter other dimensions and that virtual variants are materialised.
+     *   For more information see {@link https://github.com/neos/neos-development-collection/issues/5054}
+     *
+     * Note about constraints:
+     * ----------------------
+     *   As we cannot rely on the full integrate on the subgraph regarding the current node type schema it might not be possible to copy a node and its children.
+     *   For example copying a node with tethered children that is not tethered according to the current node type schema, or copying properties that are not defined
+     *   in the current node type schema anymore. In those cases the structure adjustments have to be executed. (todo only copy what is applicable and be graceful)
+     *
+     * Note about partial copy on error:
+     * --------------------------------
+     *   As the above mentioned constraints can fail and we handle the determined content repository commands one by one, a failure will lead to a partially evaluated copy.
+     *   The content repository is still consistent but the intent is only partially fulfilled.
+     *
+     * @param ContentRepositoryId $contentRepositoryId The content repository the copy operation is performed in
+     * @param WorkspaceName $workspaceName The name of the workspace where the node is copied and from and into (todo permit cross workspace copying?)
+     * @param DimensionSpacePoint $sourceDimensionSpacePoint The dimension to copy from
+     * @param NodeAggregateId $sourceNodeAggregateId The node aggregate which to copy (including its children)
+     * @param OriginDimensionSpacePoint $targetDimensionSpacePoint the dimension space point which is the target of the copy
+     * @param NodeAggregateId $targetParentNodeAggregateId Node aggregate id of the target node's parent. If not given, the node will be added as the parent's first child
+     * @param NodeAggregateId|null $targetSucceedingSiblingNodeAggregateId Node aggregate id of the target node's succeeding sibling (optional)
+     * @param NodeAggregateIdMapping|null $nodeAggregateIdMapping An assignment of "old" to "new" NodeAggregateIds
+     */
     public function copyNodesRecursively(
         ContentRepositoryId $contentRepositoryId,
         WorkspaceName $workspaceName,
@@ -45,7 +81,7 @@ final class NodeDuplicationService
         OriginDimensionSpacePoint $targetDimensionSpacePoint,
         NodeAggregateId $targetParentNodeAggregateId,
         ?NodeAggregateId $targetSucceedingSiblingNodeAggregateId,
-        NodeAggregateIdMapping $nodeAggregateIdMapping
+        ?NodeAggregateIdMapping $nodeAggregateIdMapping = null
     ): void {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
 
@@ -65,7 +101,7 @@ final class NodeDuplicationService
             $subtree,
             $workspaceName,
             $targetDimensionSpacePoint,
-            $nodeAggregateIdMapping
+            $nodeAggregateIdMapping ?? NodeAggregateIdMapping::createEmpty()
         );
 
         $createCopyOfNodeCommand = CreateNodeAggregateWithNode::create(

@@ -29,9 +29,10 @@ Feature: Copy nodes (without dimensions)
       | nodeAggregateId | "lady-eleonode-rootford"      |
       | nodeTypeName    | "Neos.ContentRepository:Root" |
     And the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId  | parentNodeAggregateId  | nodeTypeName                                                   | tetheredDescendantNodeAggregateIds                                                            |
-      | node-mc-nodeface | lady-eleonode-rootford | Neos.ContentRepository.Testing:DocumentWithoutTetheredChildren | {}                                                                                            |
-      | node-wan-kenody  | lady-eleonode-rootford | Neos.ContentRepository.Testing:Document                        | {"tethered-document": "nodewyn-tetherton", "tethered-document/tethered": "nodimer-tetherton"} |
+      | nodeAggregateId     | parentNodeAggregateId  | nodeTypeName                                                   | tetheredDescendantNodeAggregateIds                                                            |
+      | node-mc-nodeface    | lady-eleonode-rootford | Neos.ContentRepository.Testing:DocumentWithoutTetheredChildren | {}                                                                                            |
+      | node-wan-kenody     | lady-eleonode-rootford | Neos.ContentRepository.Testing:Document                        | {"tethered-document": "nodewyn-tetherton", "tethered-document/tethered": "nodimer-tetherton"} |
+      | sir-david-nodenburg | lady-eleonode-rootford | Neos.ContentRepository.Testing:TetheredDocument                | {"tethered": "davids-tether"}                                                                 |
 
   Scenario: Coping fails if the leaf of a nested tethered node is attempted to be copied
     And I expect the node aggregate "nodewyn-tetherton" to exist
@@ -41,12 +42,11 @@ Feature: Copy nodes (without dimensions)
     And I expect this node aggregate to be classified as "tethered"
 
     When copy nodes recursively is executed with payload:
-      | Key                         | Value                                                                                          |
-      | sourceDimensionSpacePoint   | {}                                                                                             |
-      | sourceNodeAggregateId       | "nodewyn-tetherton"                                                                            |
-      | targetDimensionSpacePoint   | {}                                                                                             |
-      | targetParentNodeAggregateId | "node-mc-nodeface"                                                                              |
-      | nodeAggregateIdMapping      | {"nodewyn-tetherton": "nodewyn-tetherton-copy", "nodimer-tetherton": "nodimer-tetherton-copy"} |
+      | Key                         | Value               |
+      | sourceDimensionSpacePoint   | {}                  |
+      | sourceNodeAggregateId       | "nodewyn-tetherton" |
+      | targetDimensionSpacePoint   | {}                  |
+      | targetParentNodeAggregateId | "node-mc-nodeface"  |
 
     Then an exception of type TetheredNodesCannotBePartiallyCopied should be thrown with message:
     """
