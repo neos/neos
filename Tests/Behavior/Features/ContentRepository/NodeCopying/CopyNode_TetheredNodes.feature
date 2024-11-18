@@ -4,7 +4,12 @@ Feature: Copy nodes with tethered nodes
     Given using no content dimensions
     And using the following node types:
     """yaml
-    'Neos.ContentRepository.Testing:Tethered': []
+    'Neos.ContentRepository.Testing:Tethered':
+      properties:
+        title:
+          type: string
+      references:
+        ref: []
     'Neos.ContentRepository.Testing:DocumentWithTethered':
       childNodes:
         tethered:
@@ -159,3 +164,30 @@ Feature: Copy nodes with tethered nodes
     And I expect this node aggregate to disable dimension space points []
     And I expect this node aggregate to have no child node aggregates
     And I expect this node aggregate to have the parent node aggregates ["sir-nodeward-nodington-i-copy"]
+
+  Scenario: Properties and references are copied for tethered child nodes
+    And the command SetNodeReferences is executed with payload:
+      | Key                   | Value                                                                            |
+      | sourceNodeAggregateId | "nodewyn-tetherton"                                                              |
+      | references            | [{"referenceName": "ref", "references": [{"target": "sir-david-nodenborough"}]}] |
+
+    And the command SetNodeProperties is executed with payload:
+      | Key             | Value                      |
+      | nodeAggregateId | "nodewyn-tetherton"        |
+      | propertyValues  | {"title": "Original Text"} |
+
+    When copy nodes recursively is executed with payload:
+      | Key                         | Value                                                                                                    |
+      | sourceDimensionSpacePoint   | {}                                                                                                       |
+      | sourceNodeAggregateId       | "sir-nodeward-nodington-i"                                                                               |
+      | targetDimensionSpacePoint   | {}                                                                                                       |
+      | targetParentNodeAggregateId | "sir-david-nodenborough"                                                                                 |
+      | nodeAggregateIdMapping      | {"sir-nodeward-nodington-i": "sir-nodeward-nodington-ii", "nodewyn-tetherton": "nodewyn-tetherton-copy"} |
+
+    And I expect node aggregate identifier "nodewyn-tetherton-copy" to lead to node cs-identifier;nodewyn-tetherton-copy;{}
+    And I expect this node to have the following properties:
+      | Key   | Value           |
+      | title | "Original Text" |
+    And I expect this node to have the following references:
+      | Name | Node                                    | Properties |
+      | ref  | cs-identifier;sir-david-nodenborough;{} | null       |

@@ -10,9 +10,11 @@ use Neos\ContentRepository\Core\Feature\NodeCreation\Command\CreateNodeAggregate
 use Neos\ContentRepository\Core\Feature\NodeDuplication\Dto\NodeAggregateIdMapping;
 use Neos\ContentRepository\Core\Feature\NodeModification\Command\SetNodeProperties;
 use Neos\ContentRepository\Core\Feature\NodeModification\Dto\PropertyValuesToWrite;
+use Neos\ContentRepository\Core\Feature\NodeReferencing\Command\SetNodeReferences;
 use Neos\ContentRepository\Core\Feature\NodeReferencing\Dto\NodeReferencesForName;
 use Neos\ContentRepository\Core\Feature\NodeReferencing\Dto\NodeReferencesToWrite;
 use Neos\ContentRepository\Core\Feature\NodeReferencing\Dto\NodeReferenceToWrite;
+use Neos\ContentRepository\Core\Projection\ContentGraph\ContentSubgraphInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindReferencesFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindSubtreeFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\References;
@@ -98,7 +100,7 @@ final class NodeDuplicationService
                 // this is not always fully correct and we could loosen the constraint by checking the node type schema
                 throw new TetheredNodesCannotBePartiallyCopied(sprintf('Cannot copy tethered node %s because child node %s is also tethered. Only standalone tethered nodes can be copied.', $subtree->node->aggregateId->value, $childSubtree->node->aggregateId->value), 1731264887);
             }
-            $commands = $this->commandsForSubtreeRecursively($transientNodeCopy, $childSubtree, $commands);
+            $commands = $this->commandsForSubtreeRecursively($transientNodeCopy, $childSubtree, $subgraph, $commands);
         }
 
         foreach ($commands as $command) {
@@ -106,14 +108,14 @@ final class NodeDuplicationService
         }
     }
 
-    private function commandsForSubtreeRecursively(TransientNodeCopy $transientParentNode, Subtree $subtree, Commands $commands): Commands
+    private function commandsForSubtreeRecursively(TransientNodeCopy $transientParentNode, Subtree $subtree, ContentSubgraphInterface $subgraph, Commands $commands): Commands
     {
         if ($subtree->node->classification->isTethered()) {
             $transientNode = $transientParentNode->forTetheredChildNode(
                 $subtree
             );
 
-            if ($subtree->node->properties->count() !== 0) {
+            if ($subtree->node->properties->count() > 0) {
                 $setPropertiesOfTetheredNodeCommand = SetNodeProperties::create(
                     $transientParentNode->workspaceName,
                     $transientNode->aggregateId,
@@ -122,11 +124,23 @@ final class NodeDuplicationService
                         iterator_to_array($subtree->node->properties)
                     ),
                 );
-                // todo references:
 
                 $commands = $commands->append($setPropertiesOfTetheredNodeCommand);
             }
 
+            $references = $subgraph->findReferences($subtree->node->aggregateId, FindReferencesFilter::create());
+            if ($references->count() > 0) {
+                $setReferencesOfTetheredNodeCommand = SetNodeReferences::create(
+                    $transientParentNode->workspaceName,
+                    $transientNode->aggregateId,
+                    $transientParentNode->originDimensionSpacePoint,
+                    $this->serializeProjectedReferences(
+                        $references
+                    ),
+                );
+
+                $commands = $commands->append($setReferencesOfTetheredNodeCommand);
+            }
         } else {
             $transientNode = $transientParentNode->forRegularChildNode(
                 $subtree
@@ -143,7 +157,9 @@ final class NodeDuplicationService
                 initialPropertyValues: PropertyValuesToWrite::fromArray(
                     iterator_to_array($subtree->node->properties)
                 ),
-            // todo references:
+                references: $this->serializeProjectedReferences(
+                    $subgraph->findReferences($subtree->node->aggregateId, FindReferencesFilter::create())
+                )
             );
 
             $createCopyOfNodeCommand = $createCopyOfNodeCommand->withTetheredDescendantNodeAggregateIds(
@@ -154,7 +170,7 @@ final class NodeDuplicationService
         }
 
         foreach ($subtree->children as $childSubtree) {
-            $commands = $this->commandsForSubtreeRecursively($transientNode, $childSubtree, $commands);
+            $commands = $this->commandsForSubtreeRecursively($transientNode, $childSubtree, $subgraph, $commands);
         }
 
         return $commands;
