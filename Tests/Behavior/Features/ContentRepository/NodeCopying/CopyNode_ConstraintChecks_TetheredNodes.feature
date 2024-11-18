@@ -48,4 +48,7 @@ Feature: Copy nodes (without dimensions)
       | targetParentNodeAggregateId | "node-mc-nodeface"                                                                              |
       | nodeAggregateIdMapping      | {"nodewyn-tetherton": "nodewyn-tetherton-copy", "nodimer-tetherton": "nodimer-tetherton-copy"} |
 
-    Then the last command should have thrown an exception of type "TetheredNodesCannotBePartiallyCopied"
+    Then an exception of type TetheredNodesCannotBePartiallyCopied should be thrown with message:
+    """
+    Cannot copy tethered node nodewyn-tetherton because child node nodimer-tetherton is also tethered. Only standalone tethered nodes can be copied.
+    """

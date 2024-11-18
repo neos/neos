@@ -20,6 +20,7 @@ use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeName;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
+use Neos\Neos\Domain\Exception\TetheredNodesCannotBePartiallyCopied;
 use Neos\Neos\Domain\Service\NodeDuplication\Commands;
 use Neos\Neos\Domain\Service\NodeDuplication\TransientNode;
 
@@ -96,6 +97,11 @@ final class NodeDuplicationService
         $commands = Commands::create($createCopyOfNodeCommand);
 
         foreach ($subtree->children as $childSubtree) {
+            if ($subtree->node->classification->isTethered() && $childSubtree->node->classification->isTethered()) {
+                // TODO we assume here that the child node is tethered because the grandparent specifies that.
+                // this is not always fully correct and we could loosen the constraint by checking the node type schema
+                throw new TetheredNodesCannotBePartiallyCopied(sprintf('Cannot copy tethered node %s because child node %s is also tethered. Only standalone tethered nodes can be copied.', $subtree->node->aggregateId->value, $childSubtree->node->aggregateId->value), 1731264887);
+            }
             $commands = $this->commandsForSubtreeRecursively($transientNode, $childSubtree, $nodeAggregateIdMapping, $commands);
         }
 

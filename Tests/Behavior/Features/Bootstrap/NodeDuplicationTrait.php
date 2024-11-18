@@ -65,16 +65,18 @@ trait NodeDuplicationTrait
             ? NodeAggregateId::fromString($commandArguments['targetSucceedingSiblingNodeAggregateId'])
             : null;
 
-        $this->getObject(NodeDuplicationService::class)->copyNodesRecursively(
-            $this->currentContentRepository->id,
-            $workspaceName,
-            $sourceDimensionSpacePoint,
-            $sourceNodeAggregateId,
-            $targetDimensionSpacePoint,
-            NodeAggregateId::fromString($commandArguments['targetParentNodeAggregateId']),
-            isset($commandArguments['targetNodeName']) ? NodeName::fromString($commandArguments['targetNodeName']) : null,
-            $targetSucceedingSiblingNodeAggregateId,
-            NodeAggregateIdMapping::fromArray($commandArguments['nodeAggregateIdMapping'])
+        $this->tryCatchingExceptions(
+            fn () => $this->getObject(NodeDuplicationService::class)->copyNodesRecursively(
+                $this->currentContentRepository->id,
+                $workspaceName,
+                $sourceDimensionSpacePoint,
+                $sourceNodeAggregateId,
+                $targetDimensionSpacePoint,
+                NodeAggregateId::fromString($commandArguments['targetParentNodeAggregateId']),
+                isset($commandArguments['targetNodeName']) ? NodeName::fromString($commandArguments['targetNodeName']) : null,
+                $targetSucceedingSiblingNodeAggregateId,
+                NodeAggregateIdMapping::fromArray($commandArguments['nodeAggregateIdMapping'])
+            )
         );
     }
 }
