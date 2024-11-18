@@ -176,9 +176,7 @@ final class NodeDuplicationService
         }
 
         foreach ($subtree->children as $childSubtree) {
-            $commands = $commands->merge(
-                $this->commandsForSubtreeRecursively($transientNode, $childSubtree, $nodeAggregateIdMapping, $commands)
-            );
+            $commands = $this->commandsForSubtreeRecursively($transientNode, $childSubtree, $nodeAggregateIdMapping, $commands);
         }
 
         return $commands;

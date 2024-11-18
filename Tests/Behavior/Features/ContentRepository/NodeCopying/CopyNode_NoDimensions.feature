@@ -104,3 +104,36 @@ Feature: Copy nodes (without dimensions)
     And I expect this node to have the following references:
       | Name | Node                                    | Properties |
       | ref  | cs-identifier;sir-david-nodenborough;{} | null       |
+
+  Scenario: Node aggregate is copied children recursively
+    When I am in workspace "live" and dimension space point {}
+    When the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId | parentNodeAggregateId      | nodeTypeName                            | initialPropertyValues     |
+      | child-a         | sir-nodeward-nodington-iii | Neos.ContentRepository.Testing:Document | {}                        |
+      | child-a1        | child-a                    | Neos.ContentRepository.Testing:Document | {"title": "I am Node A1"} |
+      | child-a2        | child-a                    | Neos.ContentRepository.Testing:Document | {}                        |
+      | child-b         | sir-nodeward-nodington-iii | Neos.ContentRepository.Testing:Document | {}                        |
+
+    When copy nodes recursively is executed with payload:
+      | Key                                    | Value                                                                                                                                                                             |
+      | sourceDimensionSpacePoint              | {}                                                                                                                                                                                |
+      | sourceNodeAggregateId                  | "sir-nodeward-nodington-iii"                                                                                                                                                      |
+      | targetDimensionSpacePoint              | {}                                                                                                                                                                                |
+      | targetParentNodeAggregateId            | "nody-mc-nodeface"                                                                                                                                                                |
+      | targetNodeName                         | "target-nn"                                                                                                                                                                       |
+      | targetSucceedingSiblingnodeAggregateId | null                                                                                                                                                                              |
+      | nodeAggregateIdMapping                 | {"sir-nodeward-nodington-iii": "sir-nodeward-nodington-iii-copy", "child-a": "child-a-copy", "child-b": "child-b-copy", "child-a1": "child-a1-copy", "child-a2": "child-a2-copy"} |
+
+    And I expect the node aggregate "sir-nodeward-nodington-iii-copy" to exist
+    And I expect this node aggregate to have the child node aggregates ["child-a-copy","child-b-copy"]
+
+    And I expect the node aggregate "child-a-copy" to exist
+    And I expect this node aggregate to have the child node aggregates ["child-a1-copy","child-a2-copy"]
+
+    And I expect the node aggregate "child-b-copy" to exist
+    And I expect this node aggregate to have no child node aggregates
+
+    And I expect node aggregate identifier "child-a1-copy" to lead to node cs-identifier;child-a1-copy;{}
+    And I expect this node to have the following serialized properties:
+      | Key   | Type   | Value          |
+      | title | string | "I am Node A1" |
