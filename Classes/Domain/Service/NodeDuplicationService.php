@@ -55,7 +55,7 @@ final class NodeDuplicationService
 
         $subtree = $subgraph->findSubtree($sourceNodeAggregateId, FindSubtreeFilter::create());
         $targetParentNode = $subgraph->findNodeById($targetParentNodeAggregateId);
-        if ($targetParentNode === null) {
+        if ($targetParentNode === null || $subtree === null) {
             // todo simple constraint checks
             throw new \RuntimeException('todo');
         }

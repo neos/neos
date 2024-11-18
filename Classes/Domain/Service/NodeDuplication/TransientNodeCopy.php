@@ -129,7 +129,7 @@ final readonly class TransientNodeCopy
     private static function getTetheredDescendantNodeAggregateIds(array $subtreeChildren, NodeAggregateIdMapping $nodeAggregateIdMapping, NodePath $nodePath, NodeAggregateIdsByNodePaths $tetheredNodeAggregateIds): NodeAggregateIdsByNodePaths
     {
         foreach ($subtreeChildren as $childSubtree) {
-            if (!$childSubtree->node->classification->isTethered()) {
+            if (!$childSubtree->node->classification->isTethered() || !$childSubtree->node->name) {
                 continue;
             }
 
