@@ -20,9 +20,7 @@ use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 /**
  * An assignment of "old" to "new" NodeAggregateIds
  *
- * Usable for predefining NodeAggregateIds if multiple nodes are copied.
- *
- * @internal only needed for testing
+ * Usable for predefining NodeAggregateIds for deterministic testing, or fetching the newly inserted node.
  */
 final class NodeAggregateIdMapping implements \JsonSerializable
 {
@@ -33,7 +31,7 @@ final class NodeAggregateIdMapping implements \JsonSerializable
      *
      * @var array<string,NodeAggregateId>
      */
-    protected array $nodeAggregateIds = [];
+    private array $nodeAggregateIds = [];
 
     /**
      * @param array<string,NodeAggregateId> $nodeAggregateIds
@@ -51,6 +49,18 @@ final class NodeAggregateIdMapping implements \JsonSerializable
 
             $this->nodeAggregateIds[$oldNodeAggregateId->value] = $newNodeAggregateId;
         }
+    }
+
+    public static function createEmpty(): self
+    {
+        return new self([]);
+    }
+
+    public function withNewNodeAggregateId(NodeAggregateId $oldNodeAggregateId, NodeAggregateId $newNodeAggregateId): self
+    {
+        $nodeAggregateIds = $this->nodeAggregateIds;
+        $nodeAggregateIds[$oldNodeAggregateId->value] = $newNodeAggregateId;
+        return new self($nodeAggregateIds);
     }
 
     /**
@@ -71,13 +81,13 @@ final class NodeAggregateIdMapping implements \JsonSerializable
     }
 
     /**
-     * @param array<string,string> $array
+     * @param array<string,string|NodeAggregateId> $array
      */
     public static function fromArray(array $array): self
     {
         $nodeAggregateIds = [];
         foreach ($array as $oldNodeAggregateId => $newNodeAggregateId) {
-            $nodeAggregateIds[$oldNodeAggregateId] = NodeAggregateId::fromString($newNodeAggregateId);
+            $nodeAggregateIds[$oldNodeAggregateId] = $newNodeAggregateId instanceof NodeAggregateId ? $newNodeAggregateId : NodeAggregateId::fromString($newNodeAggregateId);
         }
 
         return new self($nodeAggregateIds);
