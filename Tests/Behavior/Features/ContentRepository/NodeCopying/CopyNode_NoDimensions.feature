@@ -6,6 +6,15 @@ Feature: Copy nodes (without dimensions)
     And using the following node types:
     """yaml
     'Neos.ContentRepository.Testing:Document':
+      properties:
+        title:
+          type: string
+        array:
+          type: array
+        uri:
+          type: GuzzleHttp\Psr7\Uri
+        date:
+          type: DateTimeImmutable
       references:
         ref: []
     """
@@ -20,41 +29,14 @@ Feature: Copy nodes (without dimensions)
       | Key             | Value                         |
       | nodeAggregateId | "lady-eleonode-rootford"      |
       | nodeTypeName    | "Neos.ContentRepository:Root" |
-    And the event NodeAggregateWithNodeWasCreated was published with payload:
-      | Key                         | Value                                     |
-      | workspaceName               | "live"                                    |
-      | contentStreamId             | "cs-identifier"                           |
-      | nodeAggregateId             | "sir-david-nodenborough"                  |
-      | nodeTypeName                | "Neos.ContentRepository.Testing:Document" |
-      | originDimensionSpacePoint   | {}                                        |
-      | coveredDimensionSpacePoints | [{}]                                      |
-      | parentNodeAggregateId       | "lady-eleonode-rootford"                  |
-      | nodeName                    | "document"                                |
-      | nodeAggregateClassification | "regular"                                 |
-    And the event NodeAggregateWithNodeWasCreated was published with payload:
-      | Key                         | Value                                     |
-      | workspaceName               | "live"                                    |
-      | contentStreamId             | "cs-identifier"                           |
-      | nodeAggregateId             | "nody-mc-nodeface"                        |
-      | nodeTypeName                | "Neos.ContentRepository.Testing:Document" |
-      | originDimensionSpacePoint   | {}                                        |
-      | coveredDimensionSpacePoints | [{}]                                      |
-      | parentNodeAggregateId       | "sir-david-nodenborough"                  |
-      | nodeName                    | "child-document"                          |
-      | nodeAggregateClassification | "regular"                                 |
-    And the event NodeAggregateWithNodeWasCreated was published with payload:
-      | Key                         | Value                                     |
-      | workspaceName               | "live"                                    |
-      | contentStreamId             | "cs-identifier"                           |
-      | nodeAggregateId             | "sir-nodeward-nodington-iii"              |
-      | nodeTypeName                | "Neos.ContentRepository.Testing:Document" |
-      | originDimensionSpacePoint   | {}                                        |
-      | coveredDimensionSpacePoints | [{}]                                      |
-      | parentNodeAggregateId       | "lady-eleonode-rootford"                  |
-      | nodeName                    | "esquire"                                 |
-      | nodeAggregateClassification | "regular"                                 |
 
-  Scenario: Copy
+    When the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId            | parentNodeAggregateId  | nodeTypeName                            |
+      | sir-david-nodenborough     | lady-eleonode-rootford | Neos.ContentRepository.Testing:Document |
+      | nody-mc-nodeface           | sir-david-nodenborough | Neos.ContentRepository.Testing:Document |
+      | sir-nodeward-nodington-iii | lady-eleonode-rootford | Neos.ContentRepository.Testing:Document |
+
+  Scenario: Simple singular node aggregate is copied
     When I am in workspace "live" and dimension space point {}
     When copy nodes recursively is executed with payload:
       | Key                                    | Value                                                             |
@@ -76,7 +58,32 @@ Feature: Copy nodes (without dimensions)
     And I expect this node aggregate to have no child node aggregates
     And I expect this node aggregate to have the parent node aggregates ["nody-mc-nodeface"]
 
-  Scenario: Copy References
+  Scenario: Singular node aggregate is copied with (complex) properties
+    When I am in workspace "live" and dimension space point {}
+    And the command SetNodeProperties is executed with payload:
+      | Key             | Value                                                                                                                                                                            |
+      | nodeAggregateId | "sir-nodeward-nodington-iii"                                                                                                                                                     |
+      | propertyValues  | {"title": "Original Text", "array": {"givenName":"Nody", "familyName":"McNodeface"}, "uri": {"__type": "GuzzleHttp\\Psr7\\Uri", "value": "https://neos.de"}, "date": {"__type": "DateTimeImmutable", "value": "2001-09-22T12:00:00+00:00"}} |
+
+    When copy nodes recursively is executed with payload:
+      | Key                                    | Value                                                             |
+      | sourceDimensionSpacePoint              | {}                                                                |
+      | sourceNodeAggregateId                  | "sir-nodeward-nodington-iii"                                      |
+      | targetDimensionSpacePoint              | {}                                                                |
+      | targetParentNodeAggregateId            | "nody-mc-nodeface"                                                |
+      | targetNodeName                         | "target-nn"                                                       |
+      | targetSucceedingSiblingnodeAggregateId | null                                                              |
+      | nodeAggregateIdMapping                 | {"sir-nodeward-nodington-iii": "sir-nodeward-nodington-iii-copy"} |
+
+    And I expect node aggregate identifier "sir-nodeward-nodington-iii-copy" to lead to node cs-identifier;sir-nodeward-nodington-iii-copy;{}
+    And I expect this node to have the following serialized properties:
+      | Key   | Type                | Value                                          |
+      | title | string              | "Original Text"                                |
+      | array | array               | {"givenName":"Nody","familyName":"McNodeface"} |
+      | date  | DateTimeImmutable   | "2001-09-22T12:00:00+00:00"                    |
+      | uri   | GuzzleHttp\Psr7\Uri | "https://neos.de"                              |
+
+  Scenario: Singular node aggregate is copied with references
     When I am in workspace "live" and dimension space point {}
     And the command SetNodeReferences is executed with payload:
       | Key                   | Value                                                                            |
