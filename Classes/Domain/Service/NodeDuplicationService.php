@@ -20,6 +20,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\References;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Subtree;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
+use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateCurrentlyDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeName;
 use Neos\ContentRepository\Core\SharedModel\Node\ReferenceName;
@@ -53,11 +54,14 @@ final class NodeDuplicationService
 
         $subgraph = $contentRepository->getContentGraph($workspaceName)->getSubgraph($sourceDimensionSpacePoint, VisibilityConstraints::withoutRestrictions());
 
-        $subtree = $subgraph->findSubtree($sourceNodeAggregateId, FindSubtreeFilter::create());
         $targetParentNode = $subgraph->findNodeById($targetParentNodeAggregateId);
-        if ($targetParentNode === null || $subtree === null) {
-            // todo simple constraint checks
-            throw new \RuntimeException('todo');
+        if ($targetParentNode === null) {
+            throw new NodeAggregateCurrentlyDoesNotExist(sprintf('The target parent node aggregate "%s" does not exist', $targetParentNodeAggregateId->value));
+        }
+
+        $subtree = $subgraph->findSubtree($sourceNodeAggregateId, FindSubtreeFilter::create());
+        if ($subtree === null) {
+            throw new NodeAggregateCurrentlyDoesNotExist(sprintf('The source node aggregate "%s" does not exist', $sourceNodeAggregateId->value));
         }
 
         $transientNodeCopy = TransientNodeCopy::forEntry(
@@ -119,6 +123,7 @@ final class NodeDuplicationService
                     $transientParentNode->workspaceName,
                     $transientNode->aggregateId,
                     $transientParentNode->originDimensionSpacePoint,
+                    // todo skip properties not in schema
                     PropertyValuesToWrite::fromArray(
                         iterator_to_array($subtree->node->properties)
                     ),
