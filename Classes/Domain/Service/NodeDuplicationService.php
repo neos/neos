@@ -45,7 +45,6 @@ final class NodeDuplicationService
         NodeAggregateId $sourceNodeAggregateId,
         OriginDimensionSpacePoint $targetDimensionSpacePoint,
         NodeAggregateId $targetParentNodeAggregateId,
-        ?NodeName $targetNodeName,
         ?NodeAggregateId $targetSucceedingSiblingNodeAggregateId,
         NodeAggregateIdMapping $nodeAggregateIdMapping
     ): void {
@@ -85,10 +84,6 @@ final class NodeDuplicationService
                 $subgraph->findReferences($subtree->node->aggregateId, FindReferencesFilter::create())
             )
         );
-
-        if ($targetNodeName) {
-            $createCopyOfNodeCommand = $createCopyOfNodeCommand->withNodeName($targetNodeName);
-        }
 
         $createCopyOfNodeCommand = $createCopyOfNodeCommand->withTetheredDescendantNodeAggregateIds(
             $transientNodeCopy->tetheredNodeAggregateIds

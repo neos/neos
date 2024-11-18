@@ -44,14 +44,13 @@ Feature: Copy nodes (without dimensions)
       | sourceNodeAggregateId                  | "sir-nodeward-nodington-iii"                                      |
       | targetDimensionSpacePoint              | {}                                                                |
       | targetParentNodeAggregateId            | "nody-mc-nodeface"                                                |
-      | targetNodeName                         | "target-nn"                                                       |
       | targetSucceedingSiblingnodeAggregateId | null                                                              |
       | nodeAggregateIdMapping                 | {"sir-nodeward-nodington-iii": "sir-nodeward-nodington-iii-copy"} |
 
     Then I expect node aggregate identifier "sir-nodeward-nodington-iii-copy" to lead to node cs-identifier;sir-nodeward-nodington-iii-copy;{}
     And I expect the node aggregate "sir-nodeward-nodington-iii-copy" to exist
     And I expect this node aggregate to be classified as "regular"
-    And I expect this node aggregate to be named "target-nn"
+    And I expect this node aggregate to be unnamed
     And I expect this node aggregate to be of type "Neos.ContentRepository.Testing:Document"
     And I expect this node aggregate to occupy dimension space points [[]]
     And I expect this node aggregate to disable dimension space points []
@@ -71,7 +70,6 @@ Feature: Copy nodes (without dimensions)
       | sourceNodeAggregateId                  | "sir-nodeward-nodington-iii"                                      |
       | targetDimensionSpacePoint              | {}                                                                |
       | targetParentNodeAggregateId            | "nody-mc-nodeface"                                                |
-      | targetNodeName                         | "target-nn"                                                       |
       | targetSucceedingSiblingnodeAggregateId | null                                                              |
       | nodeAggregateIdMapping                 | {"sir-nodeward-nodington-iii": "sir-nodeward-nodington-iii-copy"} |
 
@@ -96,7 +94,6 @@ Feature: Copy nodes (without dimensions)
       | sourceNodeAggregateId                  | "sir-nodeward-nodington-iii"                                      |
       | targetDimensionSpacePoint              | {}                                                                |
       | targetParentNodeAggregateId            | "nody-mc-nodeface"                                                |
-      | targetNodeName                         | "target-nn"                                                       |
       | targetSucceedingSiblingnodeAggregateId | null                                                              |
       | nodeAggregateIdMapping                 | {"sir-nodeward-nodington-iii": "sir-nodeward-nodington-iii-copy"} |
 
