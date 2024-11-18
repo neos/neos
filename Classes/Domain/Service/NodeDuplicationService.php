@@ -60,12 +60,11 @@ final class NodeDuplicationService
             throw new \RuntimeException('todo');
         }
 
-        $transientNodeCopy = TransientNodeCopy::forRegular(
+        $transientNodeCopy = TransientNodeCopy::forEntry(
             $subtree,
             $workspaceName,
             $targetDimensionSpacePoint,
-            $nodeAggregateIdMapping,
-            $contentRepository->getNodeTypeManager()
+            $nodeAggregateIdMapping
         );
 
         $createCopyOfNodeCommand = CreateNodeAggregateWithNode::create(
