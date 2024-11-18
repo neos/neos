@@ -38,7 +38,6 @@ final class NodeDuplicationService
     ) {
     }
 
-    // todo, add additional property values for first node!
     public function copyNodesRecursively(
         ContentRepositoryId $contentRepositoryId,
         WorkspaceName $workspaceName,
