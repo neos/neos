@@ -11,13 +11,19 @@ use Neos\ContentRepository\Core\Feature\NodeCreation\Dto\NodeAggregateIdsByNodeP
 use Neos\ContentRepository\Core\Feature\NodeDuplication\Dto\NodeAggregateIdMapping;
 use Neos\ContentRepository\Core\Feature\NodeModification\Command\SetNodeProperties;
 use Neos\ContentRepository\Core\Feature\NodeModification\Dto\PropertyValuesToWrite;
+use Neos\ContentRepository\Core\Feature\NodeReferencing\Dto\NodeReferencesForName;
+use Neos\ContentRepository\Core\Feature\NodeReferencing\Dto\NodeReferencesToWrite;
+use Neos\ContentRepository\Core\Feature\NodeReferencing\Dto\NodeReferenceToWrite;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindReferencesFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindSubtreeFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodePath;
+use Neos\ContentRepository\Core\Projection\ContentGraph\References;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Subtree;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeName;
+use Neos\ContentRepository\Core\SharedModel\Node\ReferenceName;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Neos\Domain\Exception\TetheredNodesCannotBePartiallyCopied;
@@ -39,8 +45,8 @@ final class NodeDuplicationService
         NodeAggregateId $sourceNodeAggregateId,
         OriginDimensionSpacePoint $targetDimensionSpacePoint,
         NodeAggregateId $targetParentNodeAggregateId,
-        ?NodeName $targetNodeName, // todo
-        ?NodeAggregateId $targetSucceedingSiblingNodeAggregateId,  // todo
+        ?NodeName $targetNodeName,
+        ?NodeAggregateId $targetSucceedingSiblingNodeAggregateId,
         NodeAggregateIdMapping $nodeAggregateIdMapping
     ): void {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
@@ -74,7 +80,9 @@ final class NodeDuplicationService
             initialPropertyValues: PropertyValuesToWrite::fromArray(
                 iterator_to_array($subtree->node->properties)
             ),
-        // todo references:
+            references: $this->serializeProjectedReferences(
+                $subgraph->findReferences($subtree->node->aggregateId, FindReferencesFilter::create())
+            )
         );
 
         if ($targetNodeName) {
@@ -196,5 +204,23 @@ final class NodeDuplicationService
         }
 
         return $tetheredNodeAggregateIds;
+    }
+
+    private function serializeProjectedReferences(References $references): NodeReferencesToWrite
+    {
+        $serializedReferencesByName = [];
+        foreach ($references as $reference) {
+            if (!isset($serializedReferencesByName[$reference->name->value])) {
+                $serializedReferencesByName[$reference->name->value] = [];
+            }
+            $serializedReferencesByName[$reference->name->value][] = NodeReferenceToWrite::fromTargetAndProperties($reference->node->aggregateId, $reference->properties?->count() > 0 ? PropertyValuesToWrite::fromArray(iterator_to_array($reference->properties)) : PropertyValuesToWrite::createEmpty());
+        }
+
+        $serializedReferences = [];
+        foreach ($serializedReferencesByName as $name => $referenceObjects) {
+            $serializedReferences[] = NodeReferencesForName::fromReferences(ReferenceName::fromString($name), $referenceObjects);
+        }
+
+        return NodeReferencesToWrite::fromArray($serializedReferences);
     }
 }
