@@ -78,20 +78,6 @@ final readonly class TransientNodeCopy
             throw new \InvalidArgumentException(sprintf('Name "%s" doesnt seem to be a point to a tethered node of "%s", could not determine deterministic node aggregate id.', $nodeName->value, $this->aggregateId->value));
         }
 
-        // keep tethered node aggregate ids from parent
-        $descendantTetheredNodeAggregateIds = NodeAggregateIdsByNodePaths::createEmpty();
-        foreach ($this->tetheredNodeAggregateIds->getNodeAggregateIds() as $stringNodePath => $descendantNodeAggregateId) {
-            $nodePath = NodePath::fromString($stringNodePath);
-            $pathParts = $nodePath->getParts();
-            $firstPart = array_shift($pathParts);
-            if ($firstPart?->equals($nodeName) && count($pathParts)) {
-                $descendantTetheredNodeAggregateIds = $descendantTetheredNodeAggregateIds->add(
-                    NodePath::fromNodeNames(...$pathParts),
-                    $descendantNodeAggregateId
-                );
-            }
-        }
-
         return new self(
             $nodeAggregateId,
             $this->workspaceName,
@@ -101,7 +87,8 @@ final readonly class TransientNodeCopy
                 $subtree->children,
                 $this->nodeAggregateIdMapping,
                 NodePath::createEmpty(),
-                $descendantTetheredNodeAggregateIds
+                // we don't have to keep the relative $this->tetheredNodeAggregateIds for the current $nodName as we will just recalculate them from the subtree
+                NodeAggregateIdsByNodePaths::createEmpty()
             ),
         );
     }

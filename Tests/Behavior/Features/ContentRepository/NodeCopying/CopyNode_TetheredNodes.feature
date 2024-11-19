@@ -39,7 +39,7 @@ Feature: Copy nodes with tethered nodes
       | nody-mc-nodeface         | sir-david-nodenborough | Neos.ContentRepository.Testing:DocumentWithoutTetheredChildren |                                                                                                     |
       | nodimus-primus           | lady-eleonode-rootford | Neos.ContentRepository.Testing:DocumentWithoutTetheredChildren |                                                                                                     |
       | sir-nodeward-nodington-i | nodimus-primus         | Neos.ContentRepository.Testing:DocumentWithTethered            | {"tethered": "nodewyn-tetherton"}                                                                   |
-      | node-wan-kenodi          | lady-eleonode-rootford | Neos.ContentRepository.Testing:RootDocument                    | {"tethered-document": "tethered-document", "tethered-document/tethered": "tethered-document-child"} |
+      | node-wan-kenodi          | sir-david-nodenborough | Neos.ContentRepository.Testing:RootDocument                    | {"tethered-document": "tethered-document", "tethered-document/tethered": "tethered-document-child"} |
 
   Scenario: Coping a tethered node turns it into a regular node
     And I expect the node aggregate "nodewyn-tetherton" to exist
@@ -117,6 +117,7 @@ Feature: Copy nodes with tethered nodes
     And I expect this node aggregate to be of type "Neos.ContentRepository.Testing:DocumentWithTethered"
     And I expect this node aggregate to occupy dimension space points [[]]
     And I expect this node aggregate to disable dimension space points []
+    And I expect this node aggregate to have the child node aggregates ["tethered-document-child-copy"]
 
     And I expect the node aggregate "tethered-document-child-copy" to exist
     And I expect this node aggregate to be classified as "tethered"
@@ -191,3 +192,22 @@ Feature: Copy nodes with tethered nodes
     And I expect this node to have the following references:
       | Name | Node                                    | Properties |
       | ref  | cs-identifier;sir-david-nodenborough;{} | null       |
+
+  Scenario: Properties are copied for deeply nested tethered nodes
+    And the command SetNodeProperties is executed with payload:
+      | Key             | Value                      |
+      | nodeAggregateId | "tethered-document-child"  |
+      | propertyValues  | {"title": "Original Text"} |
+
+    When copy nodes recursively is executed with payload:
+      | Key                         | Value                                                                                                                                                                                                          |
+      | sourceDimensionSpacePoint   | {}                                                                                                                                                                                                             |
+      | sourceNodeAggregateId       | "sir-david-nodenborough"                                                                                                                                                                                       |
+      | targetDimensionSpacePoint   | {}                                                                                                                                                                                                             |
+      | targetParentNodeAggregateId | "nodimus-primus"                                                                                                                                                                                               |
+      | nodeAggregateIdMapping      | {"sir-david-nodenborough": "sir-david-nodenborough-copy", "node-wan-kenodi": "node-wan-kenodi-copy", "tethered-document": "tethered-document-copy", "tethered-document-child": "tethered-document-child-copy"} |
+
+    And I expect node aggregate identifier "tethered-document-child-copy" to lead to node cs-identifier;tethered-document-child-copy;{}
+    And I expect this node to have the following properties:
+      | Key   | Value           |
+      | title | "Original Text" |
