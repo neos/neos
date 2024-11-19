@@ -59,7 +59,7 @@ final readonly class TransientNodeCopy
             self::getTetheredDescendantNodeAggregateIds(
                 $subtree->children,
                 $nodeAggregateIdMapping,
-                NodePath::forRoot(),
+                NodePath::createEmpty(),
                 NodeAggregateIdsByNodePaths::createEmpty()
             )
         );
@@ -100,7 +100,7 @@ final readonly class TransientNodeCopy
             self::getTetheredDescendantNodeAggregateIds(
                 $subtree->children,
                 $this->nodeAggregateIdMapping,
-                NodePath::forRoot(),
+                NodePath::createEmpty(),
                 $descendantTetheredNodeAggregateIds
             ),
         );
@@ -118,7 +118,7 @@ final readonly class TransientNodeCopy
             self::getTetheredDescendantNodeAggregateIds(
                 $subtree->children,
                 $this->nodeAggregateIdMapping,
-                NodePath::forRoot(),
+                NodePath::createEmpty(),
                 NodeAggregateIdsByNodePaths::createEmpty()
             ),
         );

@@ -36,7 +36,7 @@ final class NodeAggregateIdMapping implements \JsonSerializable
     /**
      * @param array<string,NodeAggregateId> $nodeAggregateIds
      */
-    public function __construct(array $nodeAggregateIds)
+    private function __construct(array $nodeAggregateIds)
     {
         foreach ($nodeAggregateIds as $oldNodeAggregateId => $newNodeAggregateId) {
             $oldNodeAggregateId = NodeAggregateId::fromString($oldNodeAggregateId);
