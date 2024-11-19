@@ -99,9 +99,36 @@ final class NodeDuplicationService
             throw new NodeAggregateCurrentlyDoesNotExist(sprintf('The source node aggregate "%s" does not exist', $sourceNodeAggregateId->value), 1732006772);
         }
 
-        $transientNodeCopy = TransientNodeCopy::forEntry(
+        $commands = $this->calculateCopyNodesRecursively(
             $subtree,
+            $subgraph,
             $workspaceName,
+            $targetDimensionSpacePoint,
+            $targetParentNodeAggregateId,
+            $targetSucceedingSiblingNodeAggregateId,
+            $nodeAggregateIdMapping
+        );
+
+        foreach ($commands as $command) {
+            $contentRepository->handle($command);
+        }
+    }
+
+    /**
+     * @internal implementation detail of {@see NodeDuplicationService::copyNodesRecursively}, exposed for EXPERIMENTAL use cases, the API can change any time!
+     */
+    public function calculateCopyNodesRecursively(
+        Subtree $subtreeToCopy,
+        ContentSubgraphInterface $subgraph,
+        WorkspaceName $targetWorkspaceName,
+        OriginDimensionSpacePoint $targetDimensionSpacePoint,
+        NodeAggregateId $targetParentNodeAggregateId,
+        ?NodeAggregateId $targetSucceedingSiblingNodeAggregateId,
+        ?NodeAggregateIdMapping $nodeAggregateIdMapping = null
+    ): Commands {
+        $transientNodeCopy = TransientNodeCopy::forEntry(
+            $subtreeToCopy,
+            $targetWorkspaceName,
             $targetDimensionSpacePoint,
             $nodeAggregateIdMapping ?? NodeAggregateIdMapping::createEmpty()
         );
@@ -109,16 +136,16 @@ final class NodeDuplicationService
         $createCopyOfNodeCommand = CreateNodeAggregateWithNode::create(
             $transientNodeCopy->workspaceName,
             $transientNodeCopy->aggregateId,
-            $subtree->node->nodeTypeName,
+            $subtreeToCopy->node->nodeTypeName,
             $targetDimensionSpacePoint,
             $targetParentNodeAggregateId,
             succeedingSiblingNodeAggregateId: $targetSucceedingSiblingNodeAggregateId,
             // todo skip properties not in schema
             initialPropertyValues: PropertyValuesToWrite::fromArray(
-                iterator_to_array($subtree->node->properties)
+                iterator_to_array($subtreeToCopy->node->properties)
             ),
             references: $this->serializeProjectedReferences(
-                $subgraph->findReferences($subtree->node->aggregateId, FindReferencesFilter::create())
+                $subgraph->findReferences($subtreeToCopy->node->aggregateId, FindReferencesFilter::create())
             )
         );
 
@@ -128,7 +155,7 @@ final class NodeDuplicationService
 
         $commands = Commands::create($createCopyOfNodeCommand);
 
-        foreach ($subtree->node->tags->withoutInherited() as $explicitTag) {
+        foreach ($subtreeToCopy->node->tags->withoutInherited() as $explicitTag) {
             $commands = $commands->append(
                 TagSubtree::create(
                     $transientNodeCopy->workspaceName,
@@ -140,18 +167,16 @@ final class NodeDuplicationService
             );
         }
 
-        foreach ($subtree->children as $childSubtree) {
-            if ($subtree->node->classification->isTethered() && $childSubtree->node->classification->isTethered()) {
+        foreach ($subtreeToCopy->children as $childSubtree) {
+            if ($subtreeToCopy->node->classification->isTethered() && $childSubtree->node->classification->isTethered()) {
                 // TODO we assume here that the child node is tethered because the grandparent specifies that.
                 // this is not always fully correct and we could loosen the constraint by checking the node type schema
-                throw new TetheredNodesCannotBePartiallyCopied(sprintf('Cannot copy tethered node %s because child node %s is also tethered. Only standalone tethered nodes can be copied.', $subtree->node->aggregateId->value, $childSubtree->node->aggregateId->value), 1731264887);
+                throw new TetheredNodesCannotBePartiallyCopied(sprintf('Cannot copy tethered node %s because child node %s is also tethered. Only standalone tethered nodes can be copied.', $subtreeToCopy->node->aggregateId->value, $childSubtree->node->aggregateId->value), 1731264887);
             }
             $commands = $this->commandsForSubtreeRecursively($transientNodeCopy, $childSubtree, $subgraph, $commands);
         }
 
-        foreach ($commands as $command) {
-            $contentRepository->handle($command);
-        }
+        return $commands;
     }
 
     private function commandsForSubtreeRecursively(TransientNodeCopy $transientParentNode, Subtree $subtree, ContentSubgraphInterface $subgraph, Commands $commands): Commands
