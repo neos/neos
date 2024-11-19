@@ -61,9 +61,9 @@ Feature: Copy nodes (without dimensions)
   Scenario: Singular node aggregate is copied with (complex) properties
     When I am in workspace "live" and dimension space point {}
     And the command SetNodeProperties is executed with payload:
-      | Key             | Value                                                                                                                                                                            |
-      | nodeAggregateId | "sir-nodeward-nodington-iii"                                                                                                                                                     |
-      | propertyValues  | {"title": "Original Text", "array": {"givenName":"Nody", "familyName":"McNodeface"}, "uri": {"__type": "GuzzleHttp\\Psr7\\Uri", "value": "https://neos.de"}, "date": {"__type": "DateTimeImmutable", "value": "2001-09-22T12:00:00+00:00"}} |
+      | Key             | Value                                                                                                                                                                                                                                           |
+      | nodeAggregateId | "sir-nodeward-nodington-iii"                                                                                                                                                                                                                    |
+      | propertyValues  | {"title": "Original Text", "array": {"givenName":"Nody", "familyName":"McNodeface"}, "uri": {"__type": "GuzzleHttp\\\\Psr7\\\\Uri", "value": "https://neos.de"}, "date": {"__type": "DateTimeImmutable", "value": "2001-09-22T12:00:00+00:00"}} |
 
     When copy nodes recursively is executed with payload:
       | Key                                    | Value                                                             |
