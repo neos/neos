@@ -19,7 +19,7 @@ commands that may be available, use::
 
   ./flow help
 
-The following reference was automatically generated from code on 2024-11-08
+The following reference was automatically generated from code on 2024-11-19
 
 
 .. _`Neos Command Reference: NEOS.FLOW`:
@@ -2154,87 +2154,6 @@ Package *NEOS.NEOS*
 -------------------
 
 
-.. _`Neos Command Reference: NEOS.NEOS neos.neos:cr:export`:
-
-``neos.neos:cr:export``
-***********************
-
-**Export the events from the specified content repository**
-
-
-
-Arguments
-^^^^^^^^^
-
-``--path``
-  The path for storing the result
-
-
-
-Options
-^^^^^^^
-
-``--content-repository``
-  The content repository identifier
-``--verbose``
-  If set, all notices will be rendered
-
-
-
-
-
-.. _`Neos Command Reference: NEOS.NEOS neos.neos:cr:import`:
-
-``neos.neos:cr:import``
-***********************
-
-**Import the events from the path into the specified content repository**
-
-
-
-Arguments
-^^^^^^^^^
-
-``--path``
-  The path of the stored events like resource://Neos.Demo/Private/Content
-
-
-
-Options
-^^^^^^^
-
-``--content-repository``
-  The content repository identifier
-``--verbose``
-  If set, all notices will be rendered
-
-
-
-
-
-.. _`Neos Command Reference: NEOS.NEOS neos.neos:cr:prune`:
-
-``neos.neos:cr:prune``
-**********************
-
-**This will completely prune the data of the specified content repository.**
-
-
-
-
-
-Options
-^^^^^^^
-
-``--content-repository``
-  Name of the content repository where the data should be pruned from.
-``--force``
-  Prune the cr without confirmation. This cannot be reverted!
-
-
-
-
-
 .. _`Neos Command Reference: NEOS.NEOS neos.neos:domain:activate`:
 
 ``neos.neos:domain:activate``
@@ -2434,6 +2353,73 @@ Arguments
 
 
 
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:site:exportall`:
+
+``neos.neos:site:exportall``
+****************************
+
+**Export sites**
+
+This command exports all sites of the content repository.
+
+If a path is specified, this command creates the directory if needed and exports into that.
+
+If a package key is specified, this command exports to the private resources
+directory of the given package (Resources/Private/Content).
+
+
+
+Options
+^^^^^^^
+
+``--package-key``
+  Package key specifying the package containing the sites content
+``--path``
+  relative or absolute path and filename to the export files
+``--content-repository``
+  contentRepository
+``--verbose``
+  verbose
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:site:importall`:
+
+``neos.neos:site:importall``
+****************************
+
+**Import sites**
+
+This command allows importing sites from the given path/package. The format must
+be identical to that produced by the exportAll command.
+
+If a path is specified, this command expects the corresponding directory to contain the exported files
+
+If a package key is specified, this command expects the export files to be located in the private resources
+directory of the given package (Resources/Private/Content).
+
+**Note that the live workspace has to be empty prior to importing.**
+
+
+
+Options
+^^^^^^^
+
+``--package-key``
+  Package key specifying the package containing the sites content
+``--path``
+  relative or absolute path and filename to the export files
+``--content-repository``
+  contentRepository
+``--verbose``
+  verbose
+
+
+
+
+
 .. _`Neos Command Reference: NEOS.NEOS neos.neos:site:list`:
 
 ``neos.neos:site:list``
@@ -2449,22 +2435,26 @@ Arguments
 
 
 
-.. _`Neos Command Reference: NEOS.NEOS neos.neos:site:prune`:
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:site:pruneall`:
 
-``neos.neos:site:prune``
-************************
+``neos.neos:site:pruneall``
+***************************
 
-**Remove site with content and related data (with globbing)**
-
-In the future we need some more sophisticated cleanup.
-
-Arguments
-^^^^^^^^^
-
-``--site-node``
-  Name for site root nodes to clear only content of this sites (globbing is supported)
+**This will completely prune the data of the specified content repository and remove all site-records.**
 
 
+
+
+
+Options
+^^^^^^^
+
+``--content-repository``
+  Prune the cr without confirmation. This cannot be reverted!
+``--force``
+  force
+``--verbose``
+  verbose
 
 
 
@@ -2771,6 +2761,7 @@ Options
 
 Without explicit workspace roles, only administrators can change the corresponding workspace.
 With this command, a user or group (represented by a Flow role identifier) can be granted one of the two roles:
+- viewer: Can read from the workspace
 - collaborator: Can read from and write to the workspace
 - manager: Can read from and write to the workspace and manage it (i.e. change metadata & role assignments)
 
@@ -2790,7 +2781,7 @@ Arguments
 ``--subject``
   The user/group that should be assigned. By default, this is expected to be a Flow role identifier (e.g. 'Neos.Neos:AbstractEditor') – if $type is 'user', this is the username (aka account identifier) of a Neos user
 ``--role``
-  Role to assign, either 'collaborator' or 'manager' – a collaborator can read and write from/to the workspace. A manager can _on top_ change the workspace metadata & roles itself
+  Role to assign, either 'viewer', 'collaborator' or 'manager' – a viewer can only read from the workspace, a collaborator can read and write from/to the workspace. A manager can _on top_ change the workspace metadata & roles itself
 
 
 

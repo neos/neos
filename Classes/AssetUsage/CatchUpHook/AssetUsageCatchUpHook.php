@@ -118,17 +118,23 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
         $contentGraph = $this->contentGraphReadModel->getContentGraph($workspaceName);
 
         foreach ($dimensionSpacePoints as $dimensionSpacePoint) {
+            $this->assetUsageIndexingService->removeIndexForWorkspaceNameNodeAggregateIdAndDimensionSpacePoint(
+                $this->contentRepositoryId,
+                $workspaceName,
+                $nodeAggregateId,
+                $dimensionSpacePoint
+            );
+
             $subgraph = $contentGraph->getSubgraph($dimensionSpacePoint, VisibilityConstraints::withoutRestrictions());
-            $node = $subgraph->findNodeById($nodeAggregateId);
             $descendants = $subgraph->findDescendantNodes($nodeAggregateId, FindDescendantNodesFilter::create());
 
-            $nodes = array_merge([$node], iterator_to_array($descendants));
-
-            /** @var Node $node */
-            foreach ($nodes as $node) {
-                $this->assetUsageIndexingService->removeIndexForNode(
+            /** @var Node $descendant */
+            foreach ($descendants as $descendant) {
+                $this->assetUsageIndexingService->removeIndexForWorkspaceNameNodeAggregateIdAndDimensionSpacePoint(
                     $this->contentRepositoryId,
-                    $node
+                    $descendant->workspaceName,
+                    $descendant->aggregateId,
+                    $descendant->dimensionSpacePoint
                 );
             }
         }
