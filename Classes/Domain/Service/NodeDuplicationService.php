@@ -91,12 +91,12 @@ final class NodeDuplicationService
 
         $targetParentNode = $subgraph->findNodeById($targetParentNodeAggregateId);
         if ($targetParentNode === null) {
-            throw new NodeAggregateCurrentlyDoesNotExist(sprintf('The target parent node aggregate "%s" does not exist', $targetParentNodeAggregateId->value));
+            throw new NodeAggregateCurrentlyDoesNotExist(sprintf('The target parent node aggregate "%s" does not exist', $targetParentNodeAggregateId->value), 1732006769);
         }
 
         $subtree = $subgraph->findSubtree($sourceNodeAggregateId, FindSubtreeFilter::create());
         if ($subtree === null) {
-            throw new NodeAggregateCurrentlyDoesNotExist(sprintf('The source node aggregate "%s" does not exist', $sourceNodeAggregateId->value));
+            throw new NodeAggregateCurrentlyDoesNotExist(sprintf('The source node aggregate "%s" does not exist', $sourceNodeAggregateId->value), 1732006772);
         }
 
         $transientNodeCopy = TransientNodeCopy::forEntry(

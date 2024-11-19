@@ -1,5 +1,5 @@
-@contentrepository @adapters=DoctrineDBAL
-Feature: Copy nodes (without dimensions)
+@contentrepository
+Feature: Copy nodes constraint checks
 
   Background:
     Given using no content dimensions
