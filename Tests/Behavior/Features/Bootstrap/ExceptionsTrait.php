@@ -12,6 +12,7 @@ declare(strict_types=1);
  * source code.
  */
 
+use Behat\Gherkin\Node\PyStringNode;
 use PHPUnit\Framework\Assert;
 
 /**
@@ -37,12 +38,30 @@ trait ExceptionsTrait
     }
 
     /**
-     * @Then an exception :exceptionMessage should be thrown
+     * @Then an exception of type :expectedShortExceptionName should be thrown with code :code
+     * @Then an exception of type :expectedShortExceptionName should be thrown with message:
+     * @Then an exception of type :expectedShortExceptionName should be thrown
      */
-    public function anExceptionShouldBeThrown(string $exceptionMessage): void
+    public function anExceptionShouldBeThrown(string $expectedShortExceptionName, ?int $code = null, PyStringNode $expectedExceptionMessage = null): void
     {
         Assert::assertNotNull($this->lastCaughtException, 'Expected an exception but none was thrown');
-        Assert::assertSame($exceptionMessage, $this->lastCaughtException->getMessage());
+        $lastCaughtExceptionShortName = (new \ReflectionClass($this->lastCaughtException))->getShortName();
+        Assert::assertSame($expectedShortExceptionName, $lastCaughtExceptionShortName, sprintf('Actual exception: %s (%s): %s', get_debug_type($this->lastCaughtException), $this->lastCaughtException->getCode(), $this->lastCaughtException->getMessage()));
+        if ($expectedExceptionMessage !== null) {
+            Assert::assertSame($expectedExceptionMessage->getRaw(), $this->lastCaughtException->getMessage());
+        }
+        if ($code !== null) {
+            Assert::assertSame($code, $this->lastCaughtException->getCode());
+        }
+        $this->lastCaughtException = null;
+    }
+
+    /**
+     * @Then no exception should be thrown
+     */
+    public function noExceptionShouldBeThrown(): void
+    {
+        Assert::assertNull($this->lastCaughtException, 'Expected no exception but one was thrown');
         $this->lastCaughtException = null;
     }
 
