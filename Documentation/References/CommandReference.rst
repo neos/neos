@@ -19,7 +19,7 @@ commands that may be available, use::
 
   ./flow help
 
-The following reference was automatically generated from code on 2024-11-12
+The following reference was automatically generated from code on 2024-11-19
 
 
 .. _`Neos Command Reference: NEOS.FLOW`:
@@ -2761,6 +2761,7 @@ Options
 
 Without explicit workspace roles, only administrators can change the corresponding workspace.
 With this command, a user or group (represented by a Flow role identifier) can be granted one of the two roles:
+- viewer: Can read from the workspace
 - collaborator: Can read from and write to the workspace
 - manager: Can read from and write to the workspace and manage it (i.e. change metadata & role assignments)
 
@@ -2780,7 +2781,7 @@ Arguments
 ``--subject``
   The user/group that should be assigned. By default, this is expected to be a Flow role identifier (e.g. 'Neos.Neos:AbstractEditor') – if $type is 'user', this is the username (aka account identifier) of a Neos user
 ``--role``
-  Role to assign, either 'collaborator' or 'manager' – a collaborator can read and write from/to the workspace. A manager can _on top_ change the workspace metadata & roles itself
+  Role to assign, either 'viewer', 'collaborator' or 'manager' – a viewer can only read from the workspace, a collaborator can read and write from/to the workspace. A manager can _on top_ change the workspace metadata & roles itself
 
 
 
