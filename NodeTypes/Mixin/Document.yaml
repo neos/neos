@@ -66,5 +66,3 @@
         inspector:
           group: 'visibility'
           position: 40
-  options:
-    moveNodeStrategy: STRATEGY_GATHER_ALL

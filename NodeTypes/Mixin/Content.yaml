@@ -24,5 +24,3 @@
         inspector:
           editorOptions:
             baseNodeType: 'Neos.Neos:Content'
-  options:
-    moveNodeStrategy: STRATEGY_SCATTER
