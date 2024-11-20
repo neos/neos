@@ -14,18 +14,18 @@ use Behat\Behat\Context\Context as BehatContext;
 use Neos\Behat\FlowBootstrapTrait;
 use Neos\Behat\FlowEntitiesTrait;
 use Neos\ContentRepository\BehavioralTests\TestSuite\Behavior\CRBehavioralTestsSubjectProvider;
-use Neos\ContentRepository\BehavioralTests\TestSuite\Behavior\GherkinPyStringNodeBasedNodeTypeManagerFactory;
-use Neos\ContentRepository\BehavioralTests\TestSuite\Behavior\GherkinTableNodeBasedContentDimensionSourceFactory;
 use Neos\ContentRepository\Core\ContentRepository;
-use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\Factory\ContentRepositoryServiceFactoryInterface;
 use Neos\ContentRepository\Core\Factory\ContentRepositoryServiceInterface;
+use Neos\ContentRepository\Core\Feature\NodeModification\Dto\PropertyValuesToWrite;
+use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\TestSuite\Behavior\Features\Bootstrap\CRTestSuiteTrait;
 use Neos\ContentRepository\TestSuite\Behavior\Features\Bootstrap\MigrationsTrait;
+use Neos\ContentRepository\TestSuite\Fakes\FakeNodeTypeManagerFactory;
+use Neos\ContentRepository\TestSuite\Fakes\FakeContentDimensionSourceFactory;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
-use Neos\Flow\Utility\Environment;
-use Neos\ContentRepository\Core\Feature\NodeModification\Dto\PropertyValuesToWrite;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
+use Neos\Flow\Utility\Environment;
 
 class FeatureContext implements BehatContext
 {
@@ -77,8 +77,8 @@ class FeatureContext implements BehatContext
      */
     public function resetContentRepositoryComponents(): void
     {
-        GherkinTableNodeBasedContentDimensionSourceFactory::reset();
-        GherkinPyStringNodeBasedNodeTypeManagerFactory::reset();
+        FakeContentDimensionSourceFactory::reset();
+        FakeNodeTypeManagerFactory::reset();
     }
 
     /**
@@ -110,8 +110,8 @@ class FeatureContext implements BehatContext
     ): ContentRepository {
         $this->contentRepositoryRegistry->resetFactoryInstance($contentRepositoryId);
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
-        GherkinTableNodeBasedContentDimensionSourceFactory::reset();
-        GherkinPyStringNodeBasedNodeTypeManagerFactory::reset();
+        FakeContentDimensionSourceFactory::reset();
+        FakeNodeTypeManagerFactory::reset();
 
         return $contentRepository;
     }

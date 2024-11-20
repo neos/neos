@@ -20,11 +20,11 @@ use Neos\ContentRepository\Core\Factory\ContentRepositoryServiceInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
-use Neos\ContentRepository\TestSuite\Behavior\Features\Bootstrap\Helpers\TestingAuthProvider;
 use Neos\Flow\Mvc\ActionRequest;
 use Neos\Flow\Security\Authentication\Provider\TestingProvider;
 use Neos\Neos\Domain\Service\UserService;
 use Neos\Neos\Security\ContentRepositoryAuthProvider\ContentRepositoryAuthProviderFactory;
+use Neos\ContentRepository\TestSuite\Fakes\FakeAuthProvider;
 use PHPUnit\Framework\Assert;
 
 /**
@@ -57,7 +57,7 @@ trait ContentRepositorySecurityTrait
      */
     public function resetContentRepositorySecurity(): void
     {
-        TestingAuthProvider::resetAuthProvider();
+        FakeAuthProvider::resetAuthProvider();
         $this->crSecurity_contentRepositorySecurityEnabled = false;
     }
 
@@ -81,7 +81,7 @@ trait ContentRepositorySecurityTrait
         })->contentGraphReadModel;
         $contentRepositoryAuthProvider = $contentRepositoryAuthProviderFactory->build($this->currentContentRepository->id, $contentGraphReadModel);
 
-        TestingAuthProvider::replaceAuthProvider($contentRepositoryAuthProvider);
+        FakeAuthProvider::replaceAuthProvider($contentRepositoryAuthProvider);
         $this->crSecurity_contentRepositorySecurityEnabled = true;
     }
 
