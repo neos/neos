@@ -10,7 +10,6 @@ use Neos\ContentRepository\Core\Feature\DimensionSpaceAdjustment\Command\MoveDim
 use Neos\ContentRepository\Core\Feature\NodeCreation\Command\CreateNodeAggregateWithNode;
 use Neos\ContentRepository\Core\Feature\NodeDisabling\Command\DisableNodeAggregate;
 use Neos\ContentRepository\Core\Feature\NodeDisabling\Command\EnableNodeAggregate;
-use Neos\ContentRepository\Core\Feature\NodeDuplication\Command\CopyNodesRecursively;
 use Neos\ContentRepository\Core\Feature\NodeModification\Command\SetNodeProperties;
 use Neos\ContentRepository\Core\Feature\NodeMove\Command\MoveNodeAggregate;
 use Neos\ContentRepository\Core\Feature\NodeReferencing\Command\SetNodeReferences;
@@ -152,7 +151,6 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
     private function nodeThatRequiresEditPrivilegeForCommand(CommandInterface $command): ?NodeAddress
     {
         return match ($command::class) {
-            CopyNodesRecursively::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->targetDimensionSpacePoint->toDimensionSpacePoint(), $command->targetParentNodeAggregateId),
             CreateNodeAggregateWithNode::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->originDimensionSpacePoint->toDimensionSpacePoint(), $command->parentNodeAggregateId),
             CreateNodeVariant::class => NodeAddress::create($this->contentRepositoryId, $command->workspaceName, $command->sourceOrigin->toDimensionSpacePoint(), $command->nodeAggregateId),
             DisableNodeAggregate::class,

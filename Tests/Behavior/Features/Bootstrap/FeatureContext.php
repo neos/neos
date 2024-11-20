@@ -50,6 +50,8 @@ class FeatureContext implements BehatContext
     use ContentRepositorySecurityTrait;
     use UserServiceTrait;
 
+    use NodeDuplicationTrait;
+
     protected Environment $environment;
 
     protected ContentRepositoryRegistry $contentRepositoryRegistry;
