@@ -17,8 +17,8 @@ namespace Neos\Neos\Domain\Service;
 use Doctrine\DBAL\Exception as DBALException;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Local\LocalFilesystemAdapter;
-use Neos\ContentRepository\Core\ContentRepository;
-use Neos\ContentRepository\Core\Service\SubscriptionServiceFactory;
+use Neos\ContentRepository\Core\Service\ContentRepositoryMaintainer;
+use Neos\ContentRepository\Core\Service\ContentRepositoryMaintainerFactory;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Export\Factory\EventStoreImportProcessorFactory;
@@ -28,7 +28,8 @@ use Neos\ContentRepository\Export\Processors;
 use Neos\ContentRepository\Export\Processors\AssetRepositoryImportProcessor;
 use Neos\ContentRepository\Export\Severity;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
-use Neos\ContentRepositoryRegistry\Processors\ProjectionCatchupProcessor;
+use Neos\ContentRepositoryRegistry\Processors\ProjectionReplayProcessor;
+use Neos\EventStore\Model\EventStore\StatusType;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Persistence\Doctrine\Service as DoctrineService;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
@@ -67,8 +68,10 @@ final readonly class SiteImportService
         }
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
 
+        $contentRepositoryMaintainer = $this->contentRepositoryRegistry->buildService($contentRepositoryId, new ContentRepositoryMaintainerFactory());
+
         $this->requireDataBaseSchemaToBeSetup();
-        $this->requireContentRepositoryToBeSetup($contentRepository);
+        $this->requireContentRepositoryToBeSetup($contentRepositoryMaintainer, $contentRepositoryId);
 
         $filesystem = new Filesystem(new LocalFilesystemAdapter($path));
         $context = new ProcessingContext($filesystem, $onMessage);
@@ -78,7 +81,8 @@ final readonly class SiteImportService
             'Create Neos sites' => new SiteCreationProcessor($this->siteRepository, $this->domainRepository, $this->persistenceManager),
             'Import events' => $this->contentRepositoryRegistry->buildService($contentRepositoryId, new EventStoreImportProcessorFactory(WorkspaceName::forLive(), keepEventIds: true)),
             'Import assets' => new AssetRepositoryImportProcessor($this->assetRepository, $this->resourceRepository, $this->resourceManager, $this->persistenceManager),
-            'Catchup all projections' => new ProjectionCatchupProcessor($this->contentRepositoryRegistry->buildService($contentRepositoryId, new SubscriptionServiceFactory())),
+            // todo we do a replay here even though it will redo the live workspace creation. But otherwise the catchup hooks are not skipped because it seems like a regular catchup
+            'Catchup all projections' => new ProjectionReplayProcessor($contentRepositoryMaintainer),
         ]);
 
         foreach ($processors as $processorLabel => $processor) {
@@ -87,13 +91,13 @@ final readonly class SiteImportService
         }
     }
 
-    private function requireContentRepositoryToBeSetup(ContentRepository $contentRepository): void
+    private function requireContentRepositoryToBeSetup(ContentRepositoryMaintainer $contentRepositoryMaintainer, ContentRepositoryId $contentRepositoryId): void
     {
-//        TODO reimplement
-//        $status = $contentRepository->status();
-//        if (!$status->isOk()) {
-//            throw new \RuntimeException(sprintf('Content repository %s is not setup correctly, please run `./flow cr:setup`', $contentRepository->id->value));
-//        }
+        $eventStoreStatus = $contentRepositoryMaintainer->eventStoreStatus();
+        $subscriptionStatuses = $contentRepositoryMaintainer->subscriptionStatuses();
+        if ($eventStoreStatus->type !== StatusType::OK || !$subscriptionStatuses->isOk()) {
+            throw new \RuntimeException(sprintf('Content repository %s is not setup correctly, please run `./flow cr:setup`', $contentRepositoryId->value));
+        }
     }
 
     private function requireDataBaseSchemaToBeSetup(): void
