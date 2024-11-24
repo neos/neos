@@ -17,10 +17,12 @@ namespace Neos\Neos\Domain\Service;
 use Doctrine\DBAL\Exception as DBALException;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Local\LocalFilesystemAdapter;
+use Neos\ContentRepository\Core\Projection\ProjectionSetupStatusType;
 use Neos\ContentRepository\Core\Service\ContentRepositoryMaintainer;
 use Neos\ContentRepository\Core\Service\ContentRepositoryMaintainerFactory;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
+use Neos\ContentRepository\Core\Subscription\ProjectionSubscriptionStatus;
 use Neos\ContentRepository\Export\Factory\EventStoreImportProcessorFactory;
 use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
@@ -94,9 +96,16 @@ final readonly class SiteImportService
     private function requireContentRepositoryToBeSetup(ContentRepositoryMaintainer $contentRepositoryMaintainer, ContentRepositoryId $contentRepositoryId): void
     {
         $eventStoreStatus = $contentRepositoryMaintainer->eventStoreStatus();
-        $subscriptionStatuses = $contentRepositoryMaintainer->subscriptionStatuses();
-        if ($eventStoreStatus->type !== StatusType::OK || !$subscriptionStatuses->isOk()) {
+        if ($eventStoreStatus->type !== StatusType::OK) {
             throw new \RuntimeException(sprintf('Content repository %s is not setup correctly, please run `./flow cr:setup`', $contentRepositoryId->value));
+        }
+        $subscriptionStatuses = $contentRepositoryMaintainer->subscriptionStatuses();
+        foreach ($subscriptionStatuses as $status) {
+            if ($status instanceof ProjectionSubscriptionStatus) {
+                if ($status->setupStatus->type !== ProjectionSetupStatusType::OK) {
+                    throw new \RuntimeException(sprintf('Projection %s in content repository %s is not setup correctly, please run `./flow cr:setup`', $status->subscriptionId->value, $contentRepositoryId->value));
+                }
+            }
         }
     }
 
