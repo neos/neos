@@ -83,8 +83,9 @@ final readonly class SiteImportService
             'Create Neos sites' => new SiteCreationProcessor($this->siteRepository, $this->domainRepository, $this->persistenceManager),
             'Import events' => $this->contentRepositoryRegistry->buildService($contentRepositoryId, new EventStoreImportProcessorFactory(WorkspaceName::forLive(), keepEventIds: true)),
             'Import assets' => new AssetRepositoryImportProcessor($this->assetRepository, $this->resourceRepository, $this->resourceManager, $this->persistenceManager),
-            // todo we do a replay here even though it will redo the live workspace creation. But otherwise the catchup hooks are not skipped because it seems like a regular catchup
-            'Catchup all projections' => new ProjectionReplayProcessor($contentRepositoryMaintainer),
+            // WARNING! We do a replay here even though it will redo the live workspace creation. But otherwise the catchup hooks cannot determine that they need to be skipped as it seems like a regular catchup
+            // In case we allow to import events into other root workspaces, or don't expect live to be empty (see Import events), this would need to be adjusted, as otherwise existing data will be replayed
+            'Replay all projections' => new ProjectionReplayProcessor($contentRepositoryMaintainer),
         ]);
 
         foreach ($processors as $processorLabel => $processor) {
