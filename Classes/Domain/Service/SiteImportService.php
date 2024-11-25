@@ -99,8 +99,8 @@ final readonly class SiteImportService
         if ($eventStoreStatus->type !== StatusType::OK) {
             throw new \RuntimeException(sprintf('Content repository %s is not setup correctly, please run `./flow cr:setup`', $contentRepositoryId->value));
         }
-        $subscriptionStatuses = $contentRepositoryMaintainer->subscriptionStatuses();
-        foreach ($subscriptionStatuses as $status) {
+        $subscriptionStatusCollection = $contentRepositoryMaintainer->subscriptionStatus();
+        foreach ($subscriptionStatusCollection as $status) {
             if ($status instanceof ProjectionSubscriptionStatus) {
                 if ($status->setupStatus->type !== ProjectionStatusType::OK) {
                     throw new \RuntimeException(sprintf('Projection %s in content repository %s is not setup correctly, please run `./flow cr:setup`', $status->subscriptionId->value, $contentRepositoryId->value));
