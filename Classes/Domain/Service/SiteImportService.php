@@ -17,7 +17,7 @@ namespace Neos\Neos\Domain\Service;
 use Doctrine\DBAL\Exception as DBALException;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Local\LocalFilesystemAdapter;
-use Neos\ContentRepository\Core\Projection\ProjectionSetupStatusType;
+use Neos\ContentRepository\Core\Projection\ProjectionStatusType;
 use Neos\ContentRepository\Core\Service\ContentRepositoryMaintainer;
 use Neos\ContentRepository\Core\Service\ContentRepositoryMaintainerFactory;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
@@ -102,7 +102,7 @@ final readonly class SiteImportService
         $subscriptionStatuses = $contentRepositoryMaintainer->subscriptionStatuses();
         foreach ($subscriptionStatuses as $status) {
             if ($status instanceof ProjectionSubscriptionStatus) {
-                if ($status->setupStatus->type !== ProjectionSetupStatusType::OK) {
+                if ($status->setupStatus->type !== ProjectionStatusType::OK) {
                     throw new \RuntimeException(sprintf('Projection %s in content repository %s is not setup correctly, please run `./flow cr:setup`', $status->subscriptionId->value, $contentRepositoryId->value));
                 }
             }
