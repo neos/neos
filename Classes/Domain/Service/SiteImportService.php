@@ -30,7 +30,7 @@ use Neos\ContentRepository\Export\Processors;
 use Neos\ContentRepository\Export\Processors\AssetRepositoryImportProcessor;
 use Neos\ContentRepository\Export\Severity;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
-use Neos\ContentRepositoryRegistry\Processors\ProjectionReplayProcessor;
+use Neos\ContentRepositoryRegistry\Processors\SubscriptionReplayProcessor;
 use Neos\EventStore\Model\EventStore\StatusType;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Persistence\Doctrine\Service as DoctrineService;
@@ -85,7 +85,7 @@ final readonly class SiteImportService
             'Import assets' => new AssetRepositoryImportProcessor($this->assetRepository, $this->resourceRepository, $this->resourceManager, $this->persistenceManager),
             // WARNING! We do a replay here even though it will redo the live workspace creation. But otherwise the catchup hooks cannot determine that they need to be skipped as it seems like a regular catchup
             // In case we allow to import events into other root workspaces, or don't expect live to be empty (see Import events), this would need to be adjusted, as otherwise existing data will be replayed
-            'Replay all projections' => new ProjectionReplayProcessor($contentRepositoryMaintainer),
+            'Replay all subscriptions' => new SubscriptionReplayProcessor($contentRepositoryMaintainer),
         ]);
 
         foreach ($processors as $processorLabel => $processor) {
