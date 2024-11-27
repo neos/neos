@@ -14,16 +14,6 @@ The following options are allowed for defining a NodeType:
   Abstract node types are useful when using inheritance and composition, so mark base node types and
   mixins as abstract.
 
-``aggregate``
-  A boolean flag, marking a node type as *aggregate*. If a node type is marked as aggregate, it means that:
-
-  - the node type can "live on its own", i.e. can be part of an external URL
-  - when moving this node, all node variants are also moved (across all dimensions)
-  - Recursive copying only happens *inside* this aggregate, and stops at nested aggregates.
-
-  The most prominent *aggregate* is `Neos.Neos:Document` and everything which inherits from it, like
-  `Neos.NodeTypes:Page`.
-
 ``superTypes``
   An array of parent node types as keys with a boolean value::
 
