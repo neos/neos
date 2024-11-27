@@ -39,6 +39,7 @@ use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasTagged;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasUntagged;
 use Neos\ContentRepository\Core\Infrastructure\DbalSchemaDiff;
 use Neos\ContentRepository\Core\Infrastructure\DbalSchemaFactory;
+use Neos\ContentRepository\Core\Infrastructure\ProjectionTransactionTrait;
 use Neos\ContentRepository\Core\Projection\ProjectionInterface;
 use Neos\ContentRepository\Core\Projection\ProjectionStatus;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
@@ -52,6 +53,8 @@ use Neos\EventStore\Model\EventEnvelope;
  */
 class ChangeProjection implements ProjectionInterface
 {
+    use ProjectionTransactionTrait;
+
     /**
      * @var ChangeFinder|null Cache for the ChangeFinder returned by {@see getState()},
      * so that always the same instance is returned
