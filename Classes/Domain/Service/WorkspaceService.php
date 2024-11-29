@@ -14,10 +14,7 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Domain\Service;
 
-use Doctrine\DBAL\ArrayParameterType;
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Exception as DbalException;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Neos\ContentRepository\Core\Feature\Security\Exception\AccessDenied;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateRootWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Exception\WorkspaceAlreadyExists;
@@ -29,19 +26,19 @@ use Neos\ContentRepository\Core\SharedModel\Workspace\Workspace;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
-use Neos\Flow\Security\Exception\NoSuchRoleException;
+use Neos\Flow\Security\Context as SecurityContext;
 use Neos\Neos\Domain\Model\User;
 use Neos\Neos\Domain\Model\UserId;
 use Neos\Neos\Domain\Model\WorkspaceClassification;
 use Neos\Neos\Domain\Model\WorkspaceDescription;
 use Neos\Neos\Domain\Model\WorkspaceMetadata;
-use Neos\Neos\Domain\Model\WorkspacePermissions;
 use Neos\Neos\Domain\Model\WorkspaceRole;
 use Neos\Neos\Domain\Model\WorkspaceRoleAssignment;
 use Neos\Neos\Domain\Model\WorkspaceRoleAssignments;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubject;
-use Neos\Neos\Domain\Model\WorkspaceRoleSubjectType;
 use Neos\Neos\Domain\Model\WorkspaceTitle;
+use Neos\Neos\Domain\Repository\WorkspaceMetadataAndRoleRepository;
+use Neos\Neos\Security\Authorization\ContentRepositoryAuthorizationService;
 
 /**
  * Central authority to interact with Content Repository Workspaces within Neos
@@ -49,15 +46,14 @@ use Neos\Neos\Domain\Model\WorkspaceTitle;
  * @api
  */
 #[Flow\Scope('singleton')]
-final class WorkspaceService
+final readonly class WorkspaceService
 {
-    private const TABLE_NAME_WORKSPACE_METADATA = 'neos_neos_workspace_metadata';
-    private const TABLE_NAME_WORKSPACE_ROLE = 'neos_neos_workspace_role';
-
     public function __construct(
-        private readonly ContentRepositoryRegistry $contentRepositoryRegistry,
-        private readonly UserService $userService,
-        private readonly Connection $dbal,
+        private ContentRepositoryRegistry $contentRepositoryRegistry,
+        private WorkspaceMetadataAndRoleRepository $metadataAndRoleRepository,
+        private UserService $userService,
+        private ContentRepositoryAuthorizationService $authorizationService,
+        private SecurityContext $securityContext,
     ) {
     }
 
@@ -71,7 +67,7 @@ final class WorkspaceService
     public function getWorkspaceMetadata(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): WorkspaceMetadata
     {
         $workspace = $this->requireWorkspace($contentRepositoryId, $workspaceName);
-        $metadata = $this->loadWorkspaceMetadata($contentRepositoryId, $workspaceName);
+        $metadata = $this->metadataAndRoleRepository->loadWorkspaceMetadata($contentRepositoryId, $workspaceName);
         return $metadata ?? new WorkspaceMetadata(
             WorkspaceTitle::fromString($workspaceName->value),
             WorkspaceDescription::fromString(''),
@@ -85,16 +81,15 @@ final class WorkspaceService
      */
     public function setWorkspaceTitle(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $newWorkspaceTitle): void
     {
-        $workspaceMetadata = $this->loadWorkspaceMetadata($contentRepositoryId, $workspaceName);
+        $this->requireManagementWorkspacePermission($contentRepositoryId, $workspaceName);
+        $workspace = $this->requireWorkspace($contentRepositoryId, $workspaceName);
+        $workspaceMetadata = $this->metadataAndRoleRepository->loadWorkspaceMetadata($contentRepositoryId, $workspaceName);
 
         // WHY: Do not update if the title is the same
         if ($workspaceMetadata->title->equals($newWorkspaceTitle)) {
             return;
         }
-
-        $this->updateWorkspaceMetadata($contentRepositoryId, $workspaceName, [
-            'title' => $newWorkspaceTitle->value,
-        ]);
+        $this->metadataAndRoleRepository->updateWorkspaceMetadata($contentRepositoryId, $workspace, title: $newWorkspaceTitle->value, description: null);
     }
 
     /**
@@ -102,16 +97,14 @@ final class WorkspaceService
      */
     public function setWorkspaceDescription(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceDescription $newWorkspaceDescription): void
     {
-        $workspaceMetadata = $this->loadWorkspaceMetadata($contentRepositoryId, $workspaceName);
-
-        // WHY: Do not update if the description is the same
+        $this->requireManagementWorkspacePermission($contentRepositoryId, $workspaceName);
+        $workspace = $this->requireWorkspace($contentRepositoryId, $workspaceName);
+        $workspaceMetadata = $this->metadataAndRoleRepository->loadWorkspaceMetadata($contentRepositoryId, $workspaceName);
+        // WHY: Do not update if the title is the same
         if ($workspaceMetadata->description->equals($newWorkspaceDescription)) {
             return;
         }
-
-        $this->updateWorkspaceMetadata($contentRepositoryId, $workspaceName, [
-            'description' => $newWorkspaceDescription->value,
-        ]);
+        $this->metadataAndRoleRepository->updateWorkspaceMetadata($contentRepositoryId, $workspace, title: null, description: $newWorkspaceDescription->value);
     }
 
     /**
@@ -121,7 +114,7 @@ final class WorkspaceService
      */
     public function getPersonalWorkspaceForUser(ContentRepositoryId $contentRepositoryId, UserId $userId): Workspace
     {
-        $workspaceName = $this->findPrimaryWorkspaceNameForUser($contentRepositoryId, $userId);
+        $workspaceName = $this->metadataAndRoleRepository->findPrimaryWorkspaceNameForUser($contentRepositoryId, $userId);
         if ($workspaceName === null) {
             throw new \RuntimeException(sprintf('No workspace is assigned to the user with id "%s")', $userId->value), 1718293801);
         }
@@ -142,7 +135,7 @@ final class WorkspaceService
                 ContentStreamId::create()
             )
         );
-        $this->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::ROOT, null);
+        $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::ROOT, null);
     }
 
     /**
@@ -158,7 +151,7 @@ final class WorkspaceService
             return;
         }
         $this->createRootWorkspace($contentRepositoryId, $workspaceName, WorkspaceTitle::fromString('Public live workspace'), WorkspaceDescription::empty());
-        $this->assignWorkspaceRole($contentRepositoryId, $workspaceName, WorkspaceRoleAssignment::createForGroup('Neos.Neos:LivePublisher', WorkspaceRole::COLLABORATOR));
+        $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, WorkspaceRoleAssignment::createForGroup('Neos.Neos:LivePublisher', WorkspaceRole::COLLABORATOR));
     }
 
     /**
@@ -183,7 +176,7 @@ final class WorkspaceService
      */
     public function createPersonalWorkspaceForUserIfMissing(ContentRepositoryId $contentRepositoryId, User $user): void
     {
-        $existingWorkspaceName = $this->findPrimaryWorkspaceNameForUser($contentRepositoryId, $user->getId());
+        $existingWorkspaceName = $this->metadataAndRoleRepository->findPrimaryWorkspaceNameForUser($contentRepositoryId, $user->getId());
         if ($existingWorkspaceName !== null) {
             $this->requireWorkspace($contentRepositoryId, $existingWorkspaceName);
             return;
@@ -207,20 +200,9 @@ final class WorkspaceService
      */
     public function assignWorkspaceRole(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceRoleAssignment $assignment): void
     {
+        $this->requireManagementWorkspacePermission($contentRepositoryId, $workspaceName);
         $this->requireWorkspace($contentRepositoryId, $workspaceName);
-        try {
-            $this->dbal->insert(self::TABLE_NAME_WORKSPACE_ROLE, [
-                'content_repository_id' => $contentRepositoryId->value,
-                'workspace_name' => $workspaceName->value,
-                'subject_type' => $assignment->subjectType->value,
-                'subject' => $assignment->subject->value,
-                'role' => $assignment->role->value,
-            ]);
-        } catch (UniqueConstraintViolationException $e) {
-            throw new \RuntimeException(sprintf('Failed to assign role for workspace "%s" to subject "%s" (Content Repository "%s"): There is already a role assigned for that user/group, please unassign that first', $workspaceName->value, $assignment->subject->value, $contentRepositoryId->value), 1728476154, $e);
-        } catch (DbalException $e) {
-            throw new \RuntimeException(sprintf('Failed to assign role for workspace "%s" to subject "%s" (Content Repository "%s"): %s', $workspaceName->value, $assignment->subject->value, $contentRepositoryId->value, $e->getMessage()), 1728396138, $e);
-        }
+        $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, $assignment);
     }
 
     /**
@@ -228,93 +210,21 @@ final class WorkspaceService
      *
      * @see self::assignWorkspaceRole()
      */
-    public function unassignWorkspaceRole(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceRoleSubjectType $subjectType, WorkspaceRoleSubject $subject): void
+    public function unassignWorkspaceRole(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceRoleSubject $subject): void
     {
+        $this->requireManagementWorkspacePermission($contentRepositoryId, $workspaceName);
         $this->requireWorkspace($contentRepositoryId, $workspaceName);
-        try {
-            $affectedRows = $this->dbal->delete(self::TABLE_NAME_WORKSPACE_ROLE, [
-                'content_repository_id' => $contentRepositoryId->value,
-                'workspace_name' => $workspaceName->value,
-                'subject_type' => $subjectType->value,
-                'subject' => $subject->value,
-            ]);
-        } catch (DbalException $e) {
-            throw new \RuntimeException(sprintf('Failed to unassign role for subject "%s" from workspace "%s" (Content Repository "%s"): %s', $subject->value, $workspaceName->value, $contentRepositoryId->value, $e->getMessage()), 1728396169, $e);
-        }
-        if ($affectedRows === 0) {
-            throw new \RuntimeException(sprintf('Failed to unassign role for subject "%s" from workspace "%s" (Content Repository "%s"): No role assignment exists for this user/group', $subject->value, $workspaceName->value, $contentRepositoryId->value), 1728477071);
-        }
+        $this->metadataAndRoleRepository->unassignWorkspaceRole($contentRepositoryId, $workspaceName, $subject);
     }
 
     /**
      * Get all role assignments for the specified workspace
      *
-     * NOTE: This should never be used to evaluate permissions, instead {@see self::getWorkspacePermissionsForUser()} should be used!
+     * NOTE: This should never be used to evaluate permissions, instead {@see ContentRepositoryAuthorizationService::getWorkspacePermissions()} should be used!
      */
     public function getWorkspaceRoleAssignments(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): WorkspaceRoleAssignments
     {
-        $table = self::TABLE_NAME_WORKSPACE_ROLE;
-        $query = <<<SQL
-            SELECT
-                *
-            FROM
-                {$table}
-            WHERE
-                content_repository_id = :contentRepositoryId
-                AND workspace_name = :workspaceName
-        SQL;
-        try {
-            $rows = $this->dbal->fetchAllAssociative($query, [
-                'contentRepositoryId' => $contentRepositoryId->value,
-                'workspaceName' => $workspaceName->value,
-            ]);
-        } catch (DbalException $e) {
-            throw new \RuntimeException(sprintf('Failed to fetch workspace role assignments for workspace "%s" (Content Repository "%s"): %s', $workspaceName->value, $contentRepositoryId->value, $e->getMessage()), 1728474440, $e);
-        }
-        return WorkspaceRoleAssignments::fromArray(
-            array_map(static fn (array $row) => WorkspaceRoleAssignment::create(
-                WorkspaceRoleSubjectType::from($row['subject_type']),
-                WorkspaceRoleSubject::fromString($row['subject']),
-                WorkspaceRole::from($row['role']),
-            ), $rows)
-        );
-    }
-
-    /**
-     * Determines the permission the given user has for the specified workspace {@see WorkspacePermissions}
-     */
-    public function getWorkspacePermissionsForUser(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, User $user): WorkspacePermissions
-    {
-        try {
-            $userRoles = array_keys($this->userService->getAllRoles($user));
-        } catch (NoSuchRoleException $e) {
-            throw new \RuntimeException(sprintf('Failed to determine roles for user "%s", check your package dependencies: %s', $user->getId()->value, $e->getMessage()), 1727084881, $e);
-        }
-
-        $userIsAdministrator = in_array('Neos.Neos:Administrator', $userRoles, true);
-
-        if ($userIsAdministrator) {
-            return WorkspacePermissions::all();
-        }
-
-        $workspaceMetadata = $this->loadWorkspaceMetadata($contentRepositoryId, $workspaceName);
-        $userIsOwner = $workspaceMetadata !== null && $workspaceMetadata->ownerUserId !== null && $workspaceMetadata->ownerUserId->equals($user->getId());
-
-        if ($userIsOwner) {
-            return WorkspacePermissions::all();
-        }
-
-        $userWorkspaceRole = $this->loadWorkspaceRoleOfUser($contentRepositoryId, $workspaceName, $user->getId(), $userRoles);
-
-        if ($userWorkspaceRole === null) {
-            return WorkspacePermissions::none();
-        }
-
-        return WorkspacePermissions::create(
-            read: $userWorkspaceRole->isAtLeast(WorkspaceRole::COLLABORATOR),
-            write: $userWorkspaceRole->isAtLeast(WorkspaceRole::COLLABORATOR),
-            manage: $userWorkspaceRole->isAtLeast(WorkspaceRole::MANAGER),
-        );
+        return $this->metadataAndRoleRepository->getWorkspaceRoleAssignments($contentRepositoryId, $workspaceName);
     }
 
     /**
@@ -345,33 +255,6 @@ final class WorkspaceService
         throw new \RuntimeException(sprintf('Failed to find unique workspace name for "%s" after %d attempts.', $candidate, $attempt - 1), 1725975479);
     }
 
-    /**
-     * Removes all workspace metadata records for the specified content repository id
-     */
-    public function pruneWorkspaceMetadata(ContentRepositoryId $contentRepositoryId): void
-    {
-        try {
-            $this->dbal->delete(self::TABLE_NAME_WORKSPACE_METADATA, [
-                'content_repository_id' => $contentRepositoryId->value,
-            ]);
-        } catch (DbalException $e) {
-            throw new \RuntimeException(sprintf('Failed to prune workspace metadata Content Repository "%s": %s', $contentRepositoryId->value, $e->getMessage()), 1729512100, $e);
-        }
-    }
-
-    /**
-     * Removes all workspace role assignments for the specified content repository id
-     */
-    public function pruneRoleAssignments(ContentRepositoryId $contentRepositoryId): void
-    {
-        try {
-            $this->dbal->delete(self::TABLE_NAME_WORKSPACE_ROLE, [
-                'content_repository_id' => $contentRepositoryId->value,
-            ]);
-        } catch (DbalException $e) {
-            throw new \RuntimeException(sprintf('Failed to prune workspace roles for Content Repository "%s": %s', $contentRepositoryId->value, $e->getMessage()), 1729512142, $e);
-        }
-    }
 
     public function setBaseWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceName $baseWorkspaceName): void
     {
@@ -434,68 +317,6 @@ final class WorkspaceService
         }
     }
 
-    private function loadWorkspaceMetadata(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): ?WorkspaceMetadata
-    {
-        $table = self::TABLE_NAME_WORKSPACE_METADATA;
-        $query = <<<SQL
-            SELECT
-                *
-            FROM
-                {$table}
-            WHERE
-                content_repository_id = :contentRepositoryId
-                AND workspace_name = :workspaceName
-        SQL;
-        try {
-            $metadataRow = $this->dbal->fetchAssociative($query, [
-                'contentRepositoryId' => $contentRepositoryId->value,
-                'workspaceName' => $workspaceName->value,
-            ]);
-        } catch (DbalException $e) {
-            throw new \RuntimeException(sprintf(
-                'Failed to fetch metadata for workspace "%s" (Content Repository "%s), please ensure the database schema is up to date. %s',
-                $workspaceName->value,
-                $contentRepositoryId->value,
-                $e->getMessage()
-            ), 1727782164, $e);
-        }
-        if (!is_array($metadataRow)) {
-            return null;
-        }
-        return new WorkspaceMetadata(
-            WorkspaceTitle::fromString($metadataRow['title']),
-            WorkspaceDescription::fromString($metadataRow['description']),
-            WorkspaceClassification::from($metadataRow['classification']),
-            $metadataRow['owner_user_id'] !== null ? UserId::fromString($metadataRow['owner_user_id']) : null,
-        );
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function updateWorkspaceMetadata(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, array $data): void
-    {
-        $workspace = $this->requireWorkspace($contentRepositoryId, $workspaceName);
-        try {
-            $affectedRows = $this->dbal->update(self::TABLE_NAME_WORKSPACE_METADATA, $data, [
-                'content_repository_id' => $contentRepositoryId->value,
-                'workspace_name' => $workspaceName->value,
-            ]);
-            if ($affectedRows === 0) {
-                $this->dbal->insert(self::TABLE_NAME_WORKSPACE_METADATA, [
-                    'content_repository_id' => $contentRepositoryId->value,
-                    'workspace_name' => $workspaceName->value,
-                    'description' => '',
-                    'title' => $workspaceName->value,
-                    'classification' => $workspace->isRootWorkspace() ? WorkspaceClassification::ROOT->value : WorkspaceClassification::UNKNOWN->value,
-                    ...$data,
-                ]);
-            }
-        } catch (DbalException $e) {
-            throw new \RuntimeException(sprintf('Failed to update metadata for workspace "%s" (Content Repository "%s"): %s', $workspaceName->value, $contentRepositoryId->value, $e->getMessage()), 1726821159, $e);
-        }
-    }
-
     private function createWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName, UserId|null $ownerId, WorkspaceClassification $classification): void
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
@@ -506,7 +327,7 @@ final class WorkspaceService
                 ContentStreamId::create()
             )
         );
-        $this->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, $classification, $ownerId);
+        $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, $classification, $ownerId);
     }
 
     private function addWorkspaceMetadata(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceClassification $classification, UserId|null $ownerUserId): void
@@ -624,5 +445,21 @@ final class WorkspaceService
             throw new \RuntimeException(sprintf('Failed to find workspace with name "%s" for content repository "%s"', $workspaceName->value, $contentRepositoryId->value), 1718379722);
         }
         return $workspace;
+    }
+
+    private function requireManagementWorkspacePermission(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
+    {
+        if ($this->securityContext->areAuthorizationChecksDisabled()) {
+            return;
+        }
+        $workspacePermissions = $this->authorizationService->getWorkspacePermissions(
+            $contentRepositoryId,
+            $workspaceName,
+            $this->securityContext->getRoles(),
+            $this->userService->getCurrentUser()?->getId()
+        );
+        if (!$workspacePermissions->manage) {
+            throw new AccessDenied(sprintf('Managing workspace "%s" in "%s" was denied: %s', $workspaceName->value, $contentRepositoryId->value, $workspacePermissions->getReason()), 1731654519);
+        }
     }
 }

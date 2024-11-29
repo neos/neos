@@ -331,17 +331,15 @@ class NodesController extends ActionController
             // If the node exists in another dimension, we want to know how many nodes in the rootline are also
             // missing for the target dimension. This is needed in the UI to tell the user if nodes will be
             // materialized recursively upwards in the rootline. To find the node path for the given identifier,
-            // we just use the first result. This is a safe assumption at least for "Document" nodes (aggregate=true),
-            // because they are always moved in-sync.
-            if ($nodeTypeManager->getNodeType($nodeAggregate->nodeTypeName)?->isAggregate()) {
+            // we just use the first result. This is a safe assumption at least for "Document" nodes ,
+            // because they are always moved in-sync by default via (options.moveNodeStrategy=gatherAll).
+            if ($nodeTypeManager->getNodeType($nodeAggregate->nodeTypeName)?->isOfType(NodeTypeNameFactory::NAME_DOCUMENT)) {
                 // TODO: we would need the SourceDimensions parameter (as in Create()) to ensure the correct
                 // rootline is traversed. Here, we, as a workaround, simply use the 1st aggregate for now.
 
                 $missingNodesOnRootline = 0;
                 while (
-                    $parentAggregate = self::firstNodeAggregate(
-                        $contentGraph->findParentNodeAggregates($identifier)
-                    )
+                    $parentAggregate = $contentGraph->findParentNodeAggregates($identifier)->first()
                 ) {
                     if (!$parentAggregate->coversDimensionSpacePoint($dimensionSpacePoint)) {
                         $missingNodesOnRootline++;
@@ -359,18 +357,6 @@ class NodesController extends ActionController
                 }
             }
         }
-    }
-
-    /**
-     * @param iterable<NodeAggregate> $nodeAggregates
-     * @return NodeAggregate|null
-     */
-    private static function firstNodeAggregate(iterable $nodeAggregates): ?NodeAggregate
-    {
-        foreach ($nodeAggregates as $nodeAggregate) {
-            return $nodeAggregate;
-        }
-        return null;
     }
 
     /**

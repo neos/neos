@@ -171,18 +171,6 @@ class AssetUsageIndexingService
         );
     }
 
-    public function removeIndexForNode(
-        ContentRepositoryId $contentRepositoryId,
-        Node $node
-    ): void {
-        $this->removeIndexForWorkspaceNameNodeAggregateIdAndDimensionSpacePoint(
-            $contentRepositoryId,
-            $node->workspaceName,
-            $node->aggregateId,
-            $node->dimensionSpacePoint
-        );
-    }
-
     public function removeIndexForWorkspace(
         ContentRepositoryId $contentRepositoryId,
         WorkspaceName $workspaceName

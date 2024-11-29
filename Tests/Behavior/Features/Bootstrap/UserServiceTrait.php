@@ -16,8 +16,10 @@ use Behat\Gherkin\Node\TableNode;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
 use Neos\Flow\Security\AccountFactory;
 use Neos\Flow\Security\Cryptography\HashService;
+use Neos\Flow\Security\Policy\PolicyService;
 use Neos\Neos\Domain\Model\User;
 use Neos\Neos\Domain\Service\UserService;
+use Neos\Neos\Security\Authorization\Privilege\ReadNodePrivilege;
 use Neos\Party\Domain\Model\PersonName;
 use Neos\Utility\ObjectAccess;
 
@@ -63,7 +65,7 @@ trait UserServiceTrait
                 username: $userData['Username'],
                 firstName: $userData['First name'] ?? null,
                 lastName: $userData['Last name'] ?? null,
-                roleIdentifiers: isset($userData['Roles']) ? explode(',', $userData['Roles']) : null,
+                roleIdentifiers: !empty($userData['Roles']) ? explode(',', $userData['Roles']) : null,
                 id: $userData['Id'] ?? null,
             );
         }
