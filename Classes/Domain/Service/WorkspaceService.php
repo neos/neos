@@ -282,40 +282,11 @@ final readonly class WorkspaceService
             )
         );
 
-        $this->deleteWorkspaceMetadata($contentRepositoryId, $workspaceName);
-        $this->deleteWorkspaceRoleAssignments($contentRepositoryId, $workspaceName);
+        $this->metadataAndRoleRepository->deleteWorkspaceMetadata($contentRepositoryId, $workspaceName);
+        $this->metadataAndRoleRepository->deleteWorkspaceRoleAssignments($contentRepositoryId, $workspaceName);
     }
 
     // ------------------
-    public function removeWorkspaceRoleAssignment(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceRoleSubject $fromString)
-    {
-    }
-
-    private function deleteWorkspaceMetadata(ContentRepositoryId $contentRepositoryId, $workspaceName): void
-    {
-        $table = self::TABLE_NAME_WORKSPACE_METADATA;
-        $query = <<<SQL
-            DELETE FROM
-                {$table}
-            WHERE
-                content_repository_id = :contentRepositoryId
-                AND workspace_name = :workspaceName
-        SQL;
-
-        try {
-            $this->dbal->executeStatement($query, [
-                'contentRepositoryId' => $contentRepositoryId->value,
-                'workspaceName' => $workspaceName->value,
-            ]);
-        } catch (DbalException $e) {
-            throw new \RuntimeException(sprintf(
-                'Failed to delete metadata for workspace "%s" (Content Repository "%s"): %s',
-                $workspaceName->value,
-                $contentRepositoryId->value,
-                $e->getMessage()
-            ), 1726821159, $e);
-        }
-    }
 
     private function createWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName, UserId|null $ownerId, WorkspaceClassification $classification): void
     {
@@ -328,112 +299,6 @@ final readonly class WorkspaceService
             )
         );
         $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, $classification, $ownerId);
-    }
-
-    private function addWorkspaceMetadata(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceClassification $classification, UserId|null $ownerUserId): void
-    {
-        try {
-            $this->dbal->insert(self::TABLE_NAME_WORKSPACE_METADATA, [
-                'content_repository_id' => $contentRepositoryId->value,
-                'workspace_name' => $workspaceName->value,
-                'title' => $title->value,
-                'description' => $description->value,
-                'classification' => $classification->value,
-                'owner_user_id' => $ownerUserId?->value,
-            ]);
-        } catch (DbalException $e) {
-            throw new \RuntimeException(sprintf('Failed to add metadata for workspace "%s" (Content Repository "%s"): %s', $workspaceName->value, $contentRepositoryId->value, $e->getMessage()), 1727084068, $e);
-        }
-    }
-
-    private function findPrimaryWorkspaceNameForUser(ContentRepositoryId $contentRepositoryId, UserId $userId): ?WorkspaceName
-    {
-        $tableMetadata = self::TABLE_NAME_WORKSPACE_METADATA;
-        $query = <<<SQL
-            SELECT
-                workspace_name
-            FROM
-                {$tableMetadata}
-            WHERE
-                content_repository_id = :contentRepositoryId
-                AND classification = :personalWorkspaceClassification
-                AND owner_user_id = :userId
-        SQL;
-        $workspaceName = $this->dbal->fetchOne($query, [
-            'contentRepositoryId' => $contentRepositoryId->value,
-            'personalWorkspaceClassification' => WorkspaceClassification::PERSONAL->value,
-            'userId' => $userId->value,
-        ]);
-        return $workspaceName === false ? null : WorkspaceName::fromString($workspaceName);
-    }
-
-    private function deleteWorkspaceRoleAssignments(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
-    {
-        $table = self::TABLE_NAME_WORKSPACE_ROLE;
-        $query = <<<SQL
-            DELETE FROM
-                {$table}
-            WHERE
-                content_repository_id = :contentRepositoryId
-                AND workspace_name = :workspaceName
-        SQL;
-
-        try {
-            $this->dbal->executeStatement($query, [
-                'contentRepositoryId' => $contentRepositoryId->value,
-                'workspaceName' => $workspaceName->value,
-            ]);
-        } catch (DbalException $e) {
-            throw new \RuntimeException(sprintf(
-                'Failed to delete role assignments for workspace "%s" (Content Repository "%s"): %s',
-                $workspaceName->value,
-                $contentRepositoryId->value,
-                $e->getMessage()
-            ), 1726821159, $e);
-        }
-    }
-
-    /**
-     * @param array<string> $userRoles
-     */
-    private function loadWorkspaceRoleOfUser(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, UserId $userId, array $userRoles): ?WorkspaceRole
-    {
-        $tableRole = self::TABLE_NAME_WORKSPACE_ROLE;
-        $query = <<<SQL
-            SELECT
-                role
-            FROM
-                {$tableRole}
-            WHERE
-                content_repository_id = :contentRepositoryId
-                AND workspace_name = :workspaceName
-                AND (
-                    (subject_type = :userSubjectType AND subject = :userId)
-                    OR
-                    (subject_type = :groupSubjectType AND subject IN (:groupSubjects))
-                )
-            ORDER BY
-                /* We only want to return the most specific role so we order them and return the first row */
-                CASE
-                    WHEN role='MANAGER' THEN 1
-                    WHEN role='COLLABORATOR' THEN 2
-                END
-            LIMIT 1
-        SQL;
-        $role = $this->dbal->fetchOne($query, [
-            'contentRepositoryId' => $contentRepositoryId->value,
-            'workspaceName' => $workspaceName->value,
-            'userSubjectType' => WorkspaceRoleSubjectType::USER->value,
-            'userId' => $userId->value,
-            'groupSubjectType' => WorkspaceRoleSubjectType::GROUP->value,
-            'groupSubjects' => $userRoles,
-        ], [
-            'groupSubjects' => ArrayParameterType::STRING,
-        ]);
-        if ($role === false) {
-            return null;
-        }
-        return WorkspaceRole::from($role);
     }
 
     private function requireWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): Workspace
