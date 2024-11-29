@@ -578,7 +578,8 @@ AND n.origindimensionspacepointhash = :origindimensionspacepointhash',
             WHERE
                 contentStreamId = :contentStreamId
         SQL;
-        $this->dbal->executeStatement($statement,
+        $this->dbal->executeStatement(
+            $statement,
             [
                 'contentStreamId' => $contentStreamId->value,
             ]
