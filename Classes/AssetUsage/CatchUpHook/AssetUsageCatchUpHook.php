@@ -27,6 +27,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateIds;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\EventStore\Model\EventEnvelope;
 use Neos\Neos\AssetUsage\Service\AssetUsageIndexingService;
@@ -145,18 +146,13 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
         $this->assetUsageIndexingService->removeIndexForWorkspace($this->contentRepositoryId, $workspaceName);
     }
 
-    private function discardNodes(WorkspaceName $workspaceName, NodeIdsToPublishOrDiscard $nodeIds): void
+    private function discardNodes(WorkspaceName $workspaceName, NodeAggregateIds $nodeIds): void
     {
         foreach ($nodeIds as $nodeId) {
-            if (!$nodeId->dimensionSpacePoint) {
-                // NodeAggregateTypeWasChanged and NodeAggregateNameWasChanged don't impact asset usage
-                continue;
-            }
-            $this->assetUsageIndexingService->removeIndexForWorkspaceNameNodeAggregateIdAndDimensionSpacePoint(
+            $this->assetUsageIndexingService->removeAssetUsagesOfWorkspaceWithAllPropertiesInAllDimensions(
                 $this->contentRepositoryId,
                 $workspaceName,
-                $nodeId->nodeAggregateId,
-                $nodeId->dimensionSpacePoint
+                $nodeId,
             );
         }
     }

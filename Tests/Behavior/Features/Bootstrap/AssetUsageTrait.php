@@ -42,7 +42,7 @@ trait AssetUsageTrait
     public function iExpectTheAssetUsageServiceToHaveTheFollowingAssetUsages(TableNode $table)
     {
         $assetUsageService = $this->getObject(AssetUsageService::class);
-        $assetUsages = $assetUsageService->findByFilter($this->currentContentRepository->id, AssetUsageFilter::create());
+        $assetUsages = iterator_to_array($assetUsageService->findByFilter($this->currentContentRepository->id, AssetUsageFilter::create()));
 
         $tableRows = $table->getHash();
         foreach ($assetUsages as $assetUsage) {
@@ -60,9 +60,37 @@ trait AssetUsageTrait
             }
         }
 
-        Assert::assertEmpty($tableRows, "Not all given asset usages where found.");
-        Assert::assertSame($assetUsages->count(), count($table->getHash()), "More asset usages found as given.");
+        // echo json_encode($tableRows, JSON_PRETTY_PRINT);
+        // echo json_encode($assetUsages, JSON_PRETTY_PRINT);
+        Assert::assertEmpty($tableRows, "Not all given asset usages where found: " . json_encode($tableRows, JSON_PRETTY_PRINT));
+        Assert::assertSame(count($assetUsages), count($table->getHash()), "More asset usages found as given.");
 
+    }
+
+    public function fewfw(TableNode $table)
+    {
+        $assetUsageService = $this->getObject(AssetUsageService::class);
+        $assetUsages = $assetUsageService->findByFilter($this->currentContentRepository->id, AssetUsageFilter::create());
+
+        $actual = [];
+        foreach ($assetUsages as $assetUsage) {
+            $actual[] = [
+                'assetId' => $assetUsage->assetId,
+                'propertyName' => $assetUsage->propertyName,
+                'workspaceName' => $assetUsage->workspaceName->value,
+                'nodeAggregateId' => $assetUsage->nodeAggregateId->value,
+                'originDimensionSpacePoint' => str_replace('":"', '": "', $assetUsage->originDimensionSpacePoint->toJson()),
+            ];
+        }
+
+        $expected = $table->getHash();
+
+        $sorter = fn ($a, $b) => $a <=> $b;
+
+        usort($expected, $sorter);
+        usort($actual, $sorter);
+
+        Assert::assertSame($expected, $actual, "Not all given asset usages where found.");
     }
 
     /**

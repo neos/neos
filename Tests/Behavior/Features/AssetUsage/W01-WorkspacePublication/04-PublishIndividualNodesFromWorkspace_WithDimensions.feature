@@ -69,7 +69,7 @@ Feature: Publish nodes partially with dimensions
 
     When the command PublishIndividualNodesFromWorkspace is executed with payload:
       | Key                             | Value                                                                                                                         |
-      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "de"}, "nodeAggregateId": "sir-david-nodenborough"}] |
+      | nodesToPublish                  | ["sir-david-nodenborough"] |
       | contentStreamIdForRemainingPart | "user-cs-identifier-remaining"                                                                                                |
 
     Then I expect the AssetUsageService to have the following AssetUsages:
@@ -135,7 +135,7 @@ Feature: Publish nodes partially with dimensions
 
     When the command PublishIndividualNodesFromWorkspace is executed with payload:
       | Key                             | Value                                                                                                                         |
-      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "de"}, "nodeAggregateId": "sir-david-nodenborough"}] |
+      | nodesToPublish                  | ["sir-david-nodenborough"] |
       | contentStreamIdForRemainingPart | "user-cs-identifier-remaining"                                                                                                |
 
     Then I expect the AssetUsageService to have the following AssetUsages:
@@ -178,9 +178,10 @@ Feature: Publish nodes partially with dimensions
       | asset-2 | nody-mc-nodeface           | assets       | user-workspace | {"language": "de"}        |
       | asset-3 | sir-nodeward-nodington-iii | text         | user-workspace | {"language": "de"}        |
 
+    # todo de en is ONE
     When the command PublishIndividualNodesFromWorkspace is executed with payload:
       | Key                             | Value                                                                                                                                                                                                                                                     |
-      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "de"}, "nodeAggregateId": "sir-david-nodenborough"},{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "en"}, "nodeAggregateId": "sir-david-nodenborough"}] |
+      | nodesToPublish                  | ["sir-david-nodenborough"] |
       | contentStreamIdForRemainingPart | "user-cs-identifier-remaining"                                                                                                                                                                                                                            |
 
     And I expect the AssetUsageService to have the following AssetUsages:

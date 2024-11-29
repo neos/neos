@@ -208,9 +208,9 @@ Feature: Workspace permission related features
       | MoveDimensionSpacePoint             | {"source":{"language":"de"},"target":{"language":"ch"}}                                                |
       | UpdateRootNodeAggregateDimensions   | {"nodeAggregateId":"root"}                                                                             |
       | DiscardWorkspace                    | {}                                                                                                     |
-      | DiscardIndividualNodesFromWorkspace | {"nodesToDiscard":[{"nodeAggregateId":"a1"}]}                                                          |
+      | DiscardIndividualNodesFromWorkspace | {"nodesToDiscard":["a1"]}                                                                              |
       | PublishWorkspace                    | {}                                                                                                     |
-      | PublishIndividualNodesFromWorkspace | {"nodesToPublish":[{"nodeAggregateId":"a1"}]}                                                          |
+      | PublishIndividualNodesFromWorkspace | {"nodesToPublish":["a1"]}                                                                              |
       | RebaseWorkspace                     | {}                                                                                                     |
       | CreateWorkspace                     | {"workspaceName":"new-workspace","baseWorkspaceName":"workspace","newContentStreamId":"any"}           |
 

@@ -70,7 +70,7 @@ Feature: Publish nodes partially with dimensions
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                                                                                                                                                                |
       | workspaceName      | "user-workspace"                                                                                                                                                                                                                                     |
-      | nodesToDiscard     | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "de"}, "nodeAggregateId": "sir-david-nodenborough"}, {"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "de"}, "nodeAggregateId": "nody-mc-nodeface"}] |
+      | nodesToDiscard     | ["sir-david-nodenborough", "nody-mc-nodeface"] |
       | newContentStreamId | "user-cs-identifier-new"                                                                                                                                                                                                                             |
 
     Then I expect the AssetUsageService to have the following AssetUsages:
@@ -132,16 +132,16 @@ Feature: Publish nodes partially with dimensions
       | asset-2 | nody-mc-nodeface           | assets       | user-workspace | {"language": "gsw"}       |
       | asset-3 | sir-nodeward-nodington-iii | text         | user-workspace | {"language": "fr"}        |
 
+    # todo check if test is usefull
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                                    |
       | workspaceName      | "user-workspace"                                                                                                         |
-      | nodesToDiscard     | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "gsw"}, "nodeAggregateId": "nody-mc-nodeface"}] |
+      | nodesToDiscard     | ["nody-mc-nodeface"] |
       | newContentStreamId | "user-cs-identifier-new"                                                                                                 |
 
     Then I expect the AssetUsageService to have the following AssetUsages:
       | assetId | nodeAggregateId            | propertyName | workspaceName  | originDimensionSpacePoint |
       | asset-1 | sir-david-nodenborough     | asset        | user-workspace | {"language": "de"}        |
-      | asset-2 | nody-mc-nodeface           | assets       | user-workspace | {"language": "de"}        |
       | asset-3 | sir-nodeward-nodington-iii | text         | user-workspace | {"language": "fr"}        |
 
   Scenario: Discard nodes partially from user workspace with live base workspace with new generalization
@@ -151,10 +151,6 @@ Feature: Publish nodes partially with dimensions
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
     And I am in workspace "user-workspace"
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
-
     Then I am in dimension space point {"language": "de"}
     And the following CreateNodeAggregateWithNode commands are executed:
       | nodeAggregateId             | nodeName   | parentNodeAggregateId  | nodeTypeName                                           | initialPropertyValues                |
@@ -176,13 +172,12 @@ Feature: Publish nodes partially with dimensions
       | asset-2 | nody-mc-nodeface           | assets       | user-workspace | {"language": "de"}        |
       | asset-3 | sir-nodeward-nodington-iii | text         | user-workspace | {"language": "de"}        |
 
+    # todo differnt en de now simpler
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                                                                                                                                                                            |
       | workspaceName      | "user-workspace"                                                                                                                                                                                                                                                 |
-      | nodesToDiscard     | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "en"} , "nodeAggregateId": "sir-david-nodenborough"}, {"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "de"} , "nodeAggregateId": "sir-nodeward-nodington-iii"}] |
-      | newContentStreamId | "user-cs-identifier-new"                                                                                                                                                                                                                                         |
+      | nodesToDiscard     | ["sir-david-nodenborough", "nody-mc-nodeface", "sir-nodeward-nodington-iii"] |
+      | newContentStreamId | "user-cs-identifier-new"                                                     |
 
     And I expect the AssetUsageService to have the following AssetUsages:
-      | assetId | nodeAggregateId        | propertyName | workspaceName  | originDimensionSpacePoint |
-      | asset-1 | sir-david-nodenborough | asset        | user-workspace | {"language": "de"}        |
-      | asset-2 | nody-mc-nodeface       | assets       | user-workspace | {"language": "de"}        |
+      | assetId | nodeAggregateId            | propertyName | workspaceName  | originDimensionSpacePoint |
