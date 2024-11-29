@@ -53,8 +53,7 @@ Feature: Create node aggregate with node with dimensions
       | nodeAggregateId            | nodeName | parentNodeAggregateId  | nodeTypeName                        | initialPropertyValues                                              |
       | sir-nodeward-nodington-iii | esquire  | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {"text": "This is a french text about Sir Nodeward Nodington III"} |
 
-    Then I expect the ChangeProjection to have the following changes in "live":
-      | nodeAggregateId | created | changed | moved | deleted | originDimensionSpacePoint |
+    Then I expect the ChangeProjection to have no changes in "cs-identifier"
 
 
   Scenario: Nodes on user workspace have been created
@@ -77,18 +76,4 @@ Feature: Create node aggregate with node with dimensions
       | nody-mc-nodeface           | 1       | 1       | 0     | 0       | {"language":"de"}         |
       | sir-nodeward-nodington-iv  | 1       | 1       | 0     | 0       | {"language":"de"}         |
       | sir-nodeward-nodington-iii | 1       | 1       | 0     | 0       | {"language":"fr"}         |
-
-
-
-#    When the command PublishIndividualNodesFromWorkspace is executed with payload:
-#      | Key                             | Value                                                                                                                        |
-#      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language":"de"}, "nodeAggregateId": "sir-david-nodenborough"}] |
-#      | contentStreamIdForRemainingPart | "user-cs-identifier-remaining"                                                                                               |
-#
-#    And I expect the ChangeProjection to have the following changes in "user-cs-identifier-remaining":
-#      | nodeAggregateId            | created | changed | moved | deleted | originDimensionSpacePoint |
-#      | nody-mc-nodeface           | 1       | 1       | 0     | 0       | {"language":"de"}         |
-#      | sir-nodeward-nodington-iv  | 1       | 1       | 0     | 0       | {"language":"de"}         |
-#      | sir-nodeward-nodington-iii | 1       | 1       | 0     | 0       | {"language":"fr"}         |
-#
-#    Then I expect the ChangeProjection to have no changes in "user-cs-id"
+    And I expect the ChangeProjection to have no changes in "cs-identifier"

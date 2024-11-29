@@ -42,7 +42,7 @@ Feature: Create node aggregate with node without dimensions
     Given I am in workspace "live"
 
     And the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId            | nodeName   | parentNodeAggregateId  | nodeTypeName                                           | initialPropertyValues                                       |
+      | nodeAggregateId            | nodeName   | parentNodeAggregateId  | nodeTypeName                        | initialPropertyValues                                       |
       | sir-david-nodenborough     | node       | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {}                                                          |
       | nody-mc-nodeface           | child-node | sir-david-nodenborough | Neos.ContentRepository.Testing:Node | {"text": "This is a text about Nody Mc Nodeface"}           |
       | sir-nodeward-nodington-iii | esquire    | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {"text": "This is a text about Sir Nodeward Nodington III"} |
@@ -54,7 +54,7 @@ Feature: Create node aggregate with node without dimensions
     Given I am in workspace "user-workspace"
 
     And the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId            | nodeName   | parentNodeAggregateId  | nodeTypeName                                           | initialPropertyValues                                       |
+      | nodeAggregateId            | nodeName   | parentNodeAggregateId  | nodeTypeName                        | initialPropertyValues                                       |
       | sir-david-nodenborough     | node       | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {}                                                          |
       | nody-mc-nodeface           | child-node | sir-david-nodenborough | Neos.ContentRepository.Testing:Node | {"text": "This is a text about Nody Mc Nodeface"}           |
       | sir-nodeward-nodington-iii | esquire    | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {"text": "This is a text about Sir Nodeward Nodington III"} |
@@ -65,4 +65,4 @@ Feature: Create node aggregate with node without dimensions
       | nody-mc-nodeface           | 1       | 1       | 0     | 0       | {}                        |
       | sir-nodeward-nodington-iii | 1       | 1       | 0     | 0       | {}                        |
 
-    And I expect the ChangeProjection to have no changes in "live"
+    And I expect the ChangeProjection to have no changes in "cs-identifier"
