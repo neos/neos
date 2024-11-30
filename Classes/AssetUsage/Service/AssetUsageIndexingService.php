@@ -171,18 +171,6 @@ class AssetUsageIndexingService
         );
     }
 
-    public function removeAssetUsagesOfWorkspaceWithAllPropertiesInAllDimensions(
-        ContentRepositoryId $contentRepositoryId,
-        WorkspaceName $workspaceName,
-        NodeAggregateId $nodeAggregateId
-    ): void {
-        $this->assetUsageRepository->removeAssetUsagesOfWorkspaceWithAllPropertiesInAllDimensions(
-            $contentRepositoryId,
-            $workspaceName,
-            $nodeAggregateId
-        );
-    }
-
     public function removeIndexForWorkspace(
         ContentRepositoryId $contentRepositoryId,
         WorkspaceName $workspaceName

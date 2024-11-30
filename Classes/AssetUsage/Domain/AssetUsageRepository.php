@@ -204,25 +204,6 @@ final class AssetUsageRepository
         ]);
     }
 
-    public function removeAssetUsagesOfWorkspaceWithAllPropertiesInAllDimensions(
-        ContentRepositoryId $contentRepositoryId,
-        WorkspaceName $workspaceName,
-        NodeAggregateId $nodeAggregateId,
-    ): void {
-        $sql = <<<SQL
-            DELETE FROM {$this->getTableName()}
-             WHERE contentrepositoryid = :contentRepositoryId
-             AND workspacename = :workspaceName
-             AND nodeAggregateId = :nodeAggregateId
-        SQL;
-
-        $this->dbal->executeStatement($sql, [
-            'contentRepositoryId' => $contentRepositoryId->value,
-            'workspaceName' => $workspaceName->value,
-            'nodeAggregateId' => $nodeAggregateId->value
-        ]);
-    }
-
     /**
      * @param WorkspaceName[] $workspaceNames
      */

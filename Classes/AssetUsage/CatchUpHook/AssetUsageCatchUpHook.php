@@ -7,7 +7,6 @@ namespace Neos\Neos\AssetUsage\CatchUpHook;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
 use Neos\ContentRepository\Core\EventStore\EventInterface;
-use Neos\ContentRepository\Core\Feature\Common\EmbedsContentStreamId;
 use Neos\ContentRepository\Core\Feature\Common\EmbedsWorkspaceName;
 use Neos\ContentRepository\Core\Feature\DimensionSpaceAdjustment\Event\DimensionSpacePointWasMoved;
 use Neos\ContentRepository\Core\Feature\NodeCreation\Event\NodeAggregateWithNodeWasCreated;
@@ -27,7 +26,6 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
-use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateIds;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\EventStore\Model\EventEnvelope;
 use Neos\Neos\AssetUsage\Service\AssetUsageIndexingService;
@@ -146,13 +144,18 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
         $this->assetUsageIndexingService->removeIndexForWorkspace($this->contentRepositoryId, $workspaceName);
     }
 
-    private function discardNodes(WorkspaceName $workspaceName, NodeAggregateIds $nodeIds): void
+    private function discardNodes(WorkspaceName $workspaceName, NodeIdsToPublishOrDiscard $nodeIds): void
     {
         foreach ($nodeIds as $nodeId) {
-            $this->assetUsageIndexingService->removeAssetUsagesOfWorkspaceWithAllPropertiesInAllDimensions(
+            if (!$nodeId->dimensionSpacePoint) {
+                // NodeAggregateTypeWasChanged and NodeAggregateNameWasChanged don't impact asset usage
+                continue;
+            }
+            $this->assetUsageIndexingService->removeIndexForWorkspaceNameNodeAggregateIdAndDimensionSpacePoint(
                 $this->contentRepositoryId,
                 $workspaceName,
-                $nodeId,
+                $nodeId->nodeAggregateId,
+                $nodeId->dimensionSpacePoint
             );
         }
     }
