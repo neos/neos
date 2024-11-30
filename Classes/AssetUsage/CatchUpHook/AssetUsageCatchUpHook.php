@@ -15,7 +15,6 @@ use Neos\ContentRepository\Core\Feature\NodeRemoval\Event\NodeAggregateWasRemove
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeGeneralizationVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodePeerVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeSpecializationVariantWasCreated;
-use Neos\ContentRepository\Core\Feature\WorkspacePublication\Dto\NodeIdsToPublishOrDiscard;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Event\WorkspaceWasDiscarded;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Event\WorkspaceWasPartiallyDiscarded;
 use Neos\ContentRepository\Core\Projection\CatchUpHookInterface;
@@ -59,7 +58,6 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
 
         match ($eventInstance::class) {
             NodeAggregateWasRemoved::class => $this->removeNodes($eventInstance->getWorkspaceName(), $eventInstance->nodeAggregateId, $eventInstance->affectedCoveredDimensionSpacePoints),
-            WorkspaceWasPartiallyDiscarded::class => $this->discardNodes($eventInstance->getWorkspaceName(), $eventInstance->discardedNodes),
             default => null
         };
     }
@@ -81,7 +79,8 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
             NodeGeneralizationVariantWasCreated::class => $this->updateNode($eventInstance->getWorkspaceName(), $eventInstance->nodeAggregateId, $eventInstance->generalizationOrigin->toDimensionSpacePoint()),
             NodeSpecializationVariantWasCreated::class => $this->updateNode($eventInstance->getWorkspaceName(), $eventInstance->nodeAggregateId, $eventInstance->specializationOrigin->toDimensionSpacePoint()),
             NodePropertiesWereSet::class => $this->updateNode($eventInstance->getWorkspaceName(), $eventInstance->nodeAggregateId, $eventInstance->originDimensionSpacePoint->toDimensionSpacePoint()),
-            WorkspaceWasDiscarded::class => $this->discardWorkspace($eventInstance->getWorkspaceName()),
+            WorkspaceWasDiscarded::class,
+            WorkspaceWasPartiallyDiscarded::class => $this->discardWorkspace($eventInstance->getWorkspaceName()),
             DimensionSpacePointWasMoved::class => $this->updateDimensionSpacePoint($eventInstance->getWorkspaceName(), $eventInstance->source, $eventInstance->target),
             default => null
         };
@@ -142,22 +141,6 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
     private function discardWorkspace(WorkspaceName $workspaceName): void
     {
         $this->assetUsageIndexingService->removeIndexForWorkspace($this->contentRepositoryId, $workspaceName);
-    }
-
-    private function discardNodes(WorkspaceName $workspaceName, NodeIdsToPublishOrDiscard $nodeIds): void
-    {
-        foreach ($nodeIds as $nodeId) {
-            if (!$nodeId->dimensionSpacePoint) {
-                // NodeAggregateTypeWasChanged and NodeAggregateNameWasChanged don't impact asset usage
-                continue;
-            }
-            $this->assetUsageIndexingService->removeIndexForWorkspaceNameNodeAggregateIdAndDimensionSpacePoint(
-                $this->contentRepositoryId,
-                $workspaceName,
-                $nodeId->nodeAggregateId,
-                $nodeId->dimensionSpacePoint
-            );
-        }
     }
 
     private function updateDimensionSpacePoint(WorkspaceName $workspaceName, DimensionSpacePoint $source, DimensionSpacePoint $target): void
