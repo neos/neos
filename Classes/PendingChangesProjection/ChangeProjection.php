@@ -219,7 +219,6 @@ class ChangeProjection implements ProjectionInterface
 
         $affectedDimensionSpacePoints = iterator_to_array($event->succeedingSiblingsForCoverage->toDimensionSpacePointSet());
         foreach ($affectedDimensionSpacePoints as $affectedDimensionSpacePoint) {
-
             // always the case due to constraint enforcement (at least one DSP is selected and must have a succeeding sibling or null)
 
             // WORKAROUND: we simply use the events DSPs here as the origin dimension space point.
