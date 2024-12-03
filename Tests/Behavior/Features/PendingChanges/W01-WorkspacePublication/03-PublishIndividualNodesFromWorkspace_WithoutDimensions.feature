@@ -35,10 +35,6 @@ Feature: Publish nodes partially without dimensions
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
     And I am in workspace "user-workspace"
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
-    And I am in dimension space point {}
 
     Then the following CreateNodeAggregateWithNode commands are executed:
       | nodeAggregateId            | nodeName   | parentNodeAggregateId  | nodeTypeName                        | initialPropertyValues                                       |
@@ -71,10 +67,6 @@ Feature: Publish nodes partially without dimensions
       | baseWorkspaceName  | "live"             |
       | newContentStreamId | "review-cs-id"     |
 
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value              |
-      | workspaceName | "review-workspace" |
-
     When I am in workspace "review-workspace"
 
     And I am in dimension space point {}
@@ -87,10 +79,6 @@ Feature: Publish nodes partially without dimensions
       | workspaceName      | "user-workspace"   |
       | baseWorkspaceName  | "review-workspace" |
       | newContentStreamId | "user-cs-id"       |
-
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
 
     And I am in workspace "user-workspace"
 
