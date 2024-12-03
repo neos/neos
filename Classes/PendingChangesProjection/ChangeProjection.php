@@ -218,18 +218,18 @@ class ChangeProjection implements ProjectionInterface
         }
 
         $affectedDimensionSpacePoints = iterator_to_array($event->succeedingSiblingsForCoverage->toDimensionSpacePointSet());
-        $arbitraryDimensionSpacePoint = reset($affectedDimensionSpacePoints);
-        if ($arbitraryDimensionSpacePoint instanceof DimensionSpacePoint) {
+        foreach ($affectedDimensionSpacePoints as $affectedDimensionSpacePoint) {
+
             // always the case due to constraint enforcement (at least one DSP is selected and must have a succeeding sibling or null)
 
-            // WORKAROUND: we simply use the event's first DSP here as the origin dimension space point.
+            // WORKAROUND: we simply use the events DSPs here as the origin dimension space point.
             // But this DSP is not necessarily occupied.
             // @todo properly handle this by storing the necessary information in the projection
 
             $this->markAsMoved(
                 $event->getContentStreamId(),
                 $event->getNodeAggregateId(),
-                OriginDimensionSpacePoint::fromDimensionSpacePoint($arbitraryDimensionSpacePoint)
+                OriginDimensionSpacePoint::fromDimensionSpacePoint($affectedDimensionSpacePoint)
             );
         }
     }

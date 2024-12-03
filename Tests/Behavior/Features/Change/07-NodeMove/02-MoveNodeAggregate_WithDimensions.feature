@@ -108,53 +108,50 @@ Feature: Move node aggregate with dimensions
       | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "gsw"}       |
     And I expect the ChangeProjection to have no changes in "cs-identifier"
 
-#  TODO: https://github.com/neos/neos-development-collection/issues/5368
-#  Scenario: Move nodeAggregate (variant) into new parent with gatherAll
-#    When I am in dimension space point {"language": "fr"}
-#    And the command MoveNodeAggregate is executed with payload:
-#      | Key                          | Value                       |
-#      | nodeAggregateId              | "nody-mc-nodeface"          |
-#      | newParentNodeAggregateId     | "sir-nodeward-nodington-iv" |
-#      | relationDistributionStrategy | "gatherAll"                 |
-#
-#    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
-#      | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
-#      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "fr"}        |
-#      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "de"}        |
-#      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "gsw"}       |
-#    And I expect the ChangeProjection to have no changes in "cs-identifier"
+  Scenario: Move nodeAggregate (variant) into new parent with gatherAll
+    When I am in dimension space point {"language": "fr"}
+    And the command MoveNodeAggregate is executed with payload:
+      | Key                          | Value                       |
+      | nodeAggregateId              | "nody-mc-nodeface"          |
+      | newParentNodeAggregateId     | "sir-nodeward-nodington-iv" |
+      | relationDistributionStrategy | "gatherAll"                 |
 
-#  TODO: https://github.com/neos/neos-development-collection/issues/5368
-#  Scenario: Move nodeAggregate (specialization) into new parent with gatherAll
-#    When I am in dimension space point {"language": "gsw"}
-#    And the command MoveNodeAggregate is executed with payload:
-#      | Key                          | Value                       |
-#      | nodeAggregateId              | "nody-mc-nodeface"          |
-#      | newParentNodeAggregateId     | "sir-nodeward-nodington-iv" |
-#      | relationDistributionStrategy | "gatherAll"                 |
-#
-#    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
-#      | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
-#      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "de"}        |
-#      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "fr"}        |
-#      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "gsw"}       |
-#    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+      | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
+      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "fr"}        |
+      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "de"}        |
+      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "gsw"}       |
+    And I expect the ChangeProjection to have no changes in "cs-identifier"
 
-#  TODO: https://github.com/neos/neos-development-collection/issues/5368
-#  Scenario: Move nodeAggregate (generalization) into new parent with gatherAll
-#    When I am in dimension space point {"language": "de"}
-#    And the command MoveNodeAggregate is executed with payload:
-#      | Key                          | Value                       |
-#      | nodeAggregateId              | "nody-mc-nodeface"          |
-#      | newParentNodeAggregateId     | "sir-nodeward-nodington-iv" |
-#      | relationDistributionStrategy | "gatherAll"                 |
-#
-#    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
-#      | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
-#      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "de"}        |
-#      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "fr"}        |
-#      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "gsw"}       |
-#    And I expect the ChangeProjection to have no changes in "cs-identifier"
+  Scenario: Move nodeAggregate (specialization) into new parent with gatherAll
+    When I am in dimension space point {"language": "gsw"}
+    And the command MoveNodeAggregate is executed with payload:
+      | Key                          | Value                       |
+      | nodeAggregateId              | "nody-mc-nodeface"          |
+      | newParentNodeAggregateId     | "sir-nodeward-nodington-iv" |
+      | relationDistributionStrategy | "gatherAll"                 |
+
+    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+      | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
+      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "de"}        |
+      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "fr"}        |
+      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "gsw"}       |
+    And I expect the ChangeProjection to have no changes in "cs-identifier"
+
+  Scenario: Move nodeAggregate (generalization) into new parent with gatherAll
+    When I am in dimension space point {"language": "de"}
+    And the command MoveNodeAggregate is executed with payload:
+      | Key                          | Value                       |
+      | nodeAggregateId              | "nody-mc-nodeface"          |
+      | newParentNodeAggregateId     | "sir-nodeward-nodington-iv" |
+      | relationDistributionStrategy | "gatherAll"                 |
+
+    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+      | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
+      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "de"}        |
+      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "fr"}        |
+      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "gsw"}       |
+    And I expect the ChangeProjection to have no changes in "cs-identifier"
 
   Scenario: Move nodeAggregate (variant) into new parent with gatherSpecializations
     When I am in dimension space point {"language": "fr"}
@@ -182,20 +179,19 @@ Feature: Move node aggregate with dimensions
       | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "gsw"}       |
     And I expect the ChangeProjection to have no changes in "cs-identifier"
 
-#  TODO: https://github.com/neos/neos-development-collection/issues/5368
-#  Scenario: Move nodeAggregate (generalization) into new parent with gatherSpecializations
-#    When I am in dimension space point {"language": "de"}
-#    And the command MoveNodeAggregate is executed with payload:
-#      | Key                          | Value                       |
-#      | nodeAggregateId              | "nody-mc-nodeface"          |
-#      | newParentNodeAggregateId     | "sir-nodeward-nodington-iv" |
-#      | relationDistributionStrategy | "gatherSpecializations"     |
-#
-#    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
-#      | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
-#      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "de"}        |
-#      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "gsw"}       |
-#    And I expect the ChangeProjection to have no changes in "cs-identifier"
+  Scenario: Move nodeAggregate (generalization) into new parent with gatherSpecializations
+    When I am in dimension space point {"language": "de"}
+    And the command MoveNodeAggregate is executed with payload:
+      | Key                          | Value                       |
+      | nodeAggregateId              | "nody-mc-nodeface"          |
+      | newParentNodeAggregateId     | "sir-nodeward-nodington-iv" |
+      | relationDistributionStrategy | "gatherSpecializations"     |
+
+    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+      | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
+      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "de"}        |
+      | nody-mc-nodeface | 0       | 0       | 1     | 0       | {"language": "gsw"}       |
+    And I expect the ChangeProjection to have no changes in "cs-identifier"
 
   Scenario: Move nodeAggregate with children into new parent
     When I am in dimension space point {"language": "de"}
