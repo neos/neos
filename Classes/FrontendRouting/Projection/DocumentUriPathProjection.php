@@ -25,7 +25,6 @@ use Neos\ContentRepository\Core\Feature\RootNodeCreation\Event\RootNodeAggregate
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasTagged;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasUntagged;
 use Neos\ContentRepository\Core\Infrastructure\DbalSchemaDiff;
-use Neos\ContentRepository\Core\Infrastructure\ProjectionTransactionTrait;
 use Neos\ContentRepository\Core\NodeType\NodeTypeManager;
 use Neos\ContentRepository\Core\NodeType\NodeTypeName;
 use Neos\ContentRepository\Core\Projection\ProjectionInterface;
@@ -41,8 +40,6 @@ use Neos\Neos\FrontendRouting\Exception\NodeNotFoundException;
  */
 final class DocumentUriPathProjection implements ProjectionInterface, WithMarkStaleInterface
 {
-    use ProjectionTransactionTrait;
-
     public const COLUMN_TYPES_DOCUMENT_URIS = [
         'shortcutTarget' => Types::JSON,
     ];
