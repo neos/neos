@@ -45,6 +45,7 @@ class FeatureContext implements BehatContext
     use ContentCacheTrait;
     use AssetUsageTrait;
     use AssetTrait;
+    use ChangeProjectionTrait;
 
     use WorkspaceServiceTrait;
     use ContentRepositorySecurityTrait;
