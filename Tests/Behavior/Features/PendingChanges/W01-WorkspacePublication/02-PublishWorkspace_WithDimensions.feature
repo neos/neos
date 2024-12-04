@@ -1,6 +1,6 @@
 @contentrepository @adapters=DoctrineDBAL
 @flowEntities
-Feature: Publish nodes partially with dimensions
+Feature: Publish nodes with dimensions
 
   Background:
     Given using the following content dimensions:
@@ -30,16 +30,13 @@ Feature: Publish nodes partially with dimensions
       | nodeAggregateId | "lady-eleonode-rootford"      |
       | nodeTypeName    | "Neos.ContentRepository:Root" |
 
-  Scenario: Publish nodes partially from user workspace to live
+  Scenario: Publish nodes from user workspace to live
     Given the command CreateWorkspace is executed with payload:
       | Key                | Value            |
       | workspaceName      | "user-workspace" |
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
     And I am in workspace "user-workspace"
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
 
     Then I am in dimension space point {"language": "de"}
     And the following CreateNodeAggregateWithNode commands are executed:
@@ -47,7 +44,6 @@ Feature: Publish nodes partially with dimensions
       | sir-david-nodenborough    | node       | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {}                                                         |
       | nody-mc-nodeface          | child-node | sir-david-nodenborough | Neos.ContentRepository.Testing:Node | {"text": "This is a text about Nody Mc Nodeface"}          |
       | sir-nodeward-nodington-iv | bakura     | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {"text": "This is a text about Sir Nodeward Nodington IV"} |
-
 
     Then I am in dimension space point {"language": "fr"}
     And the following CreateNodeAggregateWithNode commands are executed:
@@ -61,46 +57,34 @@ Feature: Publish nodes partially with dimensions
       | sir-nodeward-nodington-iv  | 1       | 1       | 0     | 0       | {"language":"de"}         |
       | sir-nodeward-nodington-iii | 1       | 1       | 0     | 0       | {"language":"fr"}         |
 
-    When the command PublishIndividualNodesFromWorkspace is executed with payload:
-      | Key                             | Value                                                                                                                         |
-      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "de"}, "nodeAggregateId": "sir-david-nodenborough"}] |
-      | contentStreamIdForRemainingPart | "user-cs-id-remaining"                                                                                                        |
+    And the command PublishWorkspace is executed with payload:
+      | Key                | Value            |
+      | workspaceName      | "user-workspace" |
+      | newContentStreamId | "new-user-cs-id" |
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id-remaining":
-      | nodeAggregateId            | created | changed | moved | deleted | originDimensionSpacePoint |
-      | nody-mc-nodeface           | 1       | 1       | 0     | 0       | {"language":"de"}         |
-      | sir-nodeward-nodington-iv  | 1       | 1       | 0     | 0       | {"language":"de"}         |
-      | sir-nodeward-nodington-iii | 1       | 1       | 0     | 0       | {"language":"fr"}         |
-    And I expect the ChangeProjection to have no changes in "user-cs-id"
+    Then I expect the ChangeProjection to have no changes in "user-cs-id"
+    And I expect the ChangeProjection to have no changes in "new-user-cs-id"
     And I expect the ChangeProjection to have no changes in "cs-identifier"
 
-  Scenario: Publish nodes partially from user workspace to a non live workspace
+  Scenario: Publish nodes from user workspace to a non live workspace
     Given the command CreateWorkspace is executed with payload:
-      | Key                | Value              |
-      | workspaceName      | "review-workspace" |
-      | baseWorkspaceName  | "live"             |
-      | newContentStreamId | "review-cs-id"     |
-
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value              |
-      | workspaceName | "review-workspace" |
+      | Key                | Value                    |
+      | workspaceName      | "review-workspace"       |
+      | baseWorkspaceName  | "live"                   |
+      | newContentStreamId | "review-cs-id" |
 
     And I am in workspace "review-workspace"
 
     Then I am in dimension space point {"language": "de"}
     And  the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId        | nodeName | parentNodeAggregateId  | nodeTypeName                        | initialPropertyValues |
-      | sir-david-nodenborough | node     | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {}                    |
+      | nodeAggregateId           | nodeName   | parentNodeAggregateId  | nodeTypeName                        | initialPropertyValues                                      |
+      | sir-david-nodenborough    | node       | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {}                                                         |
 
     And the command CreateWorkspace is executed with payload:
-      | Key                | Value              |
-      | workspaceName      | "user-workspace"   |
-      | baseWorkspaceName  | "review-workspace" |
-      | newContentStreamId | "user-cs-id"       |
-
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
+      | Key                | Value                  |
+      | workspaceName      | "user-workspace"       |
+      | baseWorkspaceName  | "review-workspace"     |
+      | newContentStreamId | "user-cs-id" |
 
     And I am in workspace "user-workspace"
 
@@ -117,10 +101,10 @@ Feature: Publish nodes partially with dimensions
       | sourceOrigin    | {"language":"de"}  |
       | targetOrigin    | {"language":"gsw"} |
     And the command SetNodeProperties is executed with payload:
-      | Key                       | Value                  |
-      | nodeAggregateId           | "nody-mc-nodeface"     |
-      | originDimensionSpacePoint | {"language":"gsw"}     |
-      | propertyValues            | {"text": "Other text"} |
+      | Key                       | Value                       |
+      | nodeAggregateId           | "nody-mc-nodeface"          |
+      | originDimensionSpacePoint | {"language":"gsw"}          |
+      | propertyValues            | {"text": "Some other text"} |
 
     And I am in dimension space point {"language": "fr"}
     Then the following CreateNodeAggregateWithNode commands are executed:
@@ -128,8 +112,8 @@ Feature: Publish nodes partially with dimensions
       | sir-nodeward-nodington-iii | esquire  | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {"text": "This is a extended text about Sir Nodeward Nodington III"} |
 
     Then I expect the ChangeProjection to have the following changes in "review-cs-id":
-      | nodeAggregateId        | created | changed | moved | deleted | originDimensionSpacePoint |
-      | sir-david-nodenborough | 1       | 1       | 0     | 0       | {"language":"de"}         |
+      | nodeAggregateId            | created | changed | moved | deleted | originDimensionSpacePoint |
+      | sir-david-nodenborough     | 1       | 1       | 0     | 0       | {"language":"de"}         |
 
     Then I expect the ChangeProjection to have the following changes in "user-cs-id":
       | nodeAggregateId            | created | changed | moved | deleted | originDimensionSpacePoint |
@@ -138,40 +122,36 @@ Feature: Publish nodes partially with dimensions
       | sir-nodeward-nodington-iv  | 1       | 1       | 0     | 0       | {"language":"de"}         |
       | sir-nodeward-nodington-iii | 1       | 1       | 0     | 0       | {"language":"fr"}         |
 
-    When the command PublishIndividualNodesFromWorkspace is executed with payload:
-      | Key                             | Value                                                                                                                   |
-      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "de"}, "nodeAggregateId": "nody-mc-nodeface"}] |
-      | contentStreamIdForRemainingPart | "user-cs-id-remaining"                                                                                                  |
+    And the command PublishWorkspace is executed with payload:
+      | Key                | Value                      |
+      | workspaceName      | "user-workspace"           |
+      | newContentStreamId | "new-user-cs-id" |
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id-remaining":
+    Then I expect the ChangeProjection to have no changes in "user-cs-id"
+    And I expect the ChangeProjection to have no changes in "new-user-cs-id"
+    And I expect the ChangeProjection to have the following changes in "review-cs-id":
       | nodeAggregateId            | created | changed | moved | deleted | originDimensionSpacePoint |
+      | sir-david-nodenborough     | 1       | 1       | 0     | 0       | {"language":"de"}         |
+      | nody-mc-nodeface           | 1       | 1       | 0     | 0       | {"language":"de"}         |
       | nody-mc-nodeface           | 1       | 1       | 0     | 0       | {"language":"gsw"}        |
       | sir-nodeward-nodington-iv  | 1       | 1       | 0     | 0       | {"language":"de"}         |
       | sir-nodeward-nodington-iii | 1       | 1       | 0     | 0       | {"language":"fr"}         |
-    And I expect the ChangeProjection to have no changes in "user-cs-id"
-    And I expect the ChangeProjection to have the following changes in "review-cs-id":
-      | nodeAggregateId        | created | changed | moved | deleted | originDimensionSpacePoint |
-      | sir-david-nodenborough | 1       | 1       | 0     | 0       | {"language":"de"}         |
-      | nody-mc-nodeface       | 1       | 1       | 0     | 0       | {"language":"de"}         |
     And I expect the ChangeProjection to have no changes in "cs-identifier"
 
-  Scenario: Publish nodes partially from user workspace to live with new generalization
+  Scenario: Publish nodes from user workspace to live with new generalization
     Given the command CreateWorkspace is executed with payload:
       | Key                | Value            |
       | workspaceName      | "user-workspace" |
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
     And I am in workspace "user-workspace"
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
 
     Then I am in dimension space point {"language": "de"}
     And the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId            | nodeName   | parentNodeAggregateId  | nodeTypeName                        | initialPropertyValues                                       |
-      | sir-david-nodenborough     | node       | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {}                                                          |
-      | nody-mc-nodeface           | child-node | sir-david-nodenborough | Neos.ContentRepository.Testing:Node | {"text": "This is a text about Nody Mc Nodeface"}           |
-      | sir-nodeward-nodington-iii | esquire    | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {"text": "This is a text about Sir Nodeward Nodington III"} |
+      | nodeAggregateId           | nodeName   | parentNodeAggregateId  | nodeTypeName                        | initialPropertyValues                                      |
+      | sir-david-nodenborough    | node       | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {}                                                         |
+      | nody-mc-nodeface          | child-node | sir-david-nodenborough | Neos.ContentRepository.Testing:Node | {"text": "This is a text about Nody Mc Nodeface"}          |
+      | sir-nodeward-nodington-iv | bakura     | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {"text": "This is a text about Sir Nodeward Nodington IV"} |
 
     And the command CreateNodeVariant is executed with payload:
       | Key             | Value                    |
@@ -180,20 +160,17 @@ Feature: Publish nodes partially with dimensions
       | targetOrigin    | {"language":"en"}        |
 
     Then I expect the ChangeProjection to have the following changes in "user-cs-id":
-      | nodeAggregateId            | created | changed | moved | deleted | originDimensionSpacePoint |
-      | sir-david-nodenborough     | 1       | 1       | 0     | 0       | {"language":"de"}         |
-      | sir-david-nodenborough     | 1       | 1       | 0     | 0       | {"language":"en"}         |
-      | nody-mc-nodeface           | 1       | 1       | 0     | 0       | {"language":"de"}         |
-      | sir-nodeward-nodington-iii | 1       | 1       | 0     | 0       | {"language":"de"}         |
+      | nodeAggregateId           | created | changed | moved | deleted | originDimensionSpacePoint |
+      | sir-david-nodenborough    | 1       | 1       | 0     | 0       | {"language":"de"}         |
+      | nody-mc-nodeface          | 1       | 1       | 0     | 0       | {"language":"de"}         |
+      | sir-nodeward-nodington-iv | 1       | 1       | 0     | 0       | {"language":"de"}         |
+      | sir-david-nodenborough    | 1       | 1       | 0     | 0       | {"language":"en"}         |
 
-    When the command PublishIndividualNodesFromWorkspace is executed with payload:
-      | Key                             | Value                                                                                                                                                                                                                                                     |
-      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "de"}, "nodeAggregateId": "sir-david-nodenborough"},{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "en"}, "nodeAggregateId": "sir-david-nodenborough"}] |
-      | contentStreamIdForRemainingPart | "user-cs-id-remaining"                                                                                                                                                                                                                                    |
+    And the command PublishWorkspace is executed with payload:
+      | Key                | Value            |
+      | workspaceName      | "user-workspace" |
+      | newContentStreamId | "new-user-cs-id" |
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id-remaining":
-      | nodeAggregateId            | created | changed | moved | deleted | originDimensionSpacePoint |
-      | nody-mc-nodeface           | 1       | 1       | 0     | 0       | {"language":"de"}         |
-      | sir-nodeward-nodington-iii | 1       | 1       | 0     | 0       | {"language":"de"}         |
-    And I expect the ChangeProjection to have no changes in "user-cs-id"
+    Then I expect the ChangeProjection to have no changes in "user-cs-id"
+    Then I expect the ChangeProjection to have no changes in "new-user-cs-id"
     And I expect the ChangeProjection to have no changes in "cs-identifier"
