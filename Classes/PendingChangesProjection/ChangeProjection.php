@@ -221,9 +221,9 @@ class ChangeProjection implements ProjectionInterface
         foreach ($affectedDimensionSpacePoints as $affectedDimensionSpacePoint) {
             // always the case due to constraint enforcement (at least one DSP is selected and must have a succeeding sibling or null)
 
-            // WORKAROUND: we simply use the events DSPs here as the origin dimension space point.
-            // But this DSP is not necessarily occupied.
-            // @todo properly handle this by storing the necessary information in the projection
+            // We simply use the events DSPs here to store them as `Change` in even if the DSP is not necessarily  occupied.
+            // this is not problematic as the DSP should only be used for providing additional information where a change has effects instead of locating its origin
+            // todo possibly rename in the `Change` the field to '$affectedDimensionSpacePoint' field instead, as well use it now like that.
 
             $this->markAsMoved(
                 $event->getContentStreamId(),
