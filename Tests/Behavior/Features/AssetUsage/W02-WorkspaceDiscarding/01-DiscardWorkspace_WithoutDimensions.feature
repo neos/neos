@@ -1,6 +1,6 @@
 @contentrepository @adapters=DoctrineDBAL
 @flowEntities
-Feature:  Discard workspace without dimensions
+Feature: Discard workspace without dimensions
 
   Background:
     Given using no content dimensions

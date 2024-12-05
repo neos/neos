@@ -1,6 +1,6 @@
 @contentrepository @adapters=DoctrineDBAL
 @flowEntities
-Feature: Publish nodes partially without dimensions
+Feature: Discard nodes partially without dimensions
 
   Background:
     Given using no content dimensions
