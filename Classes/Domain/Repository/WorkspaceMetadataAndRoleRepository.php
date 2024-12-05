@@ -253,15 +253,30 @@ final readonly class WorkspaceMetadataAndRoleRepository
         $data = array_filter([
             'title' => $title,
             'description' => $description,
-        ], fn ($value) => $value !== null);
+        ], static fn ($value) => $value !== null);
 
+        $table = self::TABLE_NAME_WORKSPACE_METADATA;
+        $query = <<<SQL
+            SELECT
+                content_repository_id
+            FROM
+                {$table}
+            WHERE
+                content_repository_id = :contentRepositoryId
+                AND workspace_name = :workspaceName
+        SQL;
         try {
-            $affectedRows = $this->dbal->update(self::TABLE_NAME_WORKSPACE_METADATA, $data, [
-                'content_repository_id' => $contentRepositoryId->value,
-                'workspace_name' => $workspace->workspaceName->value,
-            ]);
-            if ($affectedRows === 0) {
-                $this->dbal->insert(self::TABLE_NAME_WORKSPACE_METADATA, [
+            $rowExists = $this->dbal->fetchOne($query, [
+                'contentRepositoryId' => $contentRepositoryId->value,
+                'workspaceName' => $workspace->workspaceName->value,
+            ]) !== false;
+            if ($rowExists) {
+                $this->dbal->update($table, $data, [
+                    'content_repository_id' => $contentRepositoryId->value,
+                    'workspace_name' => $workspace->workspaceName->value,
+                ]);
+            } else {
+                $this->dbal->insert($table, [
                     'content_repository_id' => $contentRepositoryId->value,
                     'workspace_name' => $workspace->workspaceName->value,
                     'description' => '',
