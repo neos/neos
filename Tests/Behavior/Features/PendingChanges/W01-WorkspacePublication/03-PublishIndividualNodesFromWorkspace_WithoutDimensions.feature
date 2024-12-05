@@ -50,7 +50,7 @@ Feature: Publish nodes partially without dimensions
 
     When the command PublishIndividualNodesFromWorkspace is executed with payload:
       | Key                             | Value                                                                                                         |
-      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-david-nodenborough"}] |
+      | nodesToPublish                  | ["sir-david-nodenborough"] |
       | contentStreamIdForRemainingPart | "user-cs-id-remaining"                                                                                        |
 
     Then I expect the ChangeProjection to have the following changes in "user-cs-id-remaining":
@@ -99,7 +99,7 @@ Feature: Publish nodes partially without dimensions
 
     When the command PublishIndividualNodesFromWorkspace is executed with payload:
       | Key                             | Value                                                                                                   |
-      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "nody-mc-nodeface"}] |
+      | nodesToPublish                  | ["nody-mc-nodeface"] |
       | contentStreamIdForRemainingPart | "user-cs-id-remaining"                                                                                  |
 
     Then I expect the ChangeProjection to have the following changes in "user-cs-id-remaining":
