@@ -18,6 +18,7 @@ use Neos\ContentRepository\Core\Feature\Security\Exception\AccessDenied;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateRootWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Exception\WorkspaceAlreadyExists;
+use Neos\ContentRepository\Core\Feature\WorkspaceModification\Command\DeleteWorkspace;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\Workspace;
@@ -202,6 +203,24 @@ final readonly class WorkspaceService
         $this->requireManagementWorkspacePermission($contentRepositoryId, $workspaceName);
         $this->requireWorkspace($contentRepositoryId, $workspaceName);
         $this->metadataAndRoleRepository->unassignWorkspaceRole($contentRepositoryId, $workspaceName, $subject);
+    }
+
+    /**
+     * Deletes a content repository workspace and also all role assignments and metadata
+     */
+    public function deleteWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
+    {
+        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
+        $this->requireWorkspace($contentRepositoryId, $workspaceName);
+
+        $contentRepository->handle(
+            DeleteWorkspace::create(
+                $workspaceName
+            )
+        );
+
+        $this->metadataAndRoleRepository->deleteWorkspaceMetadata($contentRepositoryId, $workspaceName);
+        $this->metadataAndRoleRepository->deleteWorkspaceRoleAssignments($contentRepositoryId, $workspaceName);
     }
 
     /**

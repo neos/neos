@@ -178,6 +178,58 @@ final readonly class WorkspaceMetadataAndRoleRepository
         return WorkspaceRole::from($role);
     }
 
+    public function deleteWorkspaceMetadata(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
+    {
+        $table = self::TABLE_NAME_WORKSPACE_METADATA;
+        $query = <<<SQL
+             DELETE FROM
+                 {$table}
+             WHERE
+                 content_repository_id = :contentRepositoryId
+                 AND workspace_name = :workspaceName
+         SQL;
+
+        try {
+            $this->dbal->executeStatement($query, [
+                'contentRepositoryId' => $contentRepositoryId->value,
+                'workspaceName' => $workspaceName->value,
+            ]);
+        } catch (DbalException $e) {
+            throw new \RuntimeException(sprintf(
+                'Failed to delete metadata for workspace "%s" (Content Repository "%s"): %s',
+                $workspaceName->value,
+                $contentRepositoryId->value,
+                $e->getMessage()
+            ), 1726821159, $e);
+        }
+    }
+
+    public function deleteWorkspaceRoleAssignments(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
+    {
+        $table = self::TABLE_NAME_WORKSPACE_ROLE;
+        $query = <<<SQL
+             DELETE FROM
+                 {$table}
+             WHERE
+                 content_repository_id = :contentRepositoryId
+                 AND workspace_name = :workspaceName
+         SQL;
+
+        try {
+            $this->dbal->executeStatement($query, [
+                'contentRepositoryId' => $contentRepositoryId->value,
+                'workspaceName' => $workspaceName->value,
+            ]);
+        } catch (DbalException $e) {
+            throw new \RuntimeException(sprintf(
+                'Failed to delete role assignments for workspace "%s" (Content Repository "%s"): %s',
+                $workspaceName->value,
+                $contentRepositoryId->value,
+                $e->getMessage()
+            ), 1726821159, $e);
+        }
+    }
+
     /**
      * Removes all workspace metadata records for the specified content repository id
      */
