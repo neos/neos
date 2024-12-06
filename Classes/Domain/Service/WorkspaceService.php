@@ -140,6 +140,7 @@ final readonly class WorkspaceService
         }
         $this->createRootWorkspace($contentRepositoryId, $workspaceName, WorkspaceTitle::fromString('Public live workspace'), WorkspaceDescription::empty());
         $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, WorkspaceRoleAssignment::createForGroup('Neos.Neos:LivePublisher', WorkspaceRole::COLLABORATOR));
+        $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, WorkspaceRoleAssignment::createForGroup('Neos.Flow:Everybody', WorkspaceRole::VIEWER));
     }
 
     /**

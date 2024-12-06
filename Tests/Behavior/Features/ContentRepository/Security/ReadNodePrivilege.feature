@@ -29,10 +29,7 @@ Feature: ReadNodePrivilege related features
     """
     And using identifier "default", I define a content repository
     And I am in content repository "default"
-    And the command CreateRootWorkspace is executed with payload:
-      | Key                | Value           |
-      | workspaceName      | "live"          |
-      | newContentStreamId | "cs-identifier" |
+    And the live workspace exists
     And I am in workspace "live" and dimension space point {}
     And the command CreateRootNodeAggregateWithNode is executed with payload:
       | Key             | Value                         |
@@ -64,7 +61,6 @@ Feature: ReadNodePrivilege related features
       | nodeAggregateId              | "a"                  |
       | nodeVariantSelectionStrategy | "allSpecializations" |
       | tag                          | "subtree_a"          |
-    And the role VIEWER is assigned to workspace "live" for group "Neos.Flow:Everybody"
     When a personal workspace for user "editor" is created
     And content repository security is enabled
 
