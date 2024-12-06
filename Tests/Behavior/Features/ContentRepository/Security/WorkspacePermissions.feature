@@ -42,12 +42,15 @@ Feature: Workspace permission related features
     And the following Neos users exist:
       | Username          | Roles                      |
       | admin             | Neos.Neos:Administrator    |
+      # editors are Neos.Neos:LivePublisher
       | editor            | Neos.Neos:Editor           |
-      | restricted_editor | Neos.Neos:RestrictedEditor |
       | owner             | Neos.Neos:Editor           |
       | manager           | Neos.Neos:Editor           |
       | collaborator      | Neos.Neos:Editor           |
+      | restricted_editor | Neos.Neos:RestrictedEditor |
       | uninvolved        | Neos.Neos:Editor           |
+      # neos user with out any editing roles
+      | simple_user       | Neos.Neos:UserManager      |
 
     When content repository security is enabled
 
@@ -72,8 +75,9 @@ Feature: Workspace permission related features
       | owner             |
       | collaborator      |
       | uninvolved        |
+      | simple_user       |
 
-  Scenario Outline: Creating a base workspace without WRITE permissions
+  Scenario Outline: Creating a nested workspace without READ permissions
     Given I am authenticated as <user>
     And the shared workspace "some-shared-workspace" is created with the target workspace "workspace"
     Then an exception of type "AccessDenied" should be thrown with code 1729086686
@@ -87,8 +91,9 @@ Feature: Workspace permission related features
       | editor            |
       | restricted_editor |
       | uninvolved        |
+      | simple_user       |
 
-  Scenario Outline: Creating a base workspace with WRITE permissions
+  Scenario Outline: Creating a nested workspace with READ permissions
     Given I am authenticated as <user>
     And the shared workspace "some-shared-workspace" is created with the target workspace "workspace"
 
@@ -98,6 +103,33 @@ Feature: Workspace permission related features
       | user         |
       | collaborator |
       | owner        |
+
+  Scenario Outline: Creating a workspace without READ permissions (on live)
+    Given I am authenticated as <user>
+    And the shared workspace "some-shared-workspace" is created with the target workspace "live"
+    Then an exception of type "AccessDenied" should be thrown with code 1729086686
+
+    And the personal workspace "some-other-personal-workspace" is created with the target workspace "live" for user <user>
+    Then an exception of type "AccessDenied" should be thrown with code 1729086686
+
+    Examples:
+      | user              |
+      | restricted_editor |
+      | simple_user       |
+
+  Scenario Outline: Creating a workspace with READ permissions (on live)
+    Given I am authenticated as <user>
+    And the shared workspace "some-shared-workspace" is created with the target workspace "live"
+
+    And the personal workspace "some-other-personal-workspace" is created with the target workspace "live" for user <user>
+
+    Examples:
+      | user              |
+      | admin             |
+      | editor            |
+      | owner             |
+      | collaborator      |
+      | uninvolved        |
 
   Scenario Outline: Changing a base workspace without MANAGE permissions or READ permissions on the base workspace
     Given I am authenticated as <user>
@@ -136,6 +168,7 @@ Feature: Workspace permission related features
       | user         |
       | collaborator |
       | uninvolved   |
+      | simple_user  |
 
   Scenario Outline: Deleting a workspace with MANAGE permissions
     Given I am authenticated as <user>
@@ -247,5 +280,6 @@ Feature: Workspace permission related features
       | PublishWorkspace                    | {}                                                                                                     |
       | PublishIndividualNodesFromWorkspace | {"nodesToPublish":[{"nodeAggregateId":"a1"}]}                                                          |
       | RebaseWorkspace                     | {}                                                                                                     |
+      # note, creating a core workspace will not grant permissions to it to the current user: Missing "read" permissions for base workspace "new-workspace"
       | CreateWorkspace                     | {"workspaceName":"new-workspace","baseWorkspaceName":"workspace","newContentStreamId":"any"}           |
 

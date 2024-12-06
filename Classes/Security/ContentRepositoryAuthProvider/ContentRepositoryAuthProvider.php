@@ -116,6 +116,13 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
         if ($command instanceof CreateRootWorkspace) {
             return Privilege::denied('Creation of root workspaces is currently only allowed with disabled authorization checks');
         }
+        if ($command instanceof CreateWorkspace) {
+            $baseWorkspacePermissions = $this->getWorkspacePermissionsForCurrentUser($command->baseWorkspaceName);
+            if (!$baseWorkspacePermissions->read) {
+                return Privilege::denied(sprintf('Missing "read" permissions for base workspace "%s": %s', $command->baseWorkspaceName->value, $baseWorkspacePermissions->getReason()));
+            }
+            return Privilege::granted(sprintf('User has "read" permissions for base workspace "%s"', $command->baseWorkspaceName->value));
+        }
         if ($command instanceof ChangeBaseWorkspace) {
             $workspacePermissions = $this->getWorkspacePermissionsForCurrentUser($command->workspaceName);
             if (!$workspacePermissions->manage) {
@@ -139,7 +146,6 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
             PublishWorkspace::class,
             PublishIndividualNodesFromWorkspace::class,
             RebaseWorkspace::class => $this->requireWorkspaceWritePermission($command->workspaceName),
-            CreateWorkspace::class => $this->requireWorkspaceWritePermission($command->baseWorkspaceName),
             DeleteWorkspace::class => $this->requireWorkspaceManagePermission($command->workspaceName),
             default => Privilege::granted('Command not restricted'),
         };
