@@ -42,13 +42,12 @@ Feature: Workspace permission related features
     And the following Neos users exist:
       | Username          | Roles                      |
       | admin             | Neos.Neos:Administrator    |
-      # editors are Neos.Neos:LivePublisher
-      | editor            | Neos.Neos:Editor           |
+      # all editors are Neos.Neos:LivePublisher
       | owner             | Neos.Neos:Editor           |
       | manager           | Neos.Neos:Editor           |
       | collaborator      | Neos.Neos:Editor           |
       | restricted_editor | Neos.Neos:RestrictedEditor |
-      | uninvolved        | Neos.Neos:Editor           |
+      | uninvolved_editor | Neos.Neos:Editor           |
       # neos user with out any editing roles
       | simple_user       | Neos.Neos:UserManager      |
 
@@ -70,11 +69,10 @@ Feature: Workspace permission related features
     Examples:
       | user              |
       | admin             |
-      | editor            |
       | restricted_editor |
       | owner             |
       | collaborator      |
-      | uninvolved        |
+      | uninvolved_editor |
       | simple_user       |
 
   Scenario Outline: Creating a nested workspace without READ permissions
@@ -88,9 +86,8 @@ Feature: Workspace permission related features
     Examples:
       | user              |
       | admin             |
-      | editor            |
       | restricted_editor |
-      | uninvolved        |
+      | uninvolved_editor |
       | simple_user       |
 
   Scenario Outline: Creating a nested workspace with READ permissions
@@ -126,10 +123,9 @@ Feature: Workspace permission related features
     Examples:
       | user              |
       | admin             |
-      | editor            |
       | owner             |
       | collaborator      |
-      | uninvolved        |
+      | uninvolved_editor |
 
   Scenario Outline: Changing a base workspace without MANAGE permissions or READ permissions on the base workspace
     Given I am authenticated as <user>
@@ -141,10 +137,9 @@ Feature: Workspace permission related features
 
     Examples:
       | user              |
-      | editor            |
       | restricted_editor |
       | collaborator      |
-      | uninvolved        |
+      | uninvolved_editor |
 
   Scenario Outline: Changing a base workspace with MANAGE permissions or READ permissions on the base workspace
     Given I am authenticated as <user>
@@ -165,10 +160,10 @@ Feature: Workspace permission related features
     Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
 
     Examples:
-      | user         |
-      | collaborator |
-      | uninvolved   |
-      | simple_user  |
+      | user              |
+      | collaborator      |
+      | uninvolved_editor |
+      | simple_user       |
 
   Scenario Outline: Deleting a workspace with MANAGE permissions
     Given I am authenticated as <user>
@@ -195,9 +190,9 @@ Feature: Workspace permission related features
     Then an exception of type "AccessDenied" should be thrown with code 1731654519
 
     Examples:
-      | user         |
-      | collaborator |
-      | uninvolved   |
+      | user              |
+      | collaborator      |
+      | uninvolved_editor |
 
   Scenario Outline: Managing metadata and roles of a workspace with MANAGE permissions
     Given I am authenticated as <user>
@@ -234,10 +229,7 @@ Feature: Workspace permission related features
     And I am in workspace "workspace"
 
     When I am authenticated as "uninvolved"
-    And the command <command> is executed with payload '<command payload>' and exceptions are caught
-    Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
-
-    When I am authenticated as "editor"
+    When I am authenticated as "uninvolved_editor"
     And the command <command> is executed with payload '<command payload>' and exceptions are caught
     Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
 
@@ -308,8 +300,7 @@ Feature: Workspace permission related features
       | user              |
       | restricted_editor |
       | simple_user       |
-      | uninvolved        |
-      | editor            |
+      | uninvolved_editor |
       | admin             |
 
   Scenario Outline: Publishing a workspace with WRITE permissions to live
