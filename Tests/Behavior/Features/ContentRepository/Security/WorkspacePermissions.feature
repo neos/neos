@@ -62,6 +62,8 @@ Feature: Workspace permission related features
       | Key                          | Value         |
       | nodeAggregateId              | "a1a1a"       |
       | nodeVariantSelectionStrategy | "allVariants" |
+    And the shared workspace "shared-workspace" is created with the target workspace "live"
+    When the role COLLABORATOR is assigned to workspace "shared-workspace" for group "Neos.Neos:AbstractEditor"
     And the personal workspace "workspace" is created with the target workspace "live" for user "owner"
     And I am in workspace "workspace"
     And the role MANAGER is assigned to workspace "workspace" for user "manager"
@@ -110,6 +112,34 @@ Feature: Workspace permission related features
     Examples:
       | user         |
       | collaborator |
+      | owner        |
+
+  Scenario Outline: Changing a base workspace without MANAGE permissions or READ permissions on the base workspace
+    Given I am authenticated as <user>
+    When the command ChangeBaseWorkspace is executed with payload and exceptions are caught:
+      | Key               | Value                   |
+      | workspaceName     | "workspace"             |
+      | baseWorkspaceName | "shared-workspace"      |
+    Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
+
+    Examples:
+      | user              |
+      | editor            |
+      | restricted_editor |
+      | collaborator      |
+      | uninvolved        |
+
+  Scenario Outline: Changing a base workspace with MANAGE permissions or READ permissions on the base workspace
+    Given I am authenticated as <user>
+    When the command ChangeBaseWorkspace is executed with payload:
+      | Key               | Value                   |
+      | workspaceName     | "workspace"             |
+      | baseWorkspaceName | "shared-workspace"      |
+
+    Examples:
+      | user         |
+      | admin        |
+      | manager      |
       | owner        |
 
   Scenario Outline: Deleting a workspace without MANAGE permissions
