@@ -51,28 +51,16 @@ Feature: Workspace permission related features
       | manager           | Neos.Neos:Editor           |
       | collaborator      | Neos.Neos:Editor           |
       | uninvolved        | Neos.Neos:Editor           |
-    And I am in workspace "live"
-    And I am in dimension space point {"language":"de"}
-    And the command TagSubtree is executed with payload:
-      | Key                          | Value                |
-      | nodeAggregateId              | "a"                  |
-      | nodeVariantSelectionStrategy | "allSpecializations" |
-      | tag                          | "subtree_a"          |
-    And the command DisableNodeAggregate is executed with payload:
-      | Key                          | Value         |
-      | nodeAggregateId              | "a1a1a"       |
-      | nodeVariantSelectionStrategy | "allVariants" |
+
+    When content repository security is enabled
+
     And the shared workspace "shared-workspace" is created with the target workspace "live"
-    When the role COLLABORATOR is assigned to workspace "shared-workspace" for group "Neos.Neos:AbstractEditor"
+    And the role COLLABORATOR is assigned to workspace "shared-workspace" for group "Neos.Neos:AbstractEditor"
+
+    Given I am authenticated as owner
     And the personal workspace "workspace" is created with the target workspace "live" for user "owner"
-    And I am in workspace "workspace"
     And the role MANAGER is assigned to workspace "workspace" for user "manager"
     And the role COLLABORATOR is assigned to workspace "workspace" for user "collaborator"
-    # The following step was added in order to make the `AddDimensionShineThrough` command viable
-    And I change the content dimensions in content repository "default" to:
-      | Identifier | Values      | Generalizations |
-      | language   | mul, de, ch | ch->de->mul     |
-    And content repository security is enabled
 
   Scenario Outline: Creating a root workspace
     Given I am authenticated as <user>
@@ -195,6 +183,26 @@ Feature: Workspace permission related features
       | owner   |
 
   Scenario Outline: Handling commands that require WRITE permissions on the workspace
+    # Prepare the content repository so all commands are applicable
+    And I am in workspace "live" and dimension space point {"language":"de"}
+    And the command TagSubtree is executed with payload:
+      | Key                          | Value                |
+      | nodeAggregateId              | "a"                  |
+      | nodeVariantSelectionStrategy | "allSpecializations" |
+      | tag                          | "subtree_a"          |
+    And the command DisableNodeAggregate is executed with payload:
+      | Key                          | Value             |
+      | nodeAggregateId              | "a1a1a"           |
+      | nodeVariantSelectionStrategy | "allVariants"     |
+    # The following step was added in order to make the `AddDimensionShineThrough` command viable
+    And I change the content dimensions in content repository "default" to:
+      | Identifier | Values      | Generalizations |
+      | language   | mul, de, ch | ch->de->mul     |
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value       |
+      | workspaceName | "workspace" |
+    And I am in workspace "workspace"
+
     When I am authenticated as "uninvolved"
     And the command <command> is executed with payload '<command payload>' and exceptions are caught
     Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686

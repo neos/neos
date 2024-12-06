@@ -63,6 +63,16 @@ trait WorkspaceServiceTrait
     }
 
     /**
+     * @Given the live workspace exists
+     */
+    public function theLiveWorkspaceExists(): void
+    {
+        $this->getObject(WorkspaceService::class)->createLiveWorkspaceIfMissing(
+            $this->currentContentRepository->id
+        );
+    }
+
+    /**
      * @When the personal workspace :workspaceName is created with the target workspace :targetWorkspace for user :username
      */
     public function thePersonalWorkspaceIsCreatedWithTheTargetWorkspace(string $workspaceName, string $targetWorkspace, string $username): void
