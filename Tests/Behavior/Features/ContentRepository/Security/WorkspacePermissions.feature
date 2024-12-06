@@ -277,9 +277,59 @@ Feature: Workspace permission related features
       | UpdateRootNodeAggregateDimensions   | {"nodeAggregateId":"root"}                                                                             |
       | DiscardWorkspace                    | {}                                                                                                     |
       | DiscardIndividualNodesFromWorkspace | {"nodesToDiscard":[{"nodeAggregateId":"a1"}]}                                                          |
-      | PublishWorkspace                    | {}                                                                                                     |
-      | PublishIndividualNodesFromWorkspace | {"nodesToPublish":[{"nodeAggregateId":"a1"}]}                                                          |
       | RebaseWorkspace                     | {}                                                                                                     |
       # note, creating a core workspace will not grant permissions to it to the current user: Missing "read" permissions for base workspace "new-workspace"
       | CreateWorkspace                     | {"workspaceName":"new-workspace","baseWorkspaceName":"workspace","newContentStreamId":"any"}           |
 
+  Scenario Outline: Publishing a workspace without WRITE permissions to live
+    # make changes as owner
+    Given I am authenticated as owner
+
+    And the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId | nodeTypeName       | parentNodeAggregateId | workspaceName | originDimensionSpacePoint |
+      | shernode-homes  | Neos.Neos:Document | a                     | workspace     | {"language":"de"}         |
+      | other-node      | Neos.Neos:Document | a                     | workspace     | {"language":"de"}         |
+
+    # someone else attempts to publish
+    Given I am authenticated as <user>
+
+    And the command PublishIndividualNodesFromWorkspace is executed with payload and exceptions are caught:
+      | Key            | Value                                  |
+      | workspaceName  | "workspace"                            |
+      | nodesToPublish | [{"nodeAggregateId":"shernode-homes"}] |
+    Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
+
+    And the command PublishWorkspace is executed with payload and exceptions are caught:
+      | Key           | Value       |
+      | workspaceName | "workspace" |
+    Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
+
+    Examples:
+      | user              |
+      | restricted_editor |
+      | simple_user       |
+      | uninvolved        |
+      | editor            |
+      | admin             |
+
+  Scenario Outline: Publishing a workspace with WRITE permissions to live
+    Given I am authenticated as <user>
+
+    And the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId | nodeTypeName       | parentNodeAggregateId | workspaceName | originDimensionSpacePoint |
+      | shernode-homes  | Neos.Neos:Document | a                     | workspace     | {"language":"de"}         |
+      | other-node      | Neos.Neos:Document | a                     | workspace     | {"language":"de"}         |
+
+    And the command PublishIndividualNodesFromWorkspace is executed with payload:
+      | Key            | Value                                  |
+      | workspaceName  | "workspace"                            |
+      | nodesToPublish | [{"nodeAggregateId":"shernode-homes"}] |
+
+    And the command PublishWorkspace is executed with payload:
+      | Key           | Value       |
+      | workspaceName | "workspace" |
+
+    Examples:
+      | user         |
+      | owner        |
+      | collaborator |
