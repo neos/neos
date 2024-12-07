@@ -245,6 +245,10 @@ class GraphProjectorCatchUpHookForCacheFlushing implements CatchUpHookInterface
         );
     }
 
+    public function onAfterBatchCompleted(): void
+    {
+    }
+
     public function onAfterCatchUp(): void
     {
         foreach ($this->flushNodeAggregateRequestsOnAfterCatchUp as $request) {

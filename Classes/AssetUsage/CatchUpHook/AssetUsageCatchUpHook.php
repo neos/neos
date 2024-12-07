@@ -88,6 +88,10 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
         };
     }
 
+    public function onAfterBatchCompleted(): void
+    {
+    }
+
     public function onAfterCatchUp(): void
     {
     }

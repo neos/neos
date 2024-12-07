@@ -60,6 +60,11 @@ final class RouterCacheHook implements CatchUpHookInterface
         };
     }
 
+    public function onAfterBatchCompleted(): void
+    {
+        // Nothing to do here
+    }
+
     public function onAfterCatchUp(): void
     {
         // Nothing to do here
