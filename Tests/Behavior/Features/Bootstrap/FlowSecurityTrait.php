@@ -132,4 +132,16 @@ trait FlowSecurityTrait
             }
         });
     }
+
+    /**
+     * @When I am not authenticated
+     */
+    final public function iAmNotAuthenticated(): void
+    {
+        $this->flowSecurity_testingProvider->reset();
+        $securityContext = $this->getObject(SecurityContext::class);
+        $securityContext->clearContext();
+        $securityContext->setRequest($this->flowSecurity_mockActionRequest);
+        $this->getObject(AuthenticationProviderManager::class)->authenticate();
+    }
 }

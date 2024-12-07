@@ -101,18 +101,9 @@ Feature: Workspace permission related features
       | collaborator |
       | owner        |
 
-  Scenario Outline: Creating a workspace without READ permissions (on live)
-    Given I am authenticated as <user>
+  Scenario: Creating a workspace without Neos User but READ permissions on live
+    Given I am not authenticated
     And the shared workspace "some-shared-workspace" is created with the target workspace "live"
-    Then an exception of type "AccessDenied" should be thrown with code 1729086686
-
-    And the personal workspace "some-other-personal-workspace" is created with the target workspace "live" for user <user>
-    Then an exception of type "AccessDenied" should be thrown with code 1729086686
-
-    Examples:
-      | user              |
-      | restricted_editor |
-      | simple_user       |
 
   Scenario Outline: Creating a workspace with READ permissions (on live)
     Given I am authenticated as <user>
@@ -126,6 +117,8 @@ Feature: Workspace permission related features
       | owner             |
       | collaborator      |
       | uninvolved_editor |
+      | restricted_editor |
+      | simple_user       |
 
   Scenario Outline: Changing a base workspace without MANAGE permissions or READ permissions on the base workspace
     Given I am authenticated as <user>
@@ -226,9 +219,13 @@ Feature: Workspace permission related features
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value       |
       | workspaceName | "workspace" |
+
     And I am in workspace "workspace"
 
-    When I am authenticated as "uninvolved"
+    Given I am not authenticated
+    And the command <command> is executed with payload '<command payload>' and exceptions are caught
+    Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
+
     When I am authenticated as "uninvolved_editor"
     And the command <command> is executed with payload '<command payload>' and exceptions are caught
     Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
