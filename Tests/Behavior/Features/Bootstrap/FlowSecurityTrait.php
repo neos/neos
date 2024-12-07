@@ -83,6 +83,7 @@ trait FlowSecurityTrait
         $this->flowSecurity_testingProvider = $tokenAndProviderFactory->getProviders()['TestingProvider'];
 
         $securityContext = $this->getObject(SecurityContext::class);
+        $securityContext->clearContext(); // enable authorizationChecks
         $httpRequest = $this->getObject(ServerRequestFactoryInterface::class)->createServerRequest('GET', 'http://localhost/');
         $this->flowSecurity_mockActionRequest = ActionRequest::fromHttpRequest($httpRequest);
         $securityContext->setRequest($this->flowSecurity_mockActionRequest);
