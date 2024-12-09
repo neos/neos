@@ -352,6 +352,9 @@ final readonly class WorkspaceMetadataAndRoleRepository
                 content_repository_id = :contentRepositoryId
                 AND classification = :personalWorkspaceClassification
                 AND owner_user_id = :userId
+            -- TODO introduce better deterministic selection of "primary" workspace if multiple exist
+            ORDER BY workspace_name
+            LIMIT 1
         SQL;
         $workspaceName = $this->dbal->fetchOne($query, [
             'contentRepositoryId' => $contentRepositoryId->value,

@@ -97,9 +97,9 @@ final readonly class WorkspaceService
     }
 
     /**
-     * Retrieve the currently active personal workspace for the specified $userId
+     * Retrieve the first personal workspace for the specified user
      *
-     * NOTE: Currently there can only ever be a single personal workspace per user. But this API already prepares support for multiple personal workspaces per user
+     * NOTE: Conventionally each user has only a single personal workspace but in case multiple exist the first is returned
      */
     public function getPersonalWorkspaceForUser(ContentRepositoryId $contentRepositoryId, UserId $userId): Workspace
     {
@@ -153,7 +153,6 @@ final readonly class WorkspaceService
 
     /**
      * Create a new, personal, workspace for the specified user if none exists yet
-     * @internal experimental api, until actually used by the Neos.Ui
      */
     public function createPersonalWorkspaceForUserIfMissing(ContentRepositoryId $contentRepositoryId, User $user): void
     {

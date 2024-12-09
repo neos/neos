@@ -87,13 +87,21 @@ Feature: Neos WorkspaceService related features
       | Title               | Description                    | Classification | Owner user id |
       | some-root-workspace | Some new workspace description | ROOT           |               |
 
-
   Scenario: Create a single personal workspace
     When the root workspace "some-root-workspace" is created
     And the personal workspace "some-user-workspace" is created with the target workspace "some-root-workspace" for user "jane.doe"
+    Then the personal workspace for user "jane.doe" is "some-user-workspace"
     Then the workspace "some-user-workspace" should have the following metadata:
       | Title               | Description | Classification | Owner user id |
       | some-user-workspace |             | PERSONAL       | janedoe       |
+
+
+  Scenario: For multiple personal workspaces only one workspace is returned
+    When the root workspace "some-root-workspace" is created
+    And the personal workspace "b-user-workspace" is created with the target workspace "some-root-workspace" for user "jane.doe"
+    And the personal workspace "a-user-workspace" is created with the target workspace "some-root-workspace" for user "jane.doe"
+    And the personal workspace "c-user-workspace" is created with the target workspace "some-root-workspace" for user "jane.doe"
+    Then the personal workspace for user "jane.doe" is "a-user-workspace"
 
   Scenario: Create a single shared workspace
     When the root workspace "some-root-workspace" is created
@@ -196,6 +204,7 @@ Feature: Neos WorkspaceService related features
   Scenario: Workspace permissions for personal workspace for admin user
     Given the root workspace "live" is created
     When a personal workspace for user "jane.doe" is created
+    Then the personal workspace for user "jane.doe" is "jane-doe"
     Then the workspace "jane-doe" should have the following metadata:
       | Title    | Description | Classification | Owner user id |
       | Jane Doe |             | PERSONAL       | janedoe       |

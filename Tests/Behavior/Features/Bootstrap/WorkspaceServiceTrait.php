@@ -118,6 +118,17 @@ trait WorkspaceServiceTrait
     }
 
     /**
+     * @Then the personal workspace for user :username is :workspaceName
+     */
+    public function thePersonalWorkspaceForUserIs(string $workspaceName, string $username): void
+    {
+        $ownerUserId = $this->userIdForUsername($username);
+        $actualWorkspace = $this->getObject(WorkspaceService::class)->getPersonalWorkspaceForUser($this->currentContentRepository->id, $ownerUserId);
+        Assert::assertNotNull($actualWorkspace);
+        Assert::assertSame($workspaceName, $actualWorkspace->workspaceName->value);
+    }
+
+    /**
      * @When the shared workspace :workspaceName is created with the target workspace :targetWorkspace
      * @When the shared workspace :workspaceName is created with the target workspace :targetWorkspace and role assignments:
      */
