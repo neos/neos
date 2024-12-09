@@ -128,9 +128,9 @@ Feature: Neos WorkspaceService related features
 
   Scenario: Assign role to non-existing workspace
     When the role COLLABORATOR is assigned to workspace "some-workspace" for group "Neos.Neos:AbstractEditor"
-    Then an exception of type "RuntimeException" should be thrown with message:
+    Then an exception of type "WorkspaceDoesNotExist" should be thrown with message:
     """
-    Failed to find workspace with name "some-workspace" for content repository "default"
+    The workspace "some-workspace" does not exist in content repository "default"
     """
 
   Scenario: Assign group role to root workspace
@@ -167,9 +167,9 @@ Feature: Neos WorkspaceService related features
 
   Scenario: Unassign role from non-existing workspace
     When the role for group "Neos.Neos:AbstractEditor" is unassigned from workspace "some-workspace"
-    Then an exception of type "RuntimeException" should be thrown with message:
+    Then an exception of type "WorkspaceDoesNotExist" should be thrown with message:
     """
-    Failed to find workspace with name "some-workspace" for content repository "default"
+    The workspace "some-workspace" does not exist in content repository "default"
     """
 
   Scenario: Unassign role from workspace that has not been assigned before

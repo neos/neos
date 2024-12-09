@@ -15,10 +15,9 @@ declare(strict_types=1);
 use Behat\Gherkin\Node\TableNode;
 use Neos\ContentRepository\BehavioralTests\TestSuite\Behavior\CRBehavioralTestsSubjectProvider;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateRootWorkspace;
-use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateWorkspace;
+use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
-use Neos\Flow\Security\Context as SecurityContext;
 use Neos\Neos\Domain\Model\UserId;
 use Neos\Neos\Domain\Model\WorkspaceDescription;
 use Neos\Neos\Domain\Model\WorkspaceRole;
@@ -186,7 +185,7 @@ trait WorkspaceServiceTrait
         try {
             $this->getObject(WorkspaceService::class)->getWorkspaceMetadata($this->currentContentRepository->id, WorkspaceName::fromString($workspaceName));
         } catch (\Throwable $e) {
-            Assert::assertInstanceOf(\RuntimeException::class, $e, $e->getMessage());
+            Assert::assertInstanceOf(WorkspaceDoesNotExist::class, $e, $e->getMessage());
             return;
         }
         Assert::fail('Did not throw');
@@ -204,7 +203,7 @@ trait WorkspaceServiceTrait
         try {
             $this->getObject(WorkspaceService::class)->getWorkspaceRoleAssignments($this->currentContentRepository->id, WorkspaceName::fromString($workspaceName));
         } catch (\Throwable $e) {
-            Assert::assertInstanceOf(\RuntimeException::class, $e, $e->getMessage());
+            Assert::assertInstanceOf(WorkspaceDoesNotExist::class, $e, $e->getMessage());
             return;
         }
         Assert::fail('Did not throw');
