@@ -132,7 +132,6 @@ Feature: Discard nodes partially with dimensions
       | asset-2 | nody-mc-nodeface           | assets       | user-workspace | {"language": "gsw"}       |
       | asset-3 | sir-nodeward-nodington-iii | text         | user-workspace | {"language": "fr"}        |
 
-    # todo check if test is usefull
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                                    |
       | workspaceName      | "user-workspace"                                                                                                         |
@@ -172,7 +171,6 @@ Feature: Discard nodes partially with dimensions
       | asset-2 | nody-mc-nodeface           | assets       | user-workspace | {"language": "de"}        |
       | asset-3 | sir-nodeward-nodington-iii | text         | user-workspace | {"language": "de"}        |
 
-    # todo differnt en de now simpler
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                                                                                                                                                                            |
       | workspaceName      | "user-workspace"                                                                                                                                                                                                                                                 |

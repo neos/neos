@@ -178,7 +178,6 @@ Feature: Publish nodes partially with dimensions
       | asset-2 | nody-mc-nodeface           | assets       | user-workspace | {"language": "de"}        |
       | asset-3 | sir-nodeward-nodington-iii | text         | user-workspace | {"language": "de"}        |
 
-    # todo de en is ONE
     When the command PublishIndividualNodesFromWorkspace is executed with payload:
       | Key                             | Value                                                                                                                                                                                                                                                     |
       | nodesToPublish                  | ["sir-david-nodenborough"] |
