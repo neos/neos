@@ -63,6 +63,17 @@ trait WorkspaceServiceTrait
     }
 
     /**
+     * @When the workspace :workspaceName is deleted
+     */
+    public function theWorkspaceIsDeleted(string $workspaceName): void
+    {
+        $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->deleteWorkspace(
+            $this->currentContentRepository->id,
+            WorkspaceName::fromString($workspaceName),
+        ));
+    }
+
+    /**
      * @Given the live workspace exists
      */
     public function theLiveWorkspaceExists(): void
@@ -126,18 +137,6 @@ trait WorkspaceServiceTrait
     }
 
     /**
-     * @When a workspace :workspaceName with base workspace :baseWorkspaceName exists without metadata
-     */
-    public function aWorkspaceWithBaseWorkspaceExistsWithoutMetadata(string $workspaceName, string $baseWorkspaceName): void
-    {
-        $this->currentContentRepository->handle(CreateWorkspace::create(
-            WorkspaceName::fromString($workspaceName),
-            WorkspaceName::fromString($baseWorkspaceName),
-            ContentStreamId::create(),
-        ));
-    }
-
-    /**
      * @When the title of workspace :workspaceName is set to :newTitle
      */
     public function theTitleOfWorkspaceIsSetTo(string $workspaceName, string $newTitle): void
@@ -173,6 +172,42 @@ trait WorkspaceServiceTrait
             'Classification' => $workspaceMetadata->classification->value,
             'Owner user id' => $workspaceMetadata->ownerUserId?->value ?? '',
         ]);
+    }
+
+    /**
+     * @Then the metadata for workspace :workspaceName does not exist
+     */
+    public function theWorkspaceMetadataFails($workspaceName): void
+    {
+        $metaData = $this->getObject(\Neos\Neos\Domain\Repository\WorkspaceMetadataAndRoleRepository::class)->loadWorkspaceMetadata($this->currentContentRepository->id, WorkspaceName::fromString($workspaceName));
+        Assert::assertNull($metaData);
+
+        // asking the API FAILS!
+        try {
+            $this->getObject(WorkspaceService::class)->getWorkspaceMetadata($this->currentContentRepository->id, WorkspaceName::fromString($workspaceName));
+        } catch (\Throwable $e) {
+            Assert::assertInstanceOf(\RuntimeException::class, $e, $e->getMessage());
+            return;
+        }
+        Assert::fail('Did not throw');
+    }
+
+    /**
+     * @Then the roles for workspace :workspaceName does not exist
+     */
+    public function theWorkspaceRolesFails($workspaceName): void
+    {
+        $roles = $this->getObject(\Neos\Neos\Domain\Repository\WorkspaceMetadataAndRoleRepository::class)->getWorkspaceRoleAssignments($this->currentContentRepository->id, WorkspaceName::fromString($workspaceName));
+        Assert::assertTrue($roles->isEmpty());
+
+        // asking the API FAILS!
+        try {
+            $this->getObject(WorkspaceService::class)->getWorkspaceRoleAssignments($this->currentContentRepository->id, WorkspaceName::fromString($workspaceName));
+        } catch (\Throwable $e) {
+            Assert::assertInstanceOf(\RuntimeException::class, $e, $e->getMessage());
+            return;
+        }
+        Assert::fail('Did not throw');
     }
 
     /**

@@ -231,6 +231,7 @@ final readonly class WorkspaceService
      */
     public function getWorkspaceRoleAssignments(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): WorkspaceRoleAssignments
     {
+        $this->requireWorkspace($contentRepositoryId, $workspaceName);
         return $this->metadataAndRoleRepository->getWorkspaceRoleAssignments($contentRepositoryId, $workspaceName);
     }
 

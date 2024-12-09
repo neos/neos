@@ -15,7 +15,6 @@ declare(strict_types=1);
 namespace Neos\Neos\Command;
 
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Exception\WorkspaceAlreadyExists;
-use Neos\ContentRepository\Core\Feature\WorkspaceModification\Command\DeleteWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Dto\RebaseErrorHandlingStrategy;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Exception\WorkspaceRebaseFailed;
 use Neos\ContentRepository\Core\Service\WorkspaceMaintenanceServiceFactory;
@@ -400,11 +399,7 @@ class WorkspaceCommandController extends CommandController
             $this->workspacePublishingService->discardAllWorkspaceChanges($contentRepositoryId, $workspaceName);
         }
 
-        $contentRepositoryInstance->handle(
-            DeleteWorkspace::create(
-                $workspaceName
-            )
-        );
+        $this->workspaceService->deleteWorkspace($contentRepositoryId, $workspaceName);
         $this->outputLine('Deleted workspace "%s"', [$workspaceName->value]);
     }
 

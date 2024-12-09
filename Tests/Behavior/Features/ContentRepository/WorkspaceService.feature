@@ -102,12 +102,29 @@ Feature: Neos WorkspaceService related features
       | Title                 | Description | Classification | Owner user id |
       | some-shared-workspace |             | SHARED         |               |
 
-  Scenario: Get metadata of non-existing sub workspace
+  Scenario: Get metadata of a sub workspace which is directly created via the content repository
     Given the root workspace "some-root-workspace" is created
-    When a workspace "some-workspace" with base workspace "some-root-workspace" exists without metadata
+    # dont use the workspace service here:
+    When the command CreateWorkspace is executed with payload:
+      | Key                | Value                 |
+      | workspaceName      | "some-workspace"      |
+      | baseWorkspaceName  | "some-root-workspace" |
+      | newContentStreamId | "any-cs"              |
+
     Then the workspace "some-workspace" should have the following metadata:
       | Title          | Description | Classification | Owner user id |
       | some-workspace |             | UNKNOWN        |               |
+
+  Scenario: Get metadata or roles if the workspace does not exist
+    Then the metadata for workspace "non-existing-workspace" does not exist
+    Then the roles for workspace "non-existing-workspace" does not exist
+
+    When the root workspace "some-root-workspace" with title "Some root workspace" and description "Some description" is created
+    And the role COLLABORATOR is assigned to workspace "some-root-workspace" for group "Neos.Neos:AbstractEditor"
+    Given the workspace "some-root-workspace" is deleted
+
+    Then the metadata for workspace "some-root-workspace" does not exist
+    Then the roles for workspace "some-root-workspace" does not exist
 
   Scenario: Assign role to non-existing workspace
     When the role COLLABORATOR is assigned to workspace "some-workspace" for group "Neos.Neos:AbstractEditor"

@@ -180,19 +180,10 @@ final readonly class WorkspaceMetadataAndRoleRepository
 
     public function deleteWorkspaceMetadata(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
     {
-        $table = self::TABLE_NAME_WORKSPACE_METADATA;
-        $query = <<<SQL
-             DELETE FROM
-                 {$table}
-             WHERE
-                 content_repository_id = :contentRepositoryId
-                 AND workspace_name = :workspaceName
-         SQL;
-
         try {
-            $this->dbal->executeStatement($query, [
-                'contentRepositoryId' => $contentRepositoryId->value,
-                'workspaceName' => $workspaceName->value,
+            $this->dbal->delete(self::TABLE_NAME_WORKSPACE_METADATA, [
+                'content_repository_id' => $contentRepositoryId->value,
+                'workspace_name' => $workspaceName->value,
             ]);
         } catch (DbalException $e) {
             throw new \RuntimeException(sprintf(
@@ -206,19 +197,10 @@ final readonly class WorkspaceMetadataAndRoleRepository
 
     public function deleteWorkspaceRoleAssignments(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
     {
-        $table = self::TABLE_NAME_WORKSPACE_ROLE;
-        $query = <<<SQL
-             DELETE FROM
-                 {$table}
-             WHERE
-                 content_repository_id = :contentRepositoryId
-                 AND workspace_name = :workspaceName
-         SQL;
-
         try {
-            $this->dbal->executeStatement($query, [
-                'contentRepositoryId' => $contentRepositoryId->value,
-                'workspaceName' => $workspaceName->value,
+            $this->dbal->delete(self::TABLE_NAME_WORKSPACE_ROLE, [
+                'content_repository_id' => $contentRepositoryId->value,
+                'workspace_name' => $workspaceName->value,
             ]);
         } catch (DbalException $e) {
             throw new \RuntimeException(sprintf(
