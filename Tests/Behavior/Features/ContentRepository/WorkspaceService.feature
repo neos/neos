@@ -89,6 +89,7 @@ Feature: Neos WorkspaceService related features
 
   Scenario: Create a single personal workspace
     When the root workspace "some-root-workspace" is created
+    Then the user "jane.doe" does not have a personal workspace
     And the personal workspace "some-user-workspace" is created with the target workspace "some-root-workspace" for user "jane.doe"
     Then the personal workspace for user "jane.doe" is "some-user-workspace"
     Then the workspace "some-user-workspace" should have the following metadata:
@@ -109,11 +110,14 @@ Feature: Neos WorkspaceService related features
     When a personal workspace for user "test.user" is created
     Then the personal workspace for user "test.user" is "test-user-1"
 
-  Scenario: For multiple personal workspaces only one workspace is returned
+  Scenario: A user cannot have multiple personal workspaces
     When the root workspace "some-root-workspace" is created
-    And the personal workspace "b-user-workspace" is created with the target workspace "some-root-workspace" for user "jane.doe"
     And the personal workspace "a-user-workspace" is created with the target workspace "some-root-workspace" for user "jane.doe"
-    And the personal workspace "c-user-workspace" is created with the target workspace "some-root-workspace" for user "jane.doe"
+    And the personal workspace "b-user-workspace" is created with the target workspace "some-root-workspace" for user "jane.doe"
+    Then an exception of type "RuntimeException" should be thrown with message:
+    """
+    Failed to create personal workspace "b-user-workspace" for user with id "janedoe", because the workspace "a-user-workspace" is already assigned to the user
+    """
     Then the personal workspace for user "jane.doe" is "a-user-workspace"
 
   Scenario: Create a single shared workspace

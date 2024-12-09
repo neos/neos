@@ -99,7 +99,7 @@ Feature: Workspace permission related features
     Examples:
       | user         |
       | collaborator |
-      | owner        |
+      # the "owner" user already owns a workspace
 
   Scenario: Creating a workspace without Neos User but READ permissions on live
     Given I am not authenticated
@@ -114,11 +114,11 @@ Feature: Workspace permission related features
     Examples:
       | user              |
       | admin             |
-      | owner             |
       | collaborator      |
       | uninvolved_editor |
       | restricted_editor |
       | simple_user       |
+      # the "owner" user already owns a workspace
 
   Scenario Outline: Changing a base workspace without MANAGE permissions or READ permissions on the base workspace
     Given I am authenticated as <user>

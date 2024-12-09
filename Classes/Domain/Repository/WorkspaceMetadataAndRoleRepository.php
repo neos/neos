@@ -352,10 +352,9 @@ final readonly class WorkspaceMetadataAndRoleRepository
                 content_repository_id = :contentRepositoryId
                 AND classification = :personalWorkspaceClassification
                 AND owner_user_id = :userId
-            -- TODO introduce better deterministic selection of "primary" workspace if multiple exist
-            ORDER BY workspace_name
-            LIMIT 1
         SQL;
+        // We don't order the results and return the first matching workspace.
+        // In case multiple exist - which is not desired currently - and in the happy path not possible via the api (race conditions aside) - the order is not defined.
         $workspaceName = $this->dbal->fetchOne($query, [
             'contentRepositoryId' => $contentRepositoryId->value,
             'personalWorkspaceClassification' => WorkspaceClassification::PERSONAL->value,

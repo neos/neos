@@ -97,15 +97,13 @@ final readonly class WorkspaceService
     }
 
     /**
-     * Retrieve the first personal workspace for the specified user
-     *
-     * NOTE: Conventionally each user has only a single personal workspace but in case multiple exist the first is returned
+     * Retrieve the personal workspace for the specified user, if no workspace exist an exception is thrown.
      */
     public function getPersonalWorkspaceForUser(ContentRepositoryId $contentRepositoryId, UserId $userId): Workspace
     {
         $workspaceName = $this->metadataAndRoleRepository->findPrimaryWorkspaceNameForUser($contentRepositoryId, $userId);
         if ($workspaceName === null) {
-            throw new \RuntimeException(sprintf('No workspace is assigned to the user with id "%s")', $userId->value), 1718293801);
+            throw new \RuntimeException(sprintf('No workspace is assigned to the user with id "%s")', $userId->value), 1733755300);
         }
         return $this->requireWorkspace($contentRepositoryId, $workspaceName);
     }
@@ -141,10 +139,14 @@ final readonly class WorkspaceService
     }
 
     /**
-     * Create a new, personal, workspace for the specified user
+     * Create a new, personal, workspace for the specified user (fails if the user already owns a workspace)
      */
     public function createPersonalWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName, UserId $ownerId): void
     {
+        $existingUserWorkspace = $this->metadataAndRoleRepository->findPrimaryWorkspaceNameForUser($contentRepositoryId, $ownerId);
+        if ($existingUserWorkspace !== null) {
+            throw new \RuntimeException(sprintf('Failed to create personal workspace "%s" for user with id "%s", because the workspace "%s" is already assigned to the user', $workspaceName->value, $ownerId->value, $existingUserWorkspace->value), 1733754904);
+        }
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
         $contentRepository->handle(
             CreateWorkspace::create(

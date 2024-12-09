@@ -120,12 +120,29 @@ trait WorkspaceServiceTrait
     /**
      * @Then the personal workspace for user :username is :workspaceName
      */
-    public function thePersonalWorkspaceForUserIs(string $workspaceName, string $username): void
+    public function thePersonalWorkspaceForUserIs(string $username, string $workspaceName): void
     {
         $ownerUserId = $this->userIdForUsername($username);
         $actualWorkspace = $this->getObject(WorkspaceService::class)->getPersonalWorkspaceForUser($this->currentContentRepository->id, $ownerUserId);
         Assert::assertNotNull($actualWorkspace);
         Assert::assertSame($workspaceName, $actualWorkspace->workspaceName->value);
+    }
+
+    /**
+     * @Then the user :username does not have a personal workspace
+     */
+    public function theUserDoesNotHaveAPersonalWorkspace(string $username): void
+    {
+        $ownerUserId = $this->userIdForUsername($username);
+        try {
+            $this->getObject(WorkspaceService::class)->getPersonalWorkspaceForUser($this->currentContentRepository->id, $ownerUserId);
+        } catch (\Throwable $e) {
+            // todo throw WorkspaceDoesNotExist instead??
+            Assert::assertInstanceOf(\RuntimeException::class, $e, $e->getMessage());
+            Assert::assertSame(1733755300, $e->getCode());
+            return;
+        }
+        Assert::fail('Did not throw');
     }
 
     /**
