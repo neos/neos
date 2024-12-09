@@ -113,9 +113,19 @@ final readonly class WorkspaceService
     /**
      * Create a new root (aka base) workspace with the specified metadata
      *
+     * To ensure that editors can publish to the live workspace and to allow everybody to view it an assignment like {@see WorkspaceRoleAssignments::createForLiveWorkspace} needs to be specified:
+     *
+     *     $this->workspaceService->createRootWorkspace(
+     *         $contentRepositoryId,
+     *         WorkspaceName::forLive(),
+     *         WorkspaceTitle::fromString('Public live workspace'),
+     *         WorkspaceDescription::empty(),
+     *         WorkspaceRoleAssignments::createForLiveWorkspace()
+     *     );
+     *
      * @throws WorkspaceAlreadyExists
      */
-    public function createRootWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceRoleAssignments $workspaceRoleAssignments): void
+    public function createRootWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceRoleAssignments $assignments): void
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
         $contentRepository->handle(
@@ -124,8 +134,8 @@ final readonly class WorkspaceService
                 ContentStreamId::create()
             )
         );
-        $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::ROOT, null);
-        foreach ($workspaceRoleAssignments as $assignment) {
+        $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::ROOT, ownerUserId: null);
+        foreach ($assignments as $assignment) {
             $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, $assignment);
         }
     }
@@ -135,18 +145,43 @@ final readonly class WorkspaceService
      */
     public function createPersonalWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName, UserId $ownerId): void
     {
-        $this->createWorkspace($contentRepositoryId, $workspaceName, $title, $description, $baseWorkspaceName, $ownerId, WorkspaceClassification::PERSONAL);
+        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
+        $contentRepository->handle(
+            CreateWorkspace::create(
+                $workspaceName,
+                $baseWorkspaceName,
+                ContentStreamId::create()
+            )
+        );
+        $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::PERSONAL, $ownerId);
     }
 
     /**
      * Create a new, potentially shared, workspace
      *
+     * To ensure that the user can manage the shared workspace and to enable collaborates an assignment like {@see WorkspaceRoleAssignments::createForSharedWorkspace} needs to be specified:
+     *
+     *     $this->workspaceService->createWorkspace(
+     *         ...,
+     *         assignments: WorkspaceRoleAssignments::createForSharedWorkspace(
+     *             $currentUser->getId()
+     *         )
+     *     );
+     *
      * NOTE: By default - if no role assignments are specified - only administrators can manage workspaces without role assignments.
      */
-    public function createSharedWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName, WorkspaceRoleAssignments $workspaceRoleAssignments): void
+    public function createSharedWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName, WorkspaceRoleAssignments $assignments): void
     {
-        $this->createWorkspace($contentRepositoryId, $workspaceName, $title, $description, $baseWorkspaceName, null, WorkspaceClassification::SHARED);
-        foreach ($workspaceRoleAssignments as $assignment) {
+        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
+        $contentRepository->handle(
+            CreateWorkspace::create(
+                $workspaceName,
+                $baseWorkspaceName,
+                ContentStreamId::create()
+            )
+        );
+        $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::SHARED, ownerUserId: null);
+        foreach ($assignments as $assignment) {
             $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, $assignment);
         }
     }
@@ -255,19 +290,6 @@ final readonly class WorkspaceService
     }
 
     // ------------------
-
-    private function createWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName, UserId|null $ownerId, WorkspaceClassification $classification): void
-    {
-        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
-        $contentRepository->handle(
-            CreateWorkspace::create(
-                $workspaceName,
-                $baseWorkspaceName,
-                ContentStreamId::create()
-            )
-        );
-        $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, $classification, $ownerId);
-    }
 
     /**
      * @throws WorkspaceDoesNotExist if the workspace does not exist
