@@ -95,6 +95,19 @@ Feature: Neos WorkspaceService related features
       | Title               | Description | Classification | Owner user id |
       | some-user-workspace |             | PERSONAL       | janedoe       |
 
+  Scenario: Personal workspace names are unique https://github.com/neos/neos-development-collection/issues/2850
+    And the following Neos users exist:
+      | Id  | Username  | First name | Last name | Roles                   |
+      | 123 | test-user | Test       | User      | Neos.Neos:Administrator |
+      | 456 | test.user | Test       | User      | Neos.Neos:Administrator |
+
+    When the root workspace "live" is created
+
+    When a personal workspace for user "test-user" is created
+    Then the personal workspace for user "test-user" is "test-user"
+
+    When a personal workspace for user "test.user" is created
+    Then the personal workspace for user "test.user" is "test-user-1"
 
   Scenario: For multiple personal workspaces only one workspace is returned
     When the root workspace "some-root-workspace" is created
