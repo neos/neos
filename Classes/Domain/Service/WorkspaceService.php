@@ -115,7 +115,7 @@ final readonly class WorkspaceService
      *
      * @throws WorkspaceAlreadyExists
      */
-    public function createRootWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description): void
+    public function createRootWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceRoleAssignments $workspaceRoleAssignments): void
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
         $contentRepository->handle(
@@ -125,23 +125,9 @@ final readonly class WorkspaceService
             )
         );
         $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::ROOT, null);
-    }
-
-    /**
-     * Create the "live" root workspace with the default role assignment (users with the role "Neos.Neos:LivePublisher" are collaborators)
-     */
-    public function createLiveWorkspaceIfMissing(ContentRepositoryId $contentRepositoryId): void
-    {
-        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
-        $workspaceName = WorkspaceName::forLive();
-        $liveWorkspace = $contentRepository->findWorkspaceByName($workspaceName);
-        if ($liveWorkspace !== null) {
-            // live workspace already exists
-            return;
+        foreach ($workspaceRoleAssignments as $assignment) {
+            $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, $assignment);
         }
-        $this->createRootWorkspace($contentRepositoryId, $workspaceName, WorkspaceTitle::fromString('Public live workspace'), WorkspaceDescription::empty());
-        $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, WorkspaceRoleAssignment::createForGroup('Neos.Neos:LivePublisher', WorkspaceRole::COLLABORATOR));
-        $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, WorkspaceRoleAssignment::createForGroup('Neos.Flow:Everybody', WorkspaceRole::VIEWER));
     }
 
     /**

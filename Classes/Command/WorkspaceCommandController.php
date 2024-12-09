@@ -148,7 +148,8 @@ class WorkspaceCommandController extends CommandController
             $contentRepositoryId,
             $workspaceName,
             WorkspaceTitle::fromString($title ?? $name),
-            WorkspaceDescription::fromString($description ?? '')
+            WorkspaceDescription::fromString($description ?? ''),
+            WorkspaceRoleAssignments::createEmpty()
         );
         $this->outputLine('<success>Created root workspace "%s" in content repository "%s"</success>', [$workspaceName->value, $contentRepositoryId->value]);
     }

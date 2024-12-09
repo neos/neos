@@ -60,6 +60,7 @@ trait WorkspaceServiceTrait
             WorkspaceName::fromString($workspaceName),
             WorkspaceTitle::fromString($title ?? $workspaceName),
             WorkspaceDescription::fromString($description ?? ''),
+            WorkspaceRoleAssignments::createEmpty()
         ));
     }
 
@@ -79,8 +80,12 @@ trait WorkspaceServiceTrait
      */
     public function theLiveWorkspaceExists(): void
     {
-        $this->getObject(WorkspaceService::class)->createLiveWorkspaceIfMissing(
-            $this->currentContentRepository->id
+        $this->getObject(WorkspaceService::class)->createRootWorkspace(
+            $this->currentContentRepository->id,
+            WorkspaceName::forLive(),
+            WorkspaceTitle::fromString('Public live workspace'),
+            WorkspaceDescription::empty(),
+            WorkspaceRoleAssignments::createForLiveWorkspace()
         );
     }
 
@@ -118,15 +123,15 @@ trait WorkspaceServiceTrait
      */
     public function theSharedWorkspaceIsCreatedWithTheTargetWorkspace(string $workspaceName, string $targetWorkspace, ?TableNode $rawRoleAssignments = null): void
     {
-        $workspaceRoleAssignments = [];
+        $workspaceRoleAssignments = WorkspaceRoleAssignments::createEmpty();
         foreach ($rawRoleAssignments?->getHash() ?? [] as $row) {
-            $workspaceRoleAssignments[] = WorkspaceRoleAssignment::create(
+            $workspaceRoleAssignments = $workspaceRoleAssignments->add(WorkspaceRoleAssignment::create(
                 WorkspaceRoleSubject::create(
                     WorkspaceRoleSubjectType::from($row['Type']),
                     $row['Value']
                 ),
                 WorkspaceRole::from($row['Role'])
-            );
+            ));
         }
 
         $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->createSharedWorkspace(
@@ -135,7 +140,7 @@ trait WorkspaceServiceTrait
             WorkspaceTitle::fromString($workspaceName),
             WorkspaceDescription::fromString(''),
             WorkspaceName::fromString($targetWorkspace),
-            WorkspaceRoleAssignments::fromArray($workspaceRoleAssignments)
+            $workspaceRoleAssignments
         ));
     }
 
