@@ -154,10 +154,15 @@ final readonly class WorkspaceService
 
     /**
      * Create a new, potentially shared, workspace
+     *
+     * NOTE: By default - if no role assignments are specified - only administrators can manage workspaces without role assignments.
      */
-    public function createSharedWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName): void
+    public function createSharedWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName, WorkspaceRoleAssignments $workspaceRoleAssignments): void
     {
         $this->createWorkspace($contentRepositoryId, $workspaceName, $title, $description, $baseWorkspaceName, null, WorkspaceClassification::SHARED);
+        foreach ($workspaceRoleAssignments as $assignment) {
+            $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, $assignment);
+        }
     }
 
     /**

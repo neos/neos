@@ -22,7 +22,9 @@ use Neos\Neos\Domain\Model\UserId;
 use Neos\Neos\Domain\Model\WorkspaceDescription;
 use Neos\Neos\Domain\Model\WorkspaceRole;
 use Neos\Neos\Domain\Model\WorkspaceRoleAssignment;
+use Neos\Neos\Domain\Model\WorkspaceRoleAssignments;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubject;
+use Neos\Neos\Domain\Model\WorkspaceRoleSubjectType;
 use Neos\Neos\Domain\Model\WorkspaceTitle;
 use Neos\Neos\Domain\Service\UserService;
 use Neos\Neos\Domain\Service\WorkspaceService;
@@ -112,15 +114,28 @@ trait WorkspaceServiceTrait
 
     /**
      * @When the shared workspace :workspaceName is created with the target workspace :targetWorkspace
+     * @When the shared workspace :workspaceName is created with the target workspace :targetWorkspace and role assignments:
      */
-    public function theSharedWorkspaceIsCreatedWithTheTargetWorkspace(string $workspaceName, string $targetWorkspace): void
+    public function theSharedWorkspaceIsCreatedWithTheTargetWorkspace(string $workspaceName, string $targetWorkspace, ?TableNode $rawRoleAssignments = null): void
     {
+        $workspaceRoleAssignments = [];
+        foreach ($rawRoleAssignments?->getHash() ?? [] as $row) {
+            $workspaceRoleAssignments[] = WorkspaceRoleAssignment::create(
+                WorkspaceRoleSubject::create(
+                    WorkspaceRoleSubjectType::from($row['Type']),
+                    $row['Value']
+                ),
+                WorkspaceRole::from($row['Role'])
+            );
+        }
+
         $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->createSharedWorkspace(
             $this->currentContentRepository->id,
             WorkspaceName::fromString($workspaceName),
             WorkspaceTitle::fromString($workspaceName),
             WorkspaceDescription::fromString(''),
             WorkspaceName::fromString($targetWorkspace),
+            WorkspaceRoleAssignments::fromArray($workspaceRoleAssignments)
         ));
     }
 

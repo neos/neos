@@ -25,6 +25,16 @@ final readonly class WorkspaceRoleAssignments implements \IteratorAggregate, \Co
         $this->assignments = $assignments;
     }
 
+    public static function createEmpty(): self
+    {
+        return new self();
+    }
+
+    public static function create(WorkspaceRoleAssignment ...$assignments): self
+    {
+        return new self(...$assignments);
+    }
+
     /**
      * @param array<WorkspaceRoleAssignment> $assignments
      */

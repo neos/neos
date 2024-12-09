@@ -30,6 +30,7 @@ use Neos\Neos\Domain\Model\WorkspaceClassification;
 use Neos\Neos\Domain\Model\WorkspaceDescription;
 use Neos\Neos\Domain\Model\WorkspaceRole;
 use Neos\Neos\Domain\Model\WorkspaceRoleAssignment;
+use Neos\Neos\Domain\Model\WorkspaceRoleAssignments;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubject;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubjectType;
 use Neos\Neos\Domain\Model\WorkspaceTitle;
@@ -205,6 +206,7 @@ class WorkspaceCommandController extends CommandController
             WorkspaceTitle::fromString($title ?? $workspaceName->value),
             WorkspaceDescription::fromString($description ?? ''),
             WorkspaceName::fromString($baseWorkspace),
+            WorkspaceRoleAssignments::createEmpty()
         );
         $this->outputLine('<success>Created shared workspace "%s"</success>', [$workspaceName->value]);
     }

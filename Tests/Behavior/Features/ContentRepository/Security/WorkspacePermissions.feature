@@ -51,14 +51,15 @@ Feature: Workspace permission related features
       # neos user with out any editing roles
       | simple_user       | Neos.Neos:UserManager      |
 
-    And the shared workspace "shared-workspace" is created with the target workspace "live"
-    And the role COLLABORATOR is assigned to workspace "shared-workspace" for group "Neos.Neos:AbstractEditor"
+    When content repository security is enabled
+    And the shared workspace "shared-workspace" is created with the target workspace "live" and role assignments:
+      | Role         | Type  | Value                    |
+      | COLLABORATOR | GROUP | Neos.Neos:AbstractEditor |
 
+    Given I am authenticated as owner
     And the personal workspace "workspace" is created with the target workspace "live" for user "owner"
     And the role MANAGER is assigned to workspace "workspace" for user "manager"
     And the role COLLABORATOR is assigned to workspace "workspace" for user "collaborator"
-
-    When content repository security is enabled
 
   Scenario Outline: Creating a root workspace
     Given I am authenticated as <user>
