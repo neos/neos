@@ -103,7 +103,7 @@ final readonly class WorkspaceService
     {
         $workspaceName = $this->metadataAndRoleRepository->findPrimaryWorkspaceNameForUser($contentRepositoryId, $userId);
         if ($workspaceName === null) {
-            throw new \RuntimeException(sprintf('No workspace is assigned to the user with id "%s")', $userId->value), 1733755300);
+            throw new \RuntimeException(sprintf('No workspace is assigned to the user with id "%s")', $userId->value), 1718293801);
         }
         return $this->requireWorkspace($contentRepositoryId, $workspaceName);
     }

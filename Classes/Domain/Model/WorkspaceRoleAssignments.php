@@ -107,7 +107,7 @@ final readonly class WorkspaceRoleAssignments implements \IteratorAggregate, \Co
         return false;
     }
 
-    public function add(WorkspaceRoleAssignment $assignment): self
+    public function withAssignment(WorkspaceRoleAssignment $assignment): self
     {
         return new self(...[...$this->assignments, $assignment]);
     }

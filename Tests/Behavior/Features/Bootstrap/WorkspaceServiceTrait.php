@@ -153,7 +153,7 @@ trait WorkspaceServiceTrait
     {
         $workspaceRoleAssignments = WorkspaceRoleAssignments::createEmpty();
         foreach ($rawRoleAssignments?->getHash() ?? [] as $row) {
-            $workspaceRoleAssignments = $workspaceRoleAssignments->add(WorkspaceRoleAssignment::create(
+            $workspaceRoleAssignments = $workspaceRoleAssignments->withAssignment(WorkspaceRoleAssignment::create(
                 WorkspaceRoleSubject::create(
                     WorkspaceRoleSubjectType::from($row['Type']),
                     $row['Value']
