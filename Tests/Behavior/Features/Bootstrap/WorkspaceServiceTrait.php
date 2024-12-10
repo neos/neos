@@ -139,7 +139,7 @@ trait WorkspaceServiceTrait
         } catch (\Throwable $e) {
             // todo throw WorkspaceDoesNotExist instead??
             Assert::assertInstanceOf(\RuntimeException::class, $e, $e->getMessage());
-            Assert::assertSame(1733755300, $e->getCode());
+            Assert::assertSame(1718293801, $e->getCode());
             return;
         }
         Assert::fail('Did not throw');
