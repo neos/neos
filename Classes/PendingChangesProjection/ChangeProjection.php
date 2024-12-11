@@ -24,6 +24,7 @@ use Doctrine\DBAL\Types\Types;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\DimensionSpace\OriginDimensionSpacePoint;
 use Neos\ContentRepository\Core\EventStore\EventInterface;
+use Neos\ContentRepository\Core\Feature\ContentStreamRemoval\Event\ContentStreamWasRemoved;
 use Neos\ContentRepository\Core\Feature\DimensionSpaceAdjustment\Event\DimensionSpacePointWasMoved;
 use Neos\ContentRepository\Core\Feature\NodeCreation\Event\NodeAggregateWithNodeWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeModification\Event\NodePropertiesWereSet;
@@ -149,6 +150,7 @@ class ChangeProjection implements ProjectionInterface
             NodePeerVariantWasCreated::class => $this->whenNodePeerVariantWasCreated($event),
             NodeAggregateTypeWasChanged::class => $this->whenNodeAggregateTypeWasChanged($event),
             NodeAggregateNameWasChanged::class => $this->whenNodeAggregateNameWasChanged($event),
+            ContentStreamWasRemoved::class => $this->whenContentStreamWasRemoved($event),
             default => null,
         };
     }
@@ -385,6 +387,11 @@ class ChangeProjection implements ProjectionInterface
         );
     }
 
+    private function whenContentStreamWasRemoved(ContentStreamWasRemoved $event): void
+    {
+        $this->removeChangesForContentStreamId($event->contentStreamId);
+    }
+
     private function markAsChanged(
         ContentStreamId $contentStreamId,
         NodeAggregateId $nodeAggregateId,
@@ -517,5 +524,20 @@ AND n.origindimensionspacepointhash = :origindimensionspacepointhash',
         )->fetchAssociative();
 
         return $changeRow ? Change::fromDatabaseRow($changeRow) : null;
+    }
+
+    private function removeChangesForContentStreamId(ContentStreamId $contentStreamId): void
+    {
+        $statement = <<<SQL
+            DELETE FROM {$this->tableNamePrefix}
+            WHERE
+                contentStreamId = :contentStreamId
+        SQL;
+        $this->dbal->executeStatement(
+            $statement,
+            [
+                'contentStreamId' => $contentStreamId->value,
+            ]
+        );
     }
 }

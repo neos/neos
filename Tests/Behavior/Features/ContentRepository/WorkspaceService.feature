@@ -52,6 +52,13 @@ Feature: Neos WorkspaceService related features
       | Title                    | Description | Classification | Owner user id |
       | Some new workspace title |             | ROOT           |               |
 
+  Scenario: Change title of root workspace to the same value
+    When the root workspace "some-root-workspace" with title "some title" and description "some description" is created
+    And the title of workspace "some-root-workspace" is set to "some title"
+    Then the workspace "some-root-workspace" should have the following metadata:
+      | Title      | Description      | Classification | Owner user id |
+      | some title | some description | ROOT           |               |
+
   Scenario: Set title of root workspace without metadata
     When a root workspace "some-root-workspace" exists without metadata
     And the title of workspace "some-root-workspace" is set to "Some new workspace title"
@@ -65,6 +72,13 @@ Feature: Neos WorkspaceService related features
     Then the workspace "some-root-workspace" should have the following metadata:
       | Title               | Description                    | Classification | Owner user id |
       | some-root-workspace | Some new workspace description | ROOT           |               |
+
+  Scenario: Change description of root workspace to the same value
+    When the root workspace "some-root-workspace" with title "some title" and description "some description" is created
+    And the description of workspace "some-root-workspace" is set to "some description"
+    Then the workspace "some-root-workspace" should have the following metadata:
+      | Title      | Description      | Classification | Owner user id |
+      | some title | some description | ROOT           |               |
 
   Scenario: Change description of root workspace without metadata
     When a root workspace "some-root-workspace" exists without metadata
