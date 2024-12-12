@@ -360,4 +360,13 @@ final readonly class WorkspaceMetadataAndRoleRepository
         ]);
         return $workspaceName === false ? null : WorkspaceName::fromString($workspaceName);
     }
+
+    /**
+     * @param \Closure(): void $fn
+     * @return void
+     */
+    public function transactional(\Closure $fn): void
+    {
+        $this->dbal->transactional($fn);
+    }
 }

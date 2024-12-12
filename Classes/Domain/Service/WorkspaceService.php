@@ -132,10 +132,13 @@ final readonly class WorkspaceService
                 ContentStreamId::create()
             )
         );
-        $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::ROOT, ownerUserId: null);
-        foreach ($assignments as $assignment) {
-            $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, $assignment);
-        }
+
+        $this->metadataAndRoleRepository->transactional(function () use ($contentRepositoryId, $workspaceName, $title, $description, $assignments) {
+            $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::ROOT, ownerUserId: null);
+            foreach ($assignments as $assignment) {
+                $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, $assignment);
+            }
+        });
     }
 
     /**
@@ -182,10 +185,13 @@ final readonly class WorkspaceService
                 ContentStreamId::create()
             )
         );
-        $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::SHARED, ownerUserId: null);
-        foreach ($assignments as $assignment) {
-            $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, $assignment);
-        }
+
+        $this->metadataAndRoleRepository->transactional(function () use ($contentRepositoryId, $workspaceName, $title, $description, $assignments) {
+            $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::SHARED, ownerUserId: null);
+            foreach ($assignments as $assignment) {
+                $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, $assignment);
+            }
+        });
     }
 
     /**
