@@ -340,7 +340,7 @@ final readonly class WorkspaceMetadataAndRoleRepository
         }
     }
 
-    public function findPrimaryWorkspaceNameForUser(ContentRepositoryId $contentRepositoryId, UserId $userId): ?WorkspaceName
+    public function findWorkspaceNameByUser(ContentRepositoryId $contentRepositoryId, UserId $userId): ?WorkspaceName
     {
         $tableMetadata = self::TABLE_NAME_WORKSPACE_METADATA;
         $query = <<<SQL
@@ -353,8 +353,6 @@ final readonly class WorkspaceMetadataAndRoleRepository
                 AND classification = :personalWorkspaceClassification
                 AND owner_user_id = :userId
         SQL;
-        // We don't order the results and return the first matching workspace.
-        // In case multiple exist - which is not desired currently - and in the happy path not possible via the api (race conditions aside) - the order is not defined.
         $workspaceName = $this->dbal->fetchOne($query, [
             'contentRepositoryId' => $contentRepositoryId->value,
             'personalWorkspaceClassification' => WorkspaceClassification::PERSONAL->value,

@@ -101,7 +101,7 @@ final readonly class WorkspaceService
      */
     public function getPersonalWorkspaceForUser(ContentRepositoryId $contentRepositoryId, UserId $userId): Workspace
     {
-        $workspaceName = $this->metadataAndRoleRepository->findPrimaryWorkspaceNameForUser($contentRepositoryId, $userId);
+        $workspaceName = $this->metadataAndRoleRepository->findWorkspaceNameByUser($contentRepositoryId, $userId);
         if ($workspaceName === null) {
             throw new \RuntimeException(sprintf('No workspace is assigned to the user with id "%s")', $userId->value), 1718293801);
         }
@@ -143,7 +143,7 @@ final readonly class WorkspaceService
      */
     public function createPersonalWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName, UserId $ownerId): void
     {
-        $existingUserWorkspace = $this->metadataAndRoleRepository->findPrimaryWorkspaceNameForUser($contentRepositoryId, $ownerId);
+        $existingUserWorkspace = $this->metadataAndRoleRepository->findWorkspaceNameByUser($contentRepositoryId, $ownerId);
         if ($existingUserWorkspace !== null) {
             throw new \RuntimeException(sprintf('Failed to create personal workspace "%s" for user with id "%s", because the workspace "%s" is already assigned to the user', $workspaceName->value, $ownerId->value, $existingUserWorkspace->value), 1733754904);
         }
@@ -193,7 +193,7 @@ final readonly class WorkspaceService
      */
     public function createPersonalWorkspaceForUserIfMissing(ContentRepositoryId $contentRepositoryId, User $user): void
     {
-        $existingWorkspaceName = $this->metadataAndRoleRepository->findPrimaryWorkspaceNameForUser($contentRepositoryId, $user->getId());
+        $existingWorkspaceName = $this->metadataAndRoleRepository->findWorkspaceNameByUser($contentRepositoryId, $user->getId());
         if ($existingWorkspaceName !== null) {
             $this->requireWorkspace($contentRepositoryId, $existingWorkspaceName);
             return;
