@@ -26,7 +26,7 @@ final class Version20240425223901 extends AbstractMigration
         $tableWorkspaceMetadata->addColumn('classification', 'string', ['length' => 255]);
         $tableWorkspaceMetadata->addColumn('owner_user_id', 'string', ['length' => 255, 'notnull' => false]);
         $tableWorkspaceMetadata->setPrimaryKey(['content_repository_id', 'workspace_name']);
-        $tableWorkspaceMetadata->addIndex(['owner_user_id']);
+        $tableWorkspaceMetadata->addIndex(['owner_user_id'], 'IDX_D6197E562B18554A');
 
         $tableWorkspaceRole = $schema->createTable('neos_neos_workspace_role');
         $tableWorkspaceRole->addColumn('content_repository_id', 'string', ['length' => 16]);

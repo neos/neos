@@ -33,6 +33,9 @@ use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\Neos\Domain\Exception\SiteNodeTypeIsInvalid;
 use Neos\Neos\Domain\Model\Site;
 use Neos\Neos\Domain\Model\SiteNodeName;
+use Neos\Neos\Domain\Model\WorkspaceDescription;
+use Neos\Neos\Domain\Model\WorkspaceRoleAssignments;
+use Neos\Neos\Domain\Model\WorkspaceTitle;
 
 /**
  * @internal FIXME refactor and incorporate into SiteService
@@ -89,7 +92,16 @@ readonly class SiteServiceInternals
 
     public function createSiteNodeIfNotExists(Site $site, string $nodeTypeName): void
     {
-        $this->workspaceService->createLiveWorkspaceIfMissing($this->contentRepository->id);
+        $liveWorkspace = $this->contentRepository->findWorkspaceByName(WorkspaceName::forLive());
+        if ($liveWorkspace === null) {
+            $this->workspaceService->createRootWorkspace(
+                $this->contentRepository->id,
+                WorkspaceName::forLive(),
+                WorkspaceTitle::fromString('Public live workspace'),
+                WorkspaceDescription::empty(),
+                WorkspaceRoleAssignments::createForLiveWorkspace()
+            );
+        }
 
         $sitesNodeIdentifier = $this->getOrCreateRootNodeAggregate();
         $siteNodeType = $this->nodeTypeManager->getNodeType($nodeTypeName);

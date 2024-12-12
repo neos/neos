@@ -59,6 +59,10 @@ final readonly class ContentRepositoryAuthorizationService
         if ($userId !== null) {
             $subjects[] = WorkspaceRoleSubject::createForUser($userId);
         }
+        /**
+         * We hardcode the check against administrators to always grant manage permissions. This is done to allow administrators to fix permissions of all workspaces.
+         * We don't allow all rights like read and write. Admins should be able to grant themselves permissions to write to other personal workspaces, but they should not have this permission automagically.
+         */
         $userIsAdministrator = in_array(self::ROLE_NEOS_ADMINISTRATOR, $roleIdentifiers, true);
         $userWorkspaceRole = $this->metadataAndRoleRepository->getMostPrivilegedWorkspaceRoleForSubjects($contentRepositoryId, $workspaceName, WorkspaceRoleSubjects::fromArray($subjects));
         if ($userWorkspaceRole === null) {

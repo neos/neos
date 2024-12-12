@@ -87,13 +87,38 @@ Feature: Neos WorkspaceService related features
       | Title               | Description                    | Classification | Owner user id |
       | some-root-workspace | Some new workspace description | ROOT           |               |
 
-
   Scenario: Create a single personal workspace
     When the root workspace "some-root-workspace" is created
+    Then the user "jane.doe" does not have a personal workspace
     And the personal workspace "some-user-workspace" is created with the target workspace "some-root-workspace" for user "jane.doe"
+    Then the personal workspace for user "jane.doe" is "some-user-workspace"
     Then the workspace "some-user-workspace" should have the following metadata:
       | Title               | Description | Classification | Owner user id |
       | some-user-workspace |             | PERSONAL       | janedoe       |
+
+  Scenario: Personal workspace names are unique https://github.com/neos/neos-development-collection/issues/2850
+    And the following Neos users exist:
+      | Id  | Username  | First name | Last name | Roles                   |
+      | 123 | test-user | Test       | User      | Neos.Neos:Administrator |
+      | 456 | test.user | Test       | User      | Neos.Neos:Administrator |
+
+    When the root workspace "live" is created
+
+    When a personal workspace for user "test-user" is created
+    Then the personal workspace for user "test-user" is "test-user"
+
+    When a personal workspace for user "test.user" is created
+    Then the personal workspace for user "test.user" is "test-user-1"
+
+  Scenario: A user cannot have multiple personal workspaces
+    When the root workspace "some-root-workspace" is created
+    And the personal workspace "a-user-workspace" is created with the target workspace "some-root-workspace" for user "jane.doe"
+    And the personal workspace "b-user-workspace" is created with the target workspace "some-root-workspace" for user "jane.doe"
+    Then an exception of type "RuntimeException" should be thrown with message:
+    """
+    Failed to create personal workspace "b-user-workspace" for user with id "janedoe", because the workspace "a-user-workspace" is already assigned to the user
+    """
+    Then the personal workspace for user "jane.doe" is "a-user-workspace"
 
   Scenario: Create a single shared workspace
     When the root workspace "some-root-workspace" is created
@@ -102,18 +127,35 @@ Feature: Neos WorkspaceService related features
       | Title                 | Description | Classification | Owner user id |
       | some-shared-workspace |             | SHARED         |               |
 
-  Scenario: Get metadata of non-existing sub workspace
+  Scenario: Get metadata of a sub workspace which is directly created via the content repository
     Given the root workspace "some-root-workspace" is created
-    When a workspace "some-workspace" with base workspace "some-root-workspace" exists without metadata
+    # dont use the workspace service here:
+    When the command CreateWorkspace is executed with payload:
+      | Key                | Value                 |
+      | workspaceName      | "some-workspace"      |
+      | baseWorkspaceName  | "some-root-workspace" |
+      | newContentStreamId | "any-cs"              |
+
     Then the workspace "some-workspace" should have the following metadata:
       | Title          | Description | Classification | Owner user id |
       | some-workspace |             | UNKNOWN        |               |
 
+  Scenario: Get metadata or roles if the workspace does not exist
+    Then the metadata for workspace "non-existing-workspace" does not exist
+    Then the roles for workspace "non-existing-workspace" does not exist
+
+    When the root workspace "some-root-workspace" with title "Some root workspace" and description "Some description" is created
+    And the role COLLABORATOR is assigned to workspace "some-root-workspace" for group "Neos.Neos:AbstractEditor"
+    Given the workspace "some-root-workspace" is deleted
+
+    Then the metadata for workspace "some-root-workspace" does not exist
+    Then the roles for workspace "some-root-workspace" does not exist
+
   Scenario: Assign role to non-existing workspace
     When the role COLLABORATOR is assigned to workspace "some-workspace" for group "Neos.Neos:AbstractEditor"
-    Then an exception of type "RuntimeException" should be thrown with message:
+    Then an exception of type "WorkspaceDoesNotExist" should be thrown with message:
     """
-    Failed to find workspace with name "some-workspace" for content repository "default"
+    The workspace "some-workspace" does not exist in content repository "default"
     """
 
   Scenario: Assign group role to root workspace
@@ -150,9 +192,9 @@ Feature: Neos WorkspaceService related features
 
   Scenario: Unassign role from non-existing workspace
     When the role for group "Neos.Neos:AbstractEditor" is unassigned from workspace "some-workspace"
-    Then an exception of type "RuntimeException" should be thrown with message:
+    Then an exception of type "WorkspaceDoesNotExist" should be thrown with message:
     """
-    Failed to find workspace with name "some-workspace" for content repository "default"
+    The workspace "some-workspace" does not exist in content repository "default"
     """
 
   Scenario: Unassign role from workspace that has not been assigned before
@@ -179,6 +221,7 @@ Feature: Neos WorkspaceService related features
   Scenario: Workspace permissions for personal workspace for admin user
     Given the root workspace "live" is created
     When a personal workspace for user "jane.doe" is created
+    Then the personal workspace for user "jane.doe" is "jane-doe"
     Then the workspace "jane-doe" should have the following metadata:
       | Title    | Description | Classification | Owner user id |
       | Jane Doe |             | PERSONAL       | janedoe       |

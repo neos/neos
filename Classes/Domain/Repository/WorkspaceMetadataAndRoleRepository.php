@@ -178,6 +178,40 @@ final readonly class WorkspaceMetadataAndRoleRepository
         return WorkspaceRole::from($role);
     }
 
+    public function deleteWorkspaceMetadata(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
+    {
+        try {
+            $this->dbal->delete(self::TABLE_NAME_WORKSPACE_METADATA, [
+                'content_repository_id' => $contentRepositoryId->value,
+                'workspace_name' => $workspaceName->value,
+            ]);
+        } catch (DbalException $e) {
+            throw new \RuntimeException(sprintf(
+                'Failed to delete metadata for workspace "%s" (Content Repository "%s"): %s',
+                $workspaceName->value,
+                $contentRepositoryId->value,
+                $e->getMessage()
+            ), 1726821159, $e);
+        }
+    }
+
+    public function deleteWorkspaceRoleAssignments(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
+    {
+        try {
+            $this->dbal->delete(self::TABLE_NAME_WORKSPACE_ROLE, [
+                'content_repository_id' => $contentRepositoryId->value,
+                'workspace_name' => $workspaceName->value,
+            ]);
+        } catch (DbalException $e) {
+            throw new \RuntimeException(sprintf(
+                'Failed to delete role assignments for workspace "%s" (Content Repository "%s"): %s',
+                $workspaceName->value,
+                $contentRepositoryId->value,
+                $e->getMessage()
+            ), 1726821159, $e);
+        }
+    }
+
     /**
      * Removes all workspace metadata records for the specified content repository id
      */
@@ -306,7 +340,7 @@ final readonly class WorkspaceMetadataAndRoleRepository
         }
     }
 
-    public function findPrimaryWorkspaceNameForUser(ContentRepositoryId $contentRepositoryId, UserId $userId): ?WorkspaceName
+    public function findWorkspaceNameByUser(ContentRepositoryId $contentRepositoryId, UserId $userId): ?WorkspaceName
     {
         $tableMetadata = self::TABLE_NAME_WORKSPACE_METADATA;
         $query = <<<SQL
@@ -325,5 +359,14 @@ final readonly class WorkspaceMetadataAndRoleRepository
             'userId' => $userId->value,
         ]);
         return $workspaceName === false ? null : WorkspaceName::fromString($workspaceName);
+    }
+
+    /**
+     * @param \Closure(): void $fn
+     * @return void
+     */
+    public function transactional(\Closure $fn): void
+    {
+        $this->dbal->transactional($fn);
     }
 }

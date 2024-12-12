@@ -42,4 +42,10 @@ final readonly class WorkspaceRoleAssignment
             $role
         );
     }
+
+    public function equals(WorkspaceRoleAssignment $other): bool
+    {
+        return $this->subject->equals($other->subject)
+            && $this->role === $other->role;
+    }
 }
