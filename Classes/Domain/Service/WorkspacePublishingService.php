@@ -21,8 +21,6 @@ use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\DiscardIndi
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\DiscardWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishIndividualNodesFromWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishWorkspace;
-use Neos\ContentRepository\Core\Feature\WorkspacePublication\Dto\NodeIdsToPublishOrDiscard;
-use Neos\ContentRepository\Core\Feature\WorkspacePublication\Dto\NodeIdToPublishOrDiscard;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Command\RebaseWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Dto\RebaseErrorHandlingStrategy;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Exception\WorkspaceRebaseFailed;
@@ -266,7 +264,7 @@ final class WorkspacePublishingService
     private function discardNodes(
         ContentRepository $contentRepository,
         WorkspaceName $workspaceName,
-        NodeIdsToPublishOrDiscard $nodeIdsToDiscard
+        NodeAggregateIds $nodeIdsToDiscard
     ): void {
         $contentRepository->handle(
             DiscardIndividualNodesFromWorkspace::create(
@@ -283,7 +281,7 @@ final class WorkspacePublishingService
     private function publishNodes(
         ContentRepository $contentRepository,
         WorkspaceName $workspaceName,
-        NodeIdsToPublishOrDiscard $nodeIdsToPublish
+        NodeAggregateIds $nodeIdsToPublish
     ): void {
         $contentRepository->handle(
             PublishIndividualNodesFromWorkspace::create(
@@ -341,7 +339,7 @@ final class WorkspacePublishingService
         WorkspaceName $workspaceName,
         NodeAggregateId $ancestorId,
         NodeTypeName $ancestorNodeTypeName
-    ): NodeIdsToPublishOrDiscard {
+    ): NodeAggregateIds {
         $nodeIdsToPublishOrDiscard = [];
         foreach ($this->pendingWorkspaceChangesInternal($contentRepository, $workspaceName) as $change) {
             if (
@@ -356,13 +354,10 @@ final class WorkspacePublishingService
                 continue;
             }
 
-            $nodeIdsToPublishOrDiscard[] = new NodeIdToPublishOrDiscard(
-                $change->nodeAggregateId,
-                $change->originDimensionSpacePoint?->toDimensionSpacePoint()
-            );
+            $nodeIdsToPublishOrDiscard[] = $change->nodeAggregateId;
         }
 
-        return NodeIdsToPublishOrDiscard::create(...$nodeIdsToPublishOrDiscard);
+        return NodeAggregateIds::create(...$nodeIdsToPublishOrDiscard);
     }
 
     private function pendingWorkspaceChangesInternal(ContentRepository $contentRepository, WorkspaceName $workspaceName): Changes

@@ -40,7 +40,7 @@ trait ChangeProjectionTrait
     public function iExpectTheChangeProjectionToHaveTheFollowingChangesInContentStream(TableNode $table, string $contentStreamId)
     {
         $changeFinder = $this->currentContentRepository->projectionState(ChangeFinder::class);
-        $changes = $changeFinder->findByContentStreamId(ContentStreamId::fromString($contentStreamId));
+        $changes = iterator_to_array($changeFinder->findByContentStreamId(ContentStreamId::fromString($contentStreamId)));
 
         $tableRows = $table->getHash();
         foreach ($changes as $change) {
@@ -63,14 +63,11 @@ trait ChangeProjectionTrait
             }
         }
 
-        if (count($tableRows) !== 0) {
-            $tableHeader = array_combine(array_values($table->getRow(0)), array_values($table->getRow(0)));
-            $tableRemain = $tableRows;
-            array_unshift($tableRemain, $tableHeader);
 
-            Assert::assertEmpty($tableRows, "Not all given changes where found." . PHP_EOL . (new TableNode($tableRemain))->getTableAsString());
-        }
-        Assert::assertSame(count($table->getHash()), $changes->count(), "More changes found as given.");
+        Assert::assertTrue(
+            $tableRows === [] && count($table->getHash()) === count($changes),
+            sprintf('Mismatch between all actual changes usages %s and leftover changes to match %s', json_encode($changes, JSON_PRETTY_PRINT), json_encode($tableRows, JSON_PRETTY_PRINT))
+        );
     }
 
     /**
@@ -79,8 +76,8 @@ trait ChangeProjectionTrait
     public function iExpectTheChangeProjectionToHaveNoChangesInContentStream(string $contentStreamId)
     {
         $changeFinder = $this->currentContentRepository->projectionState(ChangeFinder::class);
-        $changes = $changeFinder->findByContentStreamId(ContentStreamId::fromString($contentStreamId));
+        $changes = iterator_to_array($changeFinder->findByContentStreamId(ContentStreamId::fromString($contentStreamId)));
 
-        Assert::assertSame(0, $changes->count(), "No changes expected.");
+        Assert::assertEmpty($changes, "No changes expected, got: " . json_encode($changes, JSON_PRETTY_PRINT));
     }
 }

@@ -266,7 +266,7 @@ Feature: Workspace permission related features
       | MoveDimensionSpacePoint             | {"source":{"language":"de"},"target":{"language":"ch"}}                                                |
       | UpdateRootNodeAggregateDimensions   | {"nodeAggregateId":"root"}                                                                             |
       | DiscardWorkspace                    | {}                                                                                                     |
-      | DiscardIndividualNodesFromWorkspace | {"nodesToDiscard":[{"nodeAggregateId":"a1"}]}                                                          |
+      | DiscardIndividualNodesFromWorkspace | {"nodesToDiscard":["a1"]}                                                                              |
       | RebaseWorkspace                     | {}                                                                                                     |
       # note, creating a core workspace will not grant permissions to it to the current user: Missing "read" permissions for base workspace "new-workspace"
       | CreateWorkspace                     | {"workspaceName":"new-workspace","baseWorkspaceName":"workspace","newContentStreamId":"any"}           |
@@ -286,7 +286,7 @@ Feature: Workspace permission related features
     And the command PublishIndividualNodesFromWorkspace is executed with payload and exceptions are caught:
       | Key            | Value                                  |
       | workspaceName  | "workspace"                            |
-      | nodesToPublish | [{"nodeAggregateId":"shernode-homes"}] |
+      | nodesToPublish | ["shernode-homes"] |
     Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
 
     And the command PublishWorkspace is executed with payload and exceptions are caught:
@@ -312,7 +312,7 @@ Feature: Workspace permission related features
     And the command PublishIndividualNodesFromWorkspace is executed with payload:
       | Key            | Value                                  |
       | workspaceName  | "workspace"                            |
-      | nodesToPublish | [{"nodeAggregateId":"shernode-homes"}] |
+      | nodesToPublish | ["shernode-homes"] |
 
     And the command PublishWorkspace is executed with payload:
       | Key           | Value       |

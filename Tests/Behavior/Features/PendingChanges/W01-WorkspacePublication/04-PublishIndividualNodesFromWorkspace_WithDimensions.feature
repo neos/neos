@@ -60,7 +60,7 @@ Feature: Publish nodes partially with dimensions
 
     When the command PublishIndividualNodesFromWorkspace is executed with payload:
       | Key                             | Value                                                                                                                         |
-      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "de"}, "nodeAggregateId": "sir-david-nodenborough"}] |
+      | nodesToPublish                  | ["sir-david-nodenborough"] |
       | contentStreamIdForRemainingPart | "user-cs-id-remaining"                                                                                                        |
 
     Then I expect the ChangeProjection to have the following changes in "user-cs-id-remaining":
@@ -129,12 +129,11 @@ Feature: Publish nodes partially with dimensions
 
     When the command PublishIndividualNodesFromWorkspace is executed with payload:
       | Key                             | Value                                                                                                                   |
-      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "de"}, "nodeAggregateId": "nody-mc-nodeface"}] |
+      | nodesToPublish                  | ["nody-mc-nodeface"] |
       | contentStreamIdForRemainingPart | "user-cs-id-remaining"                                                                                                  |
 
     Then I expect the ChangeProjection to have the following changes in "user-cs-id-remaining":
       | nodeAggregateId            | created | changed | moved | deleted | originDimensionSpacePoint |
-      | nody-mc-nodeface           | 1       | 1       | 0     | 0       | {"language":"gsw"}        |
       | sir-nodeward-nodington-iv  | 1       | 1       | 0     | 0       | {"language":"de"}         |
       | sir-nodeward-nodington-iii | 1       | 1       | 0     | 0       | {"language":"fr"}         |
     And I expect the ChangeProjection to have no changes in "user-cs-id"
@@ -142,6 +141,7 @@ Feature: Publish nodes partially with dimensions
       | nodeAggregateId        | created | changed | moved | deleted | originDimensionSpacePoint |
       | sir-david-nodenborough | 1       | 1       | 0     | 0       | {"language":"de"}         |
       | nody-mc-nodeface       | 1       | 1       | 0     | 0       | {"language":"de"}         |
+      | nody-mc-nodeface       | 1       | 1       | 0     | 0       | {"language":"gsw"}        |
     And I expect the ChangeProjection to have no changes in "cs-identifier"
 
   Scenario: Publish nodes partially from user workspace to live with new generalization
@@ -174,7 +174,7 @@ Feature: Publish nodes partially with dimensions
 
     When the command PublishIndividualNodesFromWorkspace is executed with payload:
       | Key                             | Value                                                                                                                                                                                                                                                     |
-      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "de"}, "nodeAggregateId": "sir-david-nodenborough"},{"workspaceName": "user-workspace", "dimensionSpacePoint": {"language": "en"}, "nodeAggregateId": "sir-david-nodenborough"}] |
+      | nodesToPublish                  | ["sir-david-nodenborough", "sir-david-nodenborough"] |
       | contentStreamIdForRemainingPart | "user-cs-id-remaining"                                                                                                                                                                                                                                    |
 
     Then I expect the ChangeProjection to have the following changes in "user-cs-id-remaining":
