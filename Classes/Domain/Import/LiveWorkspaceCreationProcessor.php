@@ -20,8 +20,7 @@ use Neos\ContentRepository\Export\ProcessingContext;
 use Neos\ContentRepository\Export\ProcessorInterface;
 use Neos\ContentRepository\Export\Severity;
 use Neos\Neos\Domain\Model\WorkspaceDescription;
-use Neos\Neos\Domain\Model\WorkspaceRole;
-use Neos\Neos\Domain\Model\WorkspaceRoleAssignment;
+use Neos\Neos\Domain\Model\WorkspaceRoleAssignments;
 use Neos\Neos\Domain\Model\WorkspaceTitle;
 use Neos\Neos\Domain\Service\WorkspaceService;
 
@@ -44,7 +43,12 @@ final readonly class LiveWorkspaceCreationProcessor implements ProcessorInterfac
             $context->dispatch(Severity::NOTICE, 'Workspace already exists, skipping');
             return;
         }
-        $this->workspaceService->createRootWorkspace($this->contentRepository->id, WorkspaceName::forLive(), WorkspaceTitle::fromString('Live workspace'), WorkspaceDescription::fromString(''));
-        $this->workspaceService->assignWorkspaceRole($this->contentRepository->id, WorkspaceName::forLive(), WorkspaceRoleAssignment::createForGroup('Neos.Neos:LivePublisher', WorkspaceRole::COLLABORATOR));
+        $this->workspaceService->createRootWorkspace(
+            $this->contentRepository->id,
+            WorkspaceName::forLive(),
+            WorkspaceTitle::fromString('Public live workspace'),
+            WorkspaceDescription::empty(),
+            WorkspaceRoleAssignments::createForLiveWorkspace()
+        );
     }
 }

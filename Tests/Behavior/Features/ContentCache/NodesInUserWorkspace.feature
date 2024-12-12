@@ -179,7 +179,7 @@ Feature: Tests for the ContentCacheFlusher and cache flushing when applied in us
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                                                                                                                                                        |
       | workspaceName      | "user-editor"                                                                                                                                                                                                                                |
-      | nodesToDiscard     | [{"workspaceName": "user-editor", "dimensionSpacePoint": {}, "nodeAggregateId": "text-node-middle"}] |
+      | nodesToDiscard     | ["text-node-middle"] |
       | newContentStreamId | "user-cs-id-discard"                                                                                                                                                                                                                         |
 
     Then I expect node aggregate identifier "text-node-middle" to lead to no node
@@ -295,4 +295,4 @@ Feature: Tests for the ContentCacheFlusher and cache flushing when applied in us
     """
     <div class="neos-contentcollection">secondRender[Text Node at the start of the document]secondRender[Text Node in the middle of the document]secondRender[Text Node at the end of the document]</div>
     """
-    
+

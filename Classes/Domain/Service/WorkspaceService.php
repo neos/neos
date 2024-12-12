@@ -18,9 +18,9 @@ use Neos\ContentRepository\Core\Feature\Security\Exception\AccessDenied;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateRootWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Exception\WorkspaceAlreadyExists;
-use Neos\ContentRepository\Core\Feature\WorkspaceModification\Command\ChangeBaseWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Command\DeleteWorkspace;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
+use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\Workspace;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
@@ -83,12 +83,6 @@ final readonly class WorkspaceService
     {
         $this->requireManagementWorkspacePermission($contentRepositoryId, $workspaceName);
         $workspace = $this->requireWorkspace($contentRepositoryId, $workspaceName);
-        $workspaceMetadata = $this->metadataAndRoleRepository->loadWorkspaceMetadata($contentRepositoryId, $workspaceName);
-
-        // WHY: Do not update if the title is the same
-        if ($workspaceMetadata->title->equals($newWorkspaceTitle)) {
-            return;
-        }
         $this->metadataAndRoleRepository->updateWorkspaceMetadata($contentRepositoryId, $workspace, title: $newWorkspaceTitle->value, description: null);
     }
 
@@ -99,22 +93,15 @@ final readonly class WorkspaceService
     {
         $this->requireManagementWorkspacePermission($contentRepositoryId, $workspaceName);
         $workspace = $this->requireWorkspace($contentRepositoryId, $workspaceName);
-        $workspaceMetadata = $this->metadataAndRoleRepository->loadWorkspaceMetadata($contentRepositoryId, $workspaceName);
-        // WHY: Do not update if the title is the same
-        if ($workspaceMetadata->description->equals($newWorkspaceDescription)) {
-            return;
-        }
         $this->metadataAndRoleRepository->updateWorkspaceMetadata($contentRepositoryId, $workspace, title: null, description: $newWorkspaceDescription->value);
     }
 
     /**
-     * Retrieve the currently active personal workspace for the specified $userId
-     *
-     * NOTE: Currently there can only ever be a single personal workspace per user. But this API already prepares support for multiple personal workspaces per user
+     * Retrieve the personal workspace for the specified user, if no workspace exist an exception is thrown.
      */
     public function getPersonalWorkspaceForUser(ContentRepositoryId $contentRepositoryId, UserId $userId): Workspace
     {
-        $workspaceName = $this->metadataAndRoleRepository->findPrimaryWorkspaceNameForUser($contentRepositoryId, $userId);
+        $workspaceName = $this->metadataAndRoleRepository->findWorkspaceNameByUser($contentRepositoryId, $userId);
         if ($workspaceName === null) {
             throw new \RuntimeException(sprintf('No workspace is assigned to the user with id "%s")', $userId->value), 1718293801);
         }
@@ -124,9 +111,19 @@ final readonly class WorkspaceService
     /**
      * Create a new root (aka base) workspace with the specified metadata
      *
+     * To ensure that editors can publish to the live workspace and to allow everybody to view it an assignment like {@see WorkspaceRoleAssignments::createForLiveWorkspace} needs to be specified:
+     *
+     *     $this->workspaceService->createRootWorkspace(
+     *         $contentRepositoryId,
+     *         WorkspaceName::forLive(),
+     *         WorkspaceTitle::fromString('Public live workspace'),
+     *         WorkspaceDescription::empty(),
+     *         WorkspaceRoleAssignments::createForLiveWorkspace()
+     *     );
+     *
      * @throws WorkspaceAlreadyExists
      */
-    public function createRootWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description): void
+    public function createRootWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceRoleAssignments $assignments): void
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
         $contentRepository->handle(
@@ -135,48 +132,74 @@ final readonly class WorkspaceService
                 ContentStreamId::create()
             )
         );
-        $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::ROOT, null);
+
+        $this->metadataAndRoleRepository->transactional(function () use ($contentRepositoryId, $workspaceName, $title, $description, $assignments) {
+            $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::ROOT, ownerUserId: null);
+            foreach ($assignments as $assignment) {
+                $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, $assignment);
+            }
+        });
     }
 
     /**
-     * Create the "live" root workspace with the default role assignment (users with the role "Neos.Neos:LivePublisher" are collaborators)
-     */
-    public function createLiveWorkspaceIfMissing(ContentRepositoryId $contentRepositoryId): void
-    {
-        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
-        $workspaceName = WorkspaceName::forLive();
-        $liveWorkspace = $contentRepository->findWorkspaceByName($workspaceName);
-        if ($liveWorkspace !== null) {
-            // live workspace already exists
-            return;
-        }
-        $this->createRootWorkspace($contentRepositoryId, $workspaceName, WorkspaceTitle::fromString('Public live workspace'), WorkspaceDescription::empty());
-        $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, WorkspaceRoleAssignment::createForGroup('Neos.Neos:LivePublisher', WorkspaceRole::COLLABORATOR));
-    }
-
-    /**
-     * Create a new, personal, workspace for the specified user
+     * Create a new, personal, workspace for the specified user (fails if the user already owns a workspace)
      */
     public function createPersonalWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName, UserId $ownerId): void
     {
-        $this->createWorkspace($contentRepositoryId, $workspaceName, $title, $description, $baseWorkspaceName, $ownerId, WorkspaceClassification::PERSONAL);
+        $existingUserWorkspace = $this->metadataAndRoleRepository->findWorkspaceNameByUser($contentRepositoryId, $ownerId);
+        if ($existingUserWorkspace !== null) {
+            throw new \RuntimeException(sprintf('Failed to create personal workspace "%s" for user with id "%s", because the workspace "%s" is already assigned to the user', $workspaceName->value, $ownerId->value, $existingUserWorkspace->value), 1733754904);
+        }
+        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
+        $contentRepository->handle(
+            CreateWorkspace::create(
+                $workspaceName,
+                $baseWorkspaceName,
+                ContentStreamId::create()
+            )
+        );
+        $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::PERSONAL, $ownerId);
     }
 
     /**
      * Create a new, potentially shared, workspace
+     *
+     * To ensure that the user can manage the shared workspace and to enable collaborates an assignment like {@see WorkspaceRoleAssignments::createForSharedWorkspace} needs to be specified:
+     *
+     *     $this->workspaceService->createWorkspace(
+     *         ...,
+     *         assignments: WorkspaceRoleAssignments::createForSharedWorkspace(
+     *             $currentUser->getId()
+     *         )
+     *     );
+     *
+     * NOTE: By default - if no role assignments are specified - only administrators can manage workspaces without role assignments.
      */
-    public function createSharedWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName): void
+    public function createSharedWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName, WorkspaceRoleAssignments $assignments): void
     {
-        $this->createWorkspace($contentRepositoryId, $workspaceName, $title, $description, $baseWorkspaceName, null, WorkspaceClassification::SHARED);
+        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
+        $contentRepository->handle(
+            CreateWorkspace::create(
+                $workspaceName,
+                $baseWorkspaceName,
+                ContentStreamId::create()
+            )
+        );
+
+        $this->metadataAndRoleRepository->transactional(function () use ($contentRepositoryId, $workspaceName, $title, $description, $assignments) {
+            $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, WorkspaceClassification::SHARED, ownerUserId: null);
+            foreach ($assignments as $assignment) {
+                $this->metadataAndRoleRepository->assignWorkspaceRole($contentRepositoryId, $workspaceName, $assignment);
+            }
+        });
     }
 
     /**
      * Create a new, personal, workspace for the specified user if none exists yet
-     * @internal experimental api, until actually used by the Neos.Ui
      */
     public function createPersonalWorkspaceForUserIfMissing(ContentRepositoryId $contentRepositoryId, User $user): void
     {
-        $existingWorkspaceName = $this->metadataAndRoleRepository->findPrimaryWorkspaceNameForUser($contentRepositoryId, $user->getId());
+        $existingWorkspaceName = $this->metadataAndRoleRepository->findWorkspaceNameByUser($contentRepositoryId, $user->getId());
         if ($existingWorkspaceName !== null) {
             $this->requireWorkspace($contentRepositoryId, $existingWorkspaceName);
             return;
@@ -218,12 +241,31 @@ final readonly class WorkspaceService
     }
 
     /**
+     * Deletes a content repository workspace and also all role assignments and metadata
+     */
+    public function deleteWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
+    {
+        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
+        $this->requireWorkspace($contentRepositoryId, $workspaceName);
+
+        $contentRepository->handle(
+            DeleteWorkspace::create(
+                $workspaceName
+            )
+        );
+
+        $this->metadataAndRoleRepository->deleteWorkspaceMetadata($contentRepositoryId, $workspaceName);
+        $this->metadataAndRoleRepository->deleteWorkspaceRoleAssignments($contentRepositoryId, $workspaceName);
+    }
+
+    /**
      * Get all role assignments for the specified workspace
      *
      * NOTE: This should never be used to evaluate permissions, instead {@see ContentRepositoryAuthorizationService::getWorkspacePermissions()} should be used!
      */
     public function getWorkspaceRoleAssignments(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): WorkspaceRoleAssignments
     {
+        $this->requireWorkspace($contentRepositoryId, $workspaceName);
         return $this->metadataAndRoleRepository->getWorkspaceRoleAssignments($contentRepositoryId, $workspaceName);
     }
 
@@ -255,59 +297,18 @@ final readonly class WorkspaceService
         throw new \RuntimeException(sprintf('Failed to find unique workspace name for "%s" after %d attempts.', $candidate, $attempt - 1), 1725975479);
     }
 
-
-    public function setBaseWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceName $baseWorkspaceName): void
-    {
-        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
-        $workspace = $this->requireWorkspace($contentRepositoryId, $workspaceName);
-
-        if ($workspace->workspaceName->equals($baseWorkspaceName)) {
-            // WHY: Do not update if the base workspace is the same
-            return;
-        }
-
-        $contentRepository->handle(
-            ChangeBaseWorkspace::create($workspaceName, $baseWorkspaceName)
-        );
-    }
-
-    public function deleteWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName)
-    {
-        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
-        $workspace = $this->requireWorkspace($contentRepositoryId, $workspaceName);
-
-        $contentRepository->handle(
-            DeleteWorkspace::create(
-                $workspaceName,
-            )
-        );
-
-        $this->metadataAndRoleRepository->deleteWorkspaceMetadata($contentRepositoryId, $workspaceName);
-        $this->metadataAndRoleRepository->deleteWorkspaceRoleAssignments($contentRepositoryId, $workspaceName);
-    }
-
     // ------------------
 
-    private function createWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceTitle $title, WorkspaceDescription $description, WorkspaceName $baseWorkspaceName, UserId|null $ownerId, WorkspaceClassification $classification): void
-    {
-        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
-        $contentRepository->handle(
-            CreateWorkspace::create(
-                $workspaceName,
-                $baseWorkspaceName,
-                ContentStreamId::create()
-            )
-        );
-        $this->metadataAndRoleRepository->addWorkspaceMetadata($contentRepositoryId, $workspaceName, $title, $description, $classification, $ownerId);
-    }
-
+    /**
+     * @throws WorkspaceDoesNotExist if the workspace does not exist
+     */
     private function requireWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): Workspace
     {
         $workspace = $this->contentRepositoryRegistry
             ->get($contentRepositoryId)
             ->findWorkspaceByName($workspaceName);
         if ($workspace === null) {
-            throw new \RuntimeException(sprintf('Failed to find workspace with name "%s" for content repository "%s"', $workspaceName->value, $contentRepositoryId->value), 1718379722);
+            throw WorkspaceDoesNotExist::butWasSupposedToInContentRepository($workspaceName, $contentRepositoryId);
         }
         return $workspace;
     }

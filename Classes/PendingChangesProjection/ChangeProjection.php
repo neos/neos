@@ -24,6 +24,7 @@ use Doctrine\DBAL\Types\Types;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\DimensionSpace\OriginDimensionSpacePoint;
 use Neos\ContentRepository\Core\EventStore\EventInterface;
+use Neos\ContentRepository\Core\Feature\ContentStreamRemoval\Event\ContentStreamWasRemoved;
 use Neos\ContentRepository\Core\Feature\DimensionSpaceAdjustment\Event\DimensionSpacePointWasMoved;
 use Neos\ContentRepository\Core\Feature\NodeCreation\Event\NodeAggregateWithNodeWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeModification\Event\NodePropertiesWereSet;
@@ -169,6 +170,7 @@ class ChangeProjection implements ProjectionInterface
             NodePeerVariantWasCreated::class,
             NodeAggregateTypeWasChanged::class,
             NodeAggregateNameWasChanged::class,
+            ContentStreamWasRemoved::class,
         ]);
     }
 
@@ -188,6 +190,7 @@ class ChangeProjection implements ProjectionInterface
             NodePeerVariantWasCreated::class => $this->whenNodePeerVariantWasCreated($event),
             NodeAggregateTypeWasChanged::class => $this->whenNodeAggregateTypeWasChanged($event),
             NodeAggregateNameWasChanged::class => $this->whenNodeAggregateNameWasChanged($event),
+            ContentStreamWasRemoved::class => $this->whenContentStreamWasRemoved($event),
             default => throw new \InvalidArgumentException(sprintf('Unsupported event %s', get_debug_type($event))),
         };
     }
@@ -215,18 +218,17 @@ class ChangeProjection implements ProjectionInterface
         }
 
         $affectedDimensionSpacePoints = iterator_to_array($event->succeedingSiblingsForCoverage->toDimensionSpacePointSet());
-        $arbitraryDimensionSpacePoint = reset($affectedDimensionSpacePoints);
-        if ($arbitraryDimensionSpacePoint instanceof DimensionSpacePoint) {
+        foreach ($affectedDimensionSpacePoints as $affectedDimensionSpacePoint) {
             // always the case due to constraint enforcement (at least one DSP is selected and must have a succeeding sibling or null)
 
-            // WORKAROUND: we simply use the event's first DSP here as the origin dimension space point.
-            // But this DSP is not necessarily occupied.
-            // @todo properly handle this by storing the necessary information in the projection
+            // We simply use the events DSPs here to store them as `Change` in even if the DSP is not necessarily  occupied.
+            // this is not problematic as the DSP should only be used for providing additional information where a change has effects instead of locating its origin
+            // todo possibly rename in the `Change` the field to '$affectedDimensionSpacePoint' field instead, as well use it now like that.
 
             $this->markAsMoved(
                 $event->getContentStreamId(),
                 $event->getNodeAggregateId(),
-                OriginDimensionSpacePoint::fromDimensionSpacePoint($arbitraryDimensionSpacePoint)
+                OriginDimensionSpacePoint::fromDimensionSpacePoint($affectedDimensionSpacePoint)
             );
         }
     }
@@ -429,6 +431,11 @@ class ChangeProjection implements ProjectionInterface
         );
     }
 
+    private function whenContentStreamWasRemoved(ContentStreamWasRemoved $event): void
+    {
+        $this->removeChangesForContentStreamId($event->contentStreamId);
+    }
+
     private function markAsChanged(
         ContentStreamId $contentStreamId,
         NodeAggregateId $nodeAggregateId,
@@ -561,5 +568,20 @@ AND n.origindimensionspacepointhash = :origindimensionspacepointhash',
         )->fetchAssociative();
 
         return $changeRow ? Change::fromDatabaseRow($changeRow) : null;
+    }
+
+    private function removeChangesForContentStreamId(ContentStreamId $contentStreamId): void
+    {
+        $statement = <<<SQL
+            DELETE FROM {$this->tableNamePrefix}
+            WHERE
+                contentStreamId = :contentStreamId
+        SQL;
+        $this->dbal->executeStatement(
+            $statement,
+            [
+                'contentStreamId' => $contentStreamId->value,
+            ]
+        );
     }
 }

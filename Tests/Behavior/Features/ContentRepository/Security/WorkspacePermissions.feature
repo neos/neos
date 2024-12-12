@@ -20,11 +20,8 @@ Feature: Workspace permission related features
     """
     And using identifier "default", I define a content repository
     And I am in content repository "default"
-    And the command CreateRootWorkspace is executed with payload:
-      | Key                | Value           |
-      | workspaceName      | "live"          |
-      | newContentStreamId | "cs-identifier" |
-    And I am in workspace "live" and dimension space point {}
+    And the live workspace exists
+    And I am in workspace "live"
     And the command CreateRootNodeAggregateWithNode is executed with payload:
       | Key             | Value                         |
       | nodeAggregateId | "root"                        |
@@ -45,32 +42,24 @@ Feature: Workspace permission related features
     And the following Neos users exist:
       | Username          | Roles                      |
       | admin             | Neos.Neos:Administrator    |
-      | editor            | Neos.Neos:Editor           |
-      | restricted_editor | Neos.Neos:RestrictedEditor |
+      # all editors are Neos.Neos:LivePublisher
       | owner             | Neos.Neos:Editor           |
       | manager           | Neos.Neos:Editor           |
       | collaborator      | Neos.Neos:Editor           |
-      | uninvolved        | Neos.Neos:Editor           |
-    And I am in workspace "live"
-    And I am in dimension space point {"language":"de"}
-    And the command TagSubtree is executed with payload:
-      | Key                          | Value                |
-      | nodeAggregateId              | "a"                  |
-      | nodeVariantSelectionStrategy | "allSpecializations" |
-      | tag                          | "subtree_a"          |
-    And the command DisableNodeAggregate is executed with payload:
-      | Key                          | Value         |
-      | nodeAggregateId              | "a1a1a"       |
-      | nodeVariantSelectionStrategy | "allVariants" |
+      | restricted_editor | Neos.Neos:RestrictedEditor |
+      | uninvolved_editor | Neos.Neos:Editor           |
+      # neos user with out any editing roles
+      | simple_user       | Neos.Neos:UserManager      |
+
+    When content repository security is enabled
+    And the shared workspace "shared-workspace" is created with the target workspace "live" and role assignments:
+      | Role         | Type  | Value                    |
+      | COLLABORATOR | GROUP | Neos.Neos:AbstractEditor |
+
+    Given I am authenticated as owner
     And the personal workspace "workspace" is created with the target workspace "live" for user "owner"
-    And I am in workspace "workspace"
     And the role MANAGER is assigned to workspace "workspace" for user "manager"
     And the role COLLABORATOR is assigned to workspace "workspace" for user "collaborator"
-    # The following step was added in order to make the `AddDimensionShineThrough` command viable
-    And I change the content dimensions in content repository "default" to:
-      | Identifier | Values      | Generalizations |
-      | language   | mul, de, ch | ch->de->mul     |
-    And content repository security is enabled
 
   Scenario Outline: Creating a root workspace
     Given I am authenticated as <user>
@@ -80,13 +69,13 @@ Feature: Workspace permission related features
     Examples:
       | user              |
       | admin             |
-      | editor            |
       | restricted_editor |
       | owner             |
       | collaborator      |
-      | uninvolved        |
+      | uninvolved_editor |
+      | simple_user       |
 
-  Scenario Outline: Creating a base workspace without WRITE permissions
+  Scenario Outline: Creating a nested workspace without READ permissions
     Given I am authenticated as <user>
     And the shared workspace "some-shared-workspace" is created with the target workspace "workspace"
     Then an exception of type "AccessDenied" should be thrown with code 1729086686
@@ -97,11 +86,11 @@ Feature: Workspace permission related features
     Examples:
       | user              |
       | admin             |
-      | editor            |
       | restricted_editor |
-      | uninvolved        |
+      | uninvolved_editor |
+      | simple_user       |
 
-  Scenario Outline: Creating a base workspace with WRITE permissions
+  Scenario Outline: Creating a nested workspace with READ permissions
     Given I am authenticated as <user>
     And the shared workspace "some-shared-workspace" is created with the target workspace "workspace"
 
@@ -110,6 +99,52 @@ Feature: Workspace permission related features
     Examples:
       | user         |
       | collaborator |
+      # the "owner" user already owns a workspace
+
+  Scenario: Creating a workspace without Neos User but READ permissions on live
+    Given I am not authenticated
+    And the shared workspace "some-shared-workspace" is created with the target workspace "live"
+
+  Scenario Outline: Creating a workspace with READ permissions (on live)
+    Given I am authenticated as <user>
+    And the shared workspace "some-shared-workspace" is created with the target workspace "live"
+
+    And the personal workspace "some-other-personal-workspace" is created with the target workspace "live" for user <user>
+
+    Examples:
+      | user              |
+      | admin             |
+      | collaborator      |
+      | uninvolved_editor |
+      | restricted_editor |
+      | simple_user       |
+      # the "owner" user already owns a workspace
+
+  Scenario Outline: Changing a base workspace without MANAGE permissions or READ permissions on the base workspace
+    Given I am authenticated as <user>
+    When the command ChangeBaseWorkspace is executed with payload and exceptions are caught:
+      | Key               | Value                   |
+      | workspaceName     | "workspace"             |
+      | baseWorkspaceName | "shared-workspace"      |
+    Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
+
+    Examples:
+      | user              |
+      | restricted_editor |
+      | collaborator      |
+      | uninvolved_editor |
+
+  Scenario Outline: Changing a base workspace with MANAGE permissions or READ permissions on the base workspace
+    Given I am authenticated as <user>
+    When the command ChangeBaseWorkspace is executed with payload:
+      | Key               | Value                   |
+      | workspaceName     | "workspace"             |
+      | baseWorkspaceName | "shared-workspace"      |
+
+    Examples:
+      | user         |
+      | admin        |
+      | manager      |
       | owner        |
 
   Scenario Outline: Deleting a workspace without MANAGE permissions
@@ -118,9 +153,10 @@ Feature: Workspace permission related features
     Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
 
     Examples:
-      | user         |
-      | collaborator |
-      | uninvolved   |
+      | user              |
+      | collaborator      |
+      | uninvolved_editor |
+      | simple_user       |
 
   Scenario Outline: Deleting a workspace with MANAGE permissions
     Given I am authenticated as <user>
@@ -147,9 +183,9 @@ Feature: Workspace permission related features
     Then an exception of type "AccessDenied" should be thrown with code 1731654519
 
     Examples:
-      | user         |
-      | collaborator |
-      | uninvolved   |
+      | user              |
+      | collaborator      |
+      | uninvolved_editor |
 
   Scenario Outline: Managing metadata and roles of a workspace with MANAGE permissions
     Given I am authenticated as <user>
@@ -165,11 +201,33 @@ Feature: Workspace permission related features
       | owner   |
 
   Scenario Outline: Handling commands that require WRITE permissions on the workspace
-    When I am authenticated as "uninvolved"
+    # Prepare the content repository so all commands are applicable
+    When I am authenticated as "owner"
+    And I am in workspace "live" and dimension space point {"language":"de"}
+    And the command TagSubtree is executed with payload:
+      | Key                          | Value                |
+      | nodeAggregateId              | "a"                  |
+      | nodeVariantSelectionStrategy | "allSpecializations" |
+      | tag                          | "subtree_a"          |
+    And the command DisableNodeAggregate is executed with payload:
+      | Key                          | Value             |
+      | nodeAggregateId              | "a1a1a"           |
+      | nodeVariantSelectionStrategy | "allVariants"     |
+    # The following step was added in order to make the `AddDimensionShineThrough` command viable
+    And I change the content dimensions in content repository "default" to:
+      | Identifier | Values      | Generalizations |
+      | language   | mul, de, ch | ch->de->mul     |
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value       |
+      | workspaceName | "workspace" |
+
+    And I am in workspace "workspace"
+
+    Given I am not authenticated
     And the command <command> is executed with payload '<command payload>' and exceptions are caught
     Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
 
-    When I am authenticated as "editor"
+    When I am authenticated as "uninvolved_editor"
     And the command <command> is executed with payload '<command payload>' and exceptions are caught
     Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
 
@@ -208,9 +266,59 @@ Feature: Workspace permission related features
       | MoveDimensionSpacePoint             | {"source":{"language":"de"},"target":{"language":"ch"}}                                                |
       | UpdateRootNodeAggregateDimensions   | {"nodeAggregateId":"root"}                                                                             |
       | DiscardWorkspace                    | {}                                                                                                     |
-      | DiscardIndividualNodesFromWorkspace | {"nodesToDiscard":[{"nodeAggregateId":"a1"}]}                                                          |
-      | PublishWorkspace                    | {}                                                                                                     |
-      | PublishIndividualNodesFromWorkspace | {"nodesToPublish":[{"nodeAggregateId":"a1"}]}                                                          |
+      | DiscardIndividualNodesFromWorkspace | {"nodesToDiscard":["a1"]}                                                                              |
       | RebaseWorkspace                     | {}                                                                                                     |
+      # note, creating a core workspace will not grant permissions to it to the current user: Missing "read" permissions for base workspace "new-workspace"
       | CreateWorkspace                     | {"workspaceName":"new-workspace","baseWorkspaceName":"workspace","newContentStreamId":"any"}           |
 
+  Scenario Outline: Publishing a workspace without WRITE permissions to live
+    # make changes as owner
+    Given I am authenticated as owner
+
+    And the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId | nodeTypeName       | parentNodeAggregateId | workspaceName | originDimensionSpacePoint |
+      | shernode-homes  | Neos.Neos:Document | a                     | workspace     | {"language":"de"}         |
+      | other-node      | Neos.Neos:Document | a                     | workspace     | {"language":"de"}         |
+
+    # someone else attempts to publish
+    Given I am authenticated as <user>
+
+    And the command PublishIndividualNodesFromWorkspace is executed with payload and exceptions are caught:
+      | Key            | Value                                  |
+      | workspaceName  | "workspace"                            |
+      | nodesToPublish | ["shernode-homes"] |
+    Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
+
+    And the command PublishWorkspace is executed with payload and exceptions are caught:
+      | Key           | Value       |
+      | workspaceName | "workspace" |
+    Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
+
+    Examples:
+      | user              |
+      | restricted_editor |
+      | simple_user       |
+      | uninvolved_editor |
+      | admin             |
+
+  Scenario Outline: Publishing a workspace with WRITE permissions to live
+    Given I am authenticated as <user>
+
+    And the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId | nodeTypeName       | parentNodeAggregateId | workspaceName | originDimensionSpacePoint |
+      | shernode-homes  | Neos.Neos:Document | a                     | workspace     | {"language":"de"}         |
+      | other-node      | Neos.Neos:Document | a                     | workspace     | {"language":"de"}         |
+
+    And the command PublishIndividualNodesFromWorkspace is executed with payload:
+      | Key            | Value                                  |
+      | workspaceName  | "workspace"                            |
+      | nodesToPublish | ["shernode-homes"] |
+
+    And the command PublishWorkspace is executed with payload:
+      | Key           | Value       |
+      | workspaceName | "workspace" |
+
+    Examples:
+      | user         |
+      | owner        |
+      | collaborator |

@@ -83,6 +83,7 @@ trait FlowSecurityTrait
         $this->flowSecurity_testingProvider = $tokenAndProviderFactory->getProviders()['TestingProvider'];
 
         $securityContext = $this->getObject(SecurityContext::class);
+        $securityContext->clearContext(); // enable authorizationChecks
         $httpRequest = $this->getObject(ServerRequestFactoryInterface::class)->createServerRequest('GET', 'http://localhost/');
         $this->flowSecurity_mockActionRequest = ActionRequest::fromHttpRequest($httpRequest);
         $securityContext->setRequest($this->flowSecurity_mockActionRequest);
@@ -131,5 +132,17 @@ trait FlowSecurityTrait
                 return $this->mergedPolicyConfiguration;
             }
         });
+    }
+
+    /**
+     * @When I am not authenticated
+     */
+    final public function iAmNotAuthenticated(): void
+    {
+        $this->flowSecurity_testingProvider->reset();
+        $securityContext = $this->getObject(SecurityContext::class);
+        $securityContext->clearContext();
+        $securityContext->setRequest($this->flowSecurity_mockActionRequest);
+        $this->getObject(AuthenticationProviderManager::class)->authenticate();
     }
 }

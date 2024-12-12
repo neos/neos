@@ -1,6 +1,6 @@
 @contentrepository @adapters=DoctrineDBAL
 @flowEntities
-Feature: Publish nodes partially without dimensions
+Feature: Discard nodes partially without dimensions
 
   Background:
     Given using no content dimensions
@@ -68,7 +68,7 @@ Feature: Publish nodes partially without dimensions
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                              |
       | workspaceName      | "user-workspace"                                                                                                   |
-      | nodesToDiscard     | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-nodeward-nodington-iiii"}] |
+      | nodesToDiscard     | ["sir-nodeward-nodington-iiii"] |
       | newContentStreamId | "user-cs-identifier-new"                                                                                           |
 
     Then I expect the AssetUsageService to have the following AssetUsages:
@@ -105,7 +105,7 @@ Feature: Publish nodes partially without dimensions
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                                                                                                                                              |
       | workspaceName      | "user-workspace"                                                                                                                                                                                                                   |
-      | nodesToDiscard     | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-nodeward-nodington-iii"},{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-nodeward-nodington-iiii"}] |
+      | nodesToDiscard     | ["sir-nodeward-nodington-iii", "sir-nodeward-nodington-iiii"] |
       | newContentStreamId | "user-cs-identifier-new"                                                                                                                                                                                                           |
 
     Then I expect the AssetUsageService to have the following AssetUsages:
@@ -157,7 +157,7 @@ Feature: Publish nodes partially without dimensions
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                                                                                                                                              |
       | workspaceName      | "user-workspace"                                                                                                                                                                                                                   |
-      | nodesToDiscard     | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-nodeward-nodington-iiii"}] |
+      | nodesToDiscard     | ["sir-nodeward-nodington-iiii"] |
       | newContentStreamId | "user-cs-identifier-new"                                                                                                                                                                                                           |
 
     And I expect the AssetUsageService to have the following AssetUsages:
@@ -210,7 +210,7 @@ Feature: Publish nodes partially without dimensions
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                                                                                                                                              |
       | workspaceName      | "user-workspace"                                                                                                                                                                                                                   |
-      | nodesToDiscard     | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-nodeward-nodington-iii"},{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-nodeward-nodington-iiii"}] |
+      | nodesToDiscard     | ["sir-nodeward-nodington-iii", "sir-nodeward-nodington-iiii"] |
       | newContentStreamId | "user-cs-identifier-new"                                                                                                                                                                                                           |
 
     And I expect the AssetUsageService to have the following AssetUsages:
