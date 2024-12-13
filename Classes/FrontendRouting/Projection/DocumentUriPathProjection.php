@@ -105,8 +105,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
      */
     private function determineRequiredSqlStatements(): array
     {
-        $schemaManager = $this->dbal->createSchemaManager();
-        $schema = (new DocumentUriPathSchemaBuilder($this->tableNamePrefix))->buildSchema($schemaManager);
+        $schema = (new DocumentUriPathSchemaBuilder($this->tableNamePrefix))->buildSchema($this->dbal);
         $statements = DbalSchemaDiff::determineRequiredSqlStatements($this->dbal, $schema);
 
         return $statements;
