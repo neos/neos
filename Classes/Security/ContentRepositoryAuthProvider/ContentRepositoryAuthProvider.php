@@ -26,6 +26,7 @@ use Neos\ContentRepository\Core\Feature\SubtreeTagging\Command\TagSubtree;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Command\UntagSubtree;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateRootWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Command\CreateWorkspace;
+use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Exception\BaseWorkspaceDoesNotExist;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Command\ChangeBaseWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Command\DeleteWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\DiscardIndividualNodesFromWorkspace;
@@ -36,6 +37,8 @@ use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Command\RebaseWorkspace;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
+use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
+use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceHasNoBaseWorkspaceName;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\Flow\Security\Context as SecurityContext;
@@ -116,6 +119,13 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
         if ($command instanceof CreateRootWorkspace) {
             return Privilege::denied('Creation of root workspaces is currently only allowed with disabled authorization checks');
         }
+        if ($command instanceof CreateWorkspace) {
+            $baseWorkspacePermissions = $this->getWorkspacePermissionsForCurrentUser($command->baseWorkspaceName);
+            if (!$baseWorkspacePermissions->read) {
+                return Privilege::denied(sprintf('Missing "read" permissions for base workspace "%s": %s', $command->baseWorkspaceName->value, $baseWorkspacePermissions->getReason()));
+            }
+            return Privilege::granted(sprintf('User has "read" permissions for base workspace "%s"', $command->baseWorkspaceName->value));
+        }
         if ($command instanceof ChangeBaseWorkspace) {
             $workspacePermissions = $this->getWorkspacePermissionsForCurrentUser($command->workspaceName);
             if (!$workspacePermissions->manage) {
@@ -127,6 +137,28 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
             }
             return Privilege::granted(sprintf('User has "manage" permissions for workspace "%s" and "read" permissions for base workspace "%s"', $command->workspaceName->value, $command->baseWorkspaceName->value));
         }
+        if ($command instanceof PublishWorkspace || $command instanceof PublishIndividualNodesFromWorkspace) {
+            $workspacePermissions = $this->getWorkspacePermissionsForCurrentUser($command->workspaceName);
+            if (!$workspacePermissions->write) {
+                return Privilege::denied(sprintf('Missing "write" permissions for workspace "%s": %s', $command->workspaceName->value, $workspacePermissions->getReason()));
+            }
+            $workspace = $this->contentGraphReadModel->findWorkspaceByName($command->workspaceName);
+            if ($workspace === null) {
+                throw WorkspaceDoesNotExist::butWasSupposedTo($command->workspaceName);
+            }
+            if ($workspace->baseWorkspaceName === null) {
+                throw WorkspaceHasNoBaseWorkspaceName::butWasSupposedTo($workspace->workspaceName);
+            }
+            $baseWorkspace = $this->contentGraphReadModel->findWorkspaceByName($workspace->baseWorkspaceName);
+            if ($baseWorkspace === null) {
+                throw BaseWorkspaceDoesNotExist::butWasSupposedTo($workspace->workspaceName);
+            }
+            $baseWorkspacePermissions = $this->getWorkspacePermissionsForCurrentUser($baseWorkspace->workspaceName);
+            if (!$baseWorkspacePermissions->write) {
+                return Privilege::denied(sprintf('Missing "write" permissions for base workspace "%s": %s', $baseWorkspace->workspaceName->value, $baseWorkspacePermissions->getReason()));
+            }
+            return Privilege::granted(sprintf('User has "manage" permissions for workspace "%s" and "write" permissions for base workspace "%s"', $command->workspaceName->value, $baseWorkspace->workspaceName->value));
+        }
         return match ($command::class) {
             AddDimensionShineThrough::class,
             ChangeNodeAggregateName::class,
@@ -136,10 +168,7 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
             UpdateRootNodeAggregateDimensions::class,
             DiscardWorkspace::class,
             DiscardIndividualNodesFromWorkspace::class,
-            PublishWorkspace::class,
-            PublishIndividualNodesFromWorkspace::class,
             RebaseWorkspace::class => $this->requireWorkspaceWritePermission($command->workspaceName),
-            CreateWorkspace::class => $this->requireWorkspaceWritePermission($command->baseWorkspaceName),
             DeleteWorkspace::class => $this->requireWorkspaceManagePermission($command->workspaceName),
             default => Privilege::granted('Command not restricted'),
         };

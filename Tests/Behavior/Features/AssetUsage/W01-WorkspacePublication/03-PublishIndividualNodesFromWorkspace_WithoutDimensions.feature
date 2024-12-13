@@ -63,7 +63,7 @@ Feature: Publish nodes partially without dimensions
 
     When the command PublishIndividualNodesFromWorkspace is executed with payload:
       | Key                             | Value                                                                                                         |
-      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-david-nodenborough"}] |
+      | nodesToPublish                  | ["sir-david-nodenborough"] |
       | contentStreamIdForRemainingPart | "user-cs-identifier-remaining"                                                                                |
 
     Then I expect the AssetUsageService to have the following AssetUsages:
@@ -111,7 +111,7 @@ Feature: Publish nodes partially without dimensions
 
     When the command PublishIndividualNodesFromWorkspace is executed with payload:
       | Key                             | Value                                                                                                         |
-      | nodesToPublish                  | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-david-nodenborough"}] |
+      | nodesToPublish                  | ["sir-david-nodenborough"] |
       | contentStreamIdForRemainingPart | "user-cs-identifier-remaining"                                                                                |
 
     And I expect the AssetUsageService to have the following AssetUsages:

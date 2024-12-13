@@ -16,10 +16,8 @@ use Behat\Gherkin\Node\TableNode;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
 use Neos\Flow\Security\AccountFactory;
 use Neos\Flow\Security\Cryptography\HashService;
-use Neos\Flow\Security\Policy\PolicyService;
 use Neos\Neos\Domain\Model\User;
 use Neos\Neos\Domain\Service\UserService;
-use Neos\Neos\Security\Authorization\Privilege\ReadNodePrivilege;
 use Neos\Party\Domain\Model\PersonName;
 use Neos\Utility\ObjectAccess;
 
@@ -61,11 +59,14 @@ trait UserServiceTrait
     public function theFollowingNeosUsersExist(TableNode $usersTable): void
     {
         foreach ($usersTable->getHash() as $userData) {
+            if (empty($userData['Roles'])) {
+                throw new \InvalidArgumentException('Please specify explicit roles for the Neos user, to avoid using any fallbacks.');
+            }
             $this->createUser(
                 username: $userData['Username'],
                 firstName: $userData['First name'] ?? null,
                 lastName: $userData['Last name'] ?? null,
-                roleIdentifiers: !empty($userData['Roles']) ? explode(',', $userData['Roles']) : null,
+                roleIdentifiers: explode(',', $userData['Roles']),
                 id: $userData['Id'] ?? null,
             );
         }
@@ -81,6 +82,7 @@ trait UserServiceTrait
 
         $accountFactory = $this->getObject(AccountFactory::class);
 
+        // todo either hack the global hash service or fix flow to avoid having to inline this code
         // NOTE: We replace the original {@see HashService} by a "mock" for performance reasons (the default hashing strategy usually takes a while to create passwords)
 
         /** @var HashService $originalHashService */

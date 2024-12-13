@@ -15,7 +15,6 @@ declare(strict_types=1);
 namespace Neos\Neos\Command;
 
 use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Exception\WorkspaceAlreadyExists;
-use Neos\ContentRepository\Core\Feature\WorkspaceModification\Command\DeleteWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Dto\RebaseErrorHandlingStrategy;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Exception\WorkspaceRebaseFailed;
 use Neos\ContentRepository\Core\Service\WorkspaceMaintenanceServiceFactory;
@@ -31,6 +30,7 @@ use Neos\Neos\Domain\Model\WorkspaceClassification;
 use Neos\Neos\Domain\Model\WorkspaceDescription;
 use Neos\Neos\Domain\Model\WorkspaceRole;
 use Neos\Neos\Domain\Model\WorkspaceRoleAssignment;
+use Neos\Neos\Domain\Model\WorkspaceRoleAssignments;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubject;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubjectType;
 use Neos\Neos\Domain\Model\WorkspaceTitle;
@@ -148,7 +148,8 @@ class WorkspaceCommandController extends CommandController
             $contentRepositoryId,
             $workspaceName,
             WorkspaceTitle::fromString($title ?? $name),
-            WorkspaceDescription::fromString($description ?? '')
+            WorkspaceDescription::fromString($description ?? ''),
+            WorkspaceRoleAssignments::createEmpty()
         );
         $this->outputLine('<success>Created root workspace "%s" in content repository "%s"</success>', [$workspaceName->value, $contentRepositoryId->value]);
     }
@@ -206,6 +207,7 @@ class WorkspaceCommandController extends CommandController
             WorkspaceTitle::fromString($title ?? $workspaceName->value),
             WorkspaceDescription::fromString($description ?? ''),
             WorkspaceName::fromString($baseWorkspace),
+            WorkspaceRoleAssignments::createEmpty()
         );
         $this->outputLine('<success>Created shared workspace "%s"</success>', [$workspaceName->value]);
     }
@@ -400,11 +402,7 @@ class WorkspaceCommandController extends CommandController
             $this->workspacePublishingService->discardAllWorkspaceChanges($contentRepositoryId, $workspaceName);
         }
 
-        $contentRepositoryInstance->handle(
-            DeleteWorkspace::create(
-                $workspaceName
-            )
-        );
+        $this->workspaceService->deleteWorkspace($contentRepositoryId, $workspaceName);
         $this->outputLine('Deleted workspace "%s"', [$workspaceName->value]);
     }
 

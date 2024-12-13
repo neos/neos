@@ -53,7 +53,7 @@ Feature: Discard nodes partially without dimensions
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                             |
       | workspaceName      | "user-workspace"                                                                                                  |
-      | nodesToDiscard     | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-nodeward-nodington-iii"}] |
+      | nodesToDiscard     | ["sir-nodeward-nodington-iii"] |
       | newContentStreamId | "user-cs-id-remaining"                                                                                            |
 
     Then I expect the ChangeProjection to have the following changes in "user-cs-id-remaining":
@@ -85,7 +85,7 @@ Feature: Discard nodes partially without dimensions
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                                                                                                                                            |
       | workspaceName      | "user-workspace"                                                                                                                                                                                                                 |
-      | nodesToDiscard     | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-nodeward-nodington-iii"},{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-nodeward-nodington-iv"}] |
+      | nodesToDiscard     | ["sir-nodeward-nodington-iii", "sir-nodeward-nodington-iv"] |
       | newContentStreamId | "user-cs-id-remaining"                                                                                                                                                                                                           |
 
     Then I expect the ChangeProjection to have the following changes in "user-cs-id-remaining":
@@ -131,7 +131,7 @@ Feature: Discard nodes partially without dimensions
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                            |
       | workspaceName      | "user-workspace"                                                                                                 |
-      | nodesToDiscard     | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-nodeward-nodington-iv"}] |
+      | nodesToDiscard     | ["sir-nodeward-nodington-iv"] |
       | newContentStreamId | "user-cs-id-remaining"                                                                                           |
 
     Then I expect the ChangeProjection to have the following changes in "user-cs-id-remaining":
@@ -182,7 +182,7 @@ Feature: Discard nodes partially without dimensions
     When the command DiscardIndividualNodesFromWorkspace is executed with payload:
       | Key                | Value                                                                                                                                                                                                                          |
       | workspaceName      | "user-workspace"                                                                                                                                                                                                               |
-      | nodesToDiscard     | [{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-nodeward-nodington-iv"},{"workspaceName": "user-workspace", "dimensionSpacePoint": {}, "nodeAggregateId": "sir-nodeward-nodington-v"}] |
+      | nodesToDiscard     | ["sir-nodeward-nodington-iv", "sir-nodeward-nodington-v"] |
       | newContentStreamId | "user-cs-id-remaining"                                                                                                                                                                                                         |
 
     Then I expect the ChangeProjection to have the following changes in "user-cs-id-remaining":

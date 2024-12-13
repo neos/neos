@@ -54,7 +54,7 @@ Feature: Test cases for partial publish to live and uri path generation
     And the command PublishIndividualNodesFromWorkspace is executed with payload:
       | Key                       | Value                      |
       | workspaceName             | "myworkspace"              |
-      | nodesToPublish            | [{"nodeAggregateId": "justsomepage", "dimensionSpacePoint": {"example":"source"}}]       |
+      | nodesToPublish            | ["justsomepage"] |
 
     Then I expect the documenturipath table to contain exactly:
       # source: 65901ded4f068dac14ad0dce4f459b29
