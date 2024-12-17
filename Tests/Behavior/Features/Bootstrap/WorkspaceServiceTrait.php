@@ -50,6 +50,17 @@ trait WorkspaceServiceTrait
     abstract private function getObject(string $className): object;
 
     /**
+     * @BeforeScenario
+     */
+    final public function pruneWorkspaceService(): void
+    {
+        foreach (static::$alreadySetUpContentRepositories as $contentRepositoryId) {
+            $this->getObject(\Neos\Neos\Domain\Repository\WorkspaceMetadataAndRoleRepository::class)->pruneWorkspaceMetadata($contentRepositoryId);
+            $this->getObject(\Neos\Neos\Domain\Repository\WorkspaceMetadataAndRoleRepository::class)->pruneRoleAssignments($contentRepositoryId);
+        }
+    }
+
+    /**
      * @When the root workspace :workspaceName is created
      * @When the root workspace :workspaceName with title :title and description :description is created
      */

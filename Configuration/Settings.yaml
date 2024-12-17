@@ -505,6 +505,14 @@ Neos:
         neos-site: Sites
         neos-plugin: Plugins
 
+    persistence:
+      doctrine:
+        migrations:
+          ignoredTables:
+            'neos_asset_usage': true
+            'neos_neos_workspace_metadata': true
+            'neos_neos_workspace_role': true
+
   Fusion:
     rendering:
       exceptionHandler: Neos\Fusion\Core\ExceptionHandlers\ThrowingHandler
