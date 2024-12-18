@@ -16,6 +16,7 @@ use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeGeneralizationVa
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodePeerVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeSpecializationVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Event\WorkspaceWasDiscarded;
+use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Event\WorkspaceWasRebased;
 use Neos\ContentRepository\Core\Projection\CatchUpHook\CatchUpHookInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindDescendantNodesFilter;
@@ -71,6 +72,12 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
             } catch (WorkspaceDoesNotExist) {
                 return;
             }
+        }
+
+        if ($eventInstance instanceof WorkspaceWasRebased && $eventInstance->hadConflicts) {
+            // because we don't know which changes were discarded in a conflict, we discard all changes and will build up the index on succeeding calls (with the kept reapplied events)
+            $this->discardWorkspace($eventInstance->getWorkspaceName());
+            return;
         }
 
         // Note that we don't need to update the index for WorkspaceWasPublished, as updateNode will be invoked already with the published node and then clean up its previous usages in nested workspaces
