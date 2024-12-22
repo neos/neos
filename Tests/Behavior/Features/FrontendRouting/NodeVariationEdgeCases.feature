@@ -36,6 +36,7 @@ Feature: Test cases for node variation edge cases
       | nodeTypeName              | "Neos.Neos:Site"         |
       | parentNodeAggregateId     | "lady-eleonode-rootford" |
       | originDimensionSpacePoint | {"example":"source"}     |
+      | nodeName                  | "site"                   |
     And the command CreateNodeVariant is executed with payload:
       | Key             | Value                |
       | nodeAggregateId | "shernode-homes"     |
@@ -135,6 +136,7 @@ Feature: Test cases for node variation edge cases
       | nodeTypeName              | "Neos.Neos:Site"          |
       | parentNodeAggregateId     | "lady-eleonode-rootford"  |
       | originDimensionSpacePoint | {"example":"rootGeneral"} |
+      | nodeName                  | "site"                    |
     And the following CreateNodeAggregateWithNode commands are executed:
       | nodeAggregateId      | originDimensionSpacePoint | nodeName          | parentNodeAggregateId | succeedingSiblingNodeAggregateId | nodeTypeName       | initialPropertyValues          |
     # Let's create some siblings, both in source and target, to check ordering
@@ -225,6 +227,7 @@ Feature: Test cases for node variation edge cases
       | nodeTypeName              | "Neos.Neos:Site"         |
       | parentNodeAggregateId     | "lady-eleonode-rootford" |
       | originDimensionSpacePoint | {"example":"source"}     |
+      | nodeName                  | "site"                   |
     And the following CreateNodeAggregateWithNode commands are executed:
       | nodeAggregateId      | nodeName          | parentNodeAggregateId | succeedingSiblingNodeAggregateId | nodeTypeName       | initialPropertyValues          |
     # Let's create our test subject...
