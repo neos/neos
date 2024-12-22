@@ -209,7 +209,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         }
 
         $propertyValues = $event->initialPropertyValues->getPlainValues();
-        $uriPathSegment = $propertyValues['uriPathSegment'] ?? '';
+        $uriPathSegment = $propertyValues['uriPathSegment'] ?? $event->nodeAggregateId->value;
 
         $shortcutTarget = null;
         if ($documentTypeClassification === DocumentTypeClassification::CLASSIFICATION_SHORTCUT) {

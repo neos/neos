@@ -1,5 +1,5 @@
 @flowEntities @contentrepository
-Feature: Basic routing functionality if path segments are missing after node creation (like with tethered nodes)
+Feature: Routing functionality if path segments are missing like during tethered node creation
 
   Background:
     Given using no content dimensions
@@ -84,7 +84,7 @@ Feature: Basic routing functionality if path segments are missing after node cre
     And the node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/sir-david-nodenborough"
     And the node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/sir-david-nodenborough/earl-o-documentbourgh"
 
-  Scenario: Change uri path segment on first level
+  Scenario: Add uri path segment on first level
     When the command SetNodeProperties is executed with payload:
       | Key                       | Value                                            |
       | nodeAggregateId           | "sir-david-nodenborough"                         |
@@ -94,7 +94,7 @@ Feature: Basic routing functionality if path segments are missing after node cre
     Then the node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough-updated"
     And the node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough-updated/earl-o-documentbourgh"
 
-  Scenario: Change uri path segment on second level
+  Scenario: Add uri path segment on second level
     When the command SetNodeProperties is executed with payload:
       | Key                       | Value                                            |
       | nodeAggregateId           | "earl-o-documentbourgh"                         |
