@@ -46,7 +46,7 @@ class ContentCacheFlusher
     /**
      * @var array<string,string>
      */
-    private array $tagsToFlushAfterPersistance = [];
+    private array $tagsToFlushAfterPersistence = [];
 
     public function __construct(
         protected readonly ContentCache $contentCache,
@@ -236,7 +236,7 @@ class ContentCacheFlusher
      */
     protected function collectTagsForFlushOnShutdown(array $tagsToFlush): void
     {
-        $this->tagsToFlushAfterPersistance = array_merge($tagsToFlush, $this->tagsToFlushAfterPersistance);
+        $this->tagsToFlushAfterPersistence = array_merge($tagsToFlush, $this->tagsToFlushAfterPersistence);
     }
 
     /**
@@ -262,8 +262,8 @@ class ContentCacheFlusher
      */
     public function flushCollectedTags(): void
     {
-        $this->flushTagsImmediately($this->tagsToFlushAfterPersistance);
-        $this->tagsToFlushAfterPersistance = [];
+        $this->flushTagsImmediately($this->tagsToFlushAfterPersistence);
+        $this->tagsToFlushAfterPersistence = [];
     }
 
     public function shutdownObject(): void
