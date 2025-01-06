@@ -47,22 +47,9 @@ privilegeTargets:
       label: Access to own personal workspace
       matcher: 'method(Neos\Neos\TypeConverter\NodeConverter->prepareContextProperties(workspaceName === current.userInformation.personalWorkspaceName))'
 
-    # No role should have this privilege assigned:
-    'Neos.Neos:Backend.OtherUsersPersonalWorkspaceAccess':
-      label: Access to other users personal workspace
-      matcher: 'method(Neos\ContentRepository\Domain\Service\Context->validateWorkspace()) && evaluate(this.workspace.owner !== current.userInformation.backendUser, this.workspace.personalWorkspace === true)'
-
     'Neos.Neos:Backend.EditContent':
       label: General access to content editing
       matcher: 'method(Neos\Neos\Service\Controller\NodeController->(show|getPrimaryChildNode|getChildNodesForTree|filterChildNodesForTree|getChildNodes|getChildNodesFromParent|create|createAndRender|createNodeForTheTree|move|moveBefore|moveAfter|moveInto|moveAndRender|copy|copyBefore|copyAfter|copyInto|copyAndRender|update|updateAndRender|delete|searchPage|error)Action()) || method(Neos\Neos\Controller\Backend\ContentController->(uploadAsset|assetsWithMetadata|imageWithMetadata|createImageVariant|error)Action()) || method(Neos\Neos\Controller\Service\AssetProxiesController->(index|show|import|error)Action()) || method(Neos\Neos\Controller\Service\AssetsController->(index|show|error)Action()) || method(Neos\Neos\Controller\Service\NodesController->(index|show|create|error)Action())'
-
-    'Neos.Neos:Backend.PublishOwnWorkspaceContent':
-      label: Allowed to publish own personal workspace
-      matcher: 'method(Neos\Neos\Service\Controller\WorkspaceController->(publishNode|publishNodes|error)Action()) || method(Neos\Neos\Service\Controller\WorkspaceController->publishAllAction(workspaceName = current.userInformation.personalWorkspaceName)) || method(Neos\Neos\Service\Controller\WorkspaceController->getWorkspaceWideUnpublishedNodesAction(workspace.name = current.userInformation.personalWorkspaceName))'
-
-    'Neos.Neos:Backend.DiscardOwnWorkspaceContent':
-      label: Allowed to discard changes in own workspace
-      matcher: 'method(Neos\Neos\Service\Controller\WorkspaceController->(discardNode|discardNodes|error)Action()) || method(Neos\Neos\Service\Controller\WorkspaceController->discardAllAction(workspace.name === current.userInformation.personalWorkspaceName))'
 
     #
     # User management and user settings
@@ -173,7 +160,6 @@ roles:
   'Neos.Neos:AbstractEditor':
     # This group is assigned conventionally for new shared workspaces as collaborator. See WorkspaceService::assignWorkspaceRole
     abstract: true
-    parentRoles: ['Neos.ContentRepository:Administrator']
     privileges:
       -
         privilegeTarget: 'Neos.Neos:Backend.GeneralAccess'
@@ -189,14 +175,6 @@ roles:
 
       -
         privilegeTarget: 'Neos.Neos:Backend.EditContent'
-        permission: GRANT
-
-      -
-        privilegeTarget: 'Neos.Neos:Backend.PublishOwnWorkspaceContent'
-        permission: GRANT
-
-      -
-        privilegeTarget: 'Neos.Neos:Backend.DiscardOwnWorkspaceContent'
         permission: GRANT
 
       -
