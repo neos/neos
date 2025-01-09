@@ -74,12 +74,6 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
             }
         }
 
-        if ($eventInstance instanceof WorkspaceWasRebased && $eventInstance->hasSkippedEvents()) {
-            // because we don't know which changes were discarded in a conflict, we discard all changes and will build up the index on succeeding calls (with the kept reapplied events)
-            $this->discardWorkspace($eventInstance->getWorkspaceName());
-            return;
-        }
-
         // Note that we don't need to update the index for WorkspaceWasPublished, as updateNode will be invoked already with the published node and then clean up its previous usages in nested workspaces
         match ($eventInstance::class) {
             NodeAggregateWithNodeWasCreated::class => $this->updateNode($eventInstance->getWorkspaceName(), $eventInstance->nodeAggregateId, $eventInstance->originDimensionSpacePoint->toDimensionSpacePoint()),
@@ -89,6 +83,8 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
             NodePropertiesWereSet::class => $this->updateNode($eventInstance->getWorkspaceName(), $eventInstance->nodeAggregateId, $eventInstance->originDimensionSpacePoint->toDimensionSpacePoint()),
             WorkspaceWasDiscarded::class => $this->discardWorkspace($eventInstance->getWorkspaceName()),
             DimensionSpacePointWasMoved::class => $this->updateDimensionSpacePoint($eventInstance->getWorkspaceName(), $eventInstance->source, $eventInstance->target),
+            // because we don't know which changes were discarded in a conflict, we discard all changes and will build up the index on succeeding calls (with the kept reapplied events)
+            WorkspaceWasRebased::class => $eventInstance->hasSkippedEvents() && $this->discardWorkspace($eventInstance->getWorkspaceName()),
             default => null
         };
     }
