@@ -74,7 +74,7 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
             }
         }
 
-        if ($eventInstance instanceof WorkspaceWasRebased && $eventInstance->hadConflicts) {
+        if ($eventInstance instanceof WorkspaceWasRebased && $eventInstance->hasSkippedEvents()) {
             // because we don't know which changes were discarded in a conflict, we discard all changes and will build up the index on succeeding calls (with the kept reapplied events)
             $this->discardWorkspace($eventInstance->getWorkspaceName());
             return;
