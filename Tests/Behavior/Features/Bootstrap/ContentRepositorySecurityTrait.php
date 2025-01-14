@@ -67,18 +67,7 @@ trait ContentRepositorySecurityTrait
             return;
         }
         $contentRepositoryAuthProviderFactory = $this->getObject(ContentRepositoryAuthProviderFactory::class);
-        $contentGraphReadModel = $this->getContentRepositoryService(new class implements ContentRepositoryServiceFactoryInterface {
-            public function build(ContentRepositoryServiceFactoryDependencies $serviceFactoryDependencies): ContentRepositoryServiceInterface
-            {
-                $contentGraphReadModel = $serviceFactoryDependencies->contentGraphReadModel;
-                return new class ($contentGraphReadModel) implements ContentRepositoryServiceInterface {
-                    public function __construct(
-                        public ContentGraphReadModelInterface $contentGraphReadModel,
-                    ) {
-                    }
-                };
-            }
-        })->contentGraphReadModel;
+        $contentGraphReadModel = $this->getContentGraphReadModel();
         $contentRepositoryAuthProvider = $contentRepositoryAuthProviderFactory->build($this->currentContentRepository->id, $contentGraphReadModel);
 
         FakeAuthProvider::replaceAuthProvider($contentRepositoryAuthProvider);
