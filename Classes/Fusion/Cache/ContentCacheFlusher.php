@@ -227,6 +227,7 @@ class ContentCacheFlusher
             $affectedEntries = $this->contentCache->flushByTags(array_keys($tagsToFlush));
             $this->systemLogger->debug(sprintf('Content cache: Removed %s entries', $affectedEntries));
         }
+        $this->emitTagsFlushed($tagsToFlush);
     }
 
     /**
@@ -269,5 +270,16 @@ class ContentCacheFlusher
     public function shutdownObject(): void
     {
         $this->flushCollectedTags();
+    }
+
+    /**
+     * Signal that is triggered whenever cache tags get flushed
+     *
+     * @Flow\Signal
+     * @param array<string, string> $tagsToFlush
+     * @return void
+     */
+    protected function emitTagsFlushed(array $tagsToFlush): void
+    {
     }
 }
