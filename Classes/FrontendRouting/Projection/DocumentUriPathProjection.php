@@ -31,6 +31,7 @@ use Neos\ContentRepository\Core\Projection\ProjectionInterface;
 use Neos\ContentRepository\Core\Projection\ProjectionStatus;
 use Neos\ContentRepository\Core\Projection\WithMarkStaleInterface;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
+use Neos\ContentRepository\Core\SharedModel\Node\PropertyName;
 use Neos\EventStore\Model\EventEnvelope;
 use Neos\Neos\Domain\Model\SiteNodeName;
 use Neos\Neos\FrontendRouting\Exception\NodeNotFoundException;
@@ -209,7 +210,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         }
 
         $propertyValues = $event->initialPropertyValues->getPlainValues();
-        $uriPathSegment = $propertyValues['uriPathSegment'] ?? $event->nodeAggregateId->value;
+        $uriPathSegment = ($propertyValues['uriPathSegment'] ?? '') ?: $event->nodeAggregateId->value;
 
         $shortcutTarget = null;
         if ($documentTypeClassification === DocumentTypeClassification::CLASSIFICATION_SHORTCUT) {
@@ -494,8 +495,10 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
             return;
         }
         $newPropertyValues = $event->propertyValues->getPlainValues();
+        $unsetPropertyNames = array_map(fn(PropertyName $propertyName) => $propertyName->value, iterator_to_array($event->propertiesToUnset->getIterator()));
         if (
             !isset($newPropertyValues['uriPathSegment'])
+            && !in_array('uriPathSegment', $unsetPropertyNames)
             && !isset($newPropertyValues['targetMode'])
             && !isset($newPropertyValues['target'])
         ) {
@@ -529,12 +532,12 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 );
             }
 
-            if (!isset($newPropertyValues['uriPathSegment'])) {
+            if (!isset($newPropertyValues['uriPathSegment']) && !in_array('uriPathSegment', $unsetPropertyNames)) {
                 continue;
             }
             $oldUriPath = $node->getUriPath();
             $uriPathSegments = explode('/', $oldUriPath);
-            $uriPathSegments[array_key_last($uriPathSegments)] = $newPropertyValues['uriPathSegment'];
+            $uriPathSegments[array_key_last($uriPathSegments)] = ($newPropertyValues['uriPathSegment'] ?? '') ?: $event->nodeAggregateId;
             $newUriPath = implode('/', $uriPathSegments);
 
             $this->updateNodeQuery(

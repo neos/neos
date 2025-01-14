@@ -102,3 +102,47 @@ Feature: Routing functionality if path segments are missing like during tethered
       | propertyValues            | {"uriPathSegment": "earl-documentbourgh-updated"} |
     And I am on URL "/"
     Then the node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/sir-david-nodenborough/earl-documentbourgh-updated"
+
+  Scenario: Add empty uri path segment on first level
+    When the command SetNodeProperties is executed with payload:
+      | Key                       | Value                                            |
+      | nodeAggregateId           | "sir-david-nodenborough"                         |
+      | originDimensionSpacePoint | {}                                               |
+      | propertyValues            | {"uriPathSegment": ""} |
+    And I am on URL "/"
+    Then the node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/sir-david-nodenborough"
+    And the node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/sir-david-nodenborough/earl-o-documentbourgh"
+
+  Scenario: Uri path segment is unset after having been set before
+    When the command SetNodeProperties is executed with payload:
+      | Key                       | Value                                            |
+      | nodeAggregateId           | "sir-david-nodenborough"                         |
+      | originDimensionSpacePoint | {}                                               |
+      | propertyValues            | {"uriPathSegment": "david-nodenborough-updated"} |
+    And I am on URL "/"
+    Then the node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough-updated"
+    And the node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough-updated/earl-o-documentbourgh"
+    When the command SetNodeProperties is executed with payload:
+      | Key                       | Value                                            |
+      | nodeAggregateId           | "sir-david-nodenborough"                         |
+      | originDimensionSpacePoint | {}                                               |
+      | propertyValues            | {"uriPathSegment": null}                         |
+    Then the node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/sir-david-nodenborough"
+    And the node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/sir-david-nodenborough/earl-o-documentbourgh"
+
+  Scenario: Uri path segment is set to empty string having been set before
+    When the command SetNodeProperties is executed with payload:
+      | Key                       | Value                                            |
+      | nodeAggregateId           | "sir-david-nodenborough"                         |
+      | originDimensionSpacePoint | {}                                               |
+      | propertyValues            | {"uriPathSegment": "david-nodenborough-updated"} |
+    And I am on URL "/"
+    Then the node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough-updated"
+    And the node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough-updated/earl-o-documentbourgh"
+    When the command SetNodeProperties is executed with payload:
+      | Key                       | Value                                            |
+      | nodeAggregateId           | "sir-david-nodenborough"                         |
+      | originDimensionSpacePoint | {}                                               |
+      | propertyValues            | {"uriPathSegment": ""}                           |
+    Then the node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/sir-david-nodenborough"
+    And the node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/sir-david-nodenborough/earl-o-documentbourgh"
