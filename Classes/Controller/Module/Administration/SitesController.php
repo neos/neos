@@ -89,6 +89,14 @@ class SitesController extends AbstractModuleController
      */
     protected $session;
 
+    /**
+     * This is not 100% correct, but it is as good as we can get it to work right now
+     * It works when the created site's name will use the configuration "*" which by default uses the default preset.
+     *
+     * @Flow\InjectConfiguration("sitePresets.default.contentRepository")
+     */
+    protected $defaultContentRepositoryForNewSites;
+
     #[Flow\Inject]
     protected UserService $domainUserService;
 
@@ -236,21 +244,18 @@ class SitesController extends AbstractModuleController
      */
     public function newSiteAction(): void
     {
-        // This is not 100% correct, but it is as good as we can get it to work right now
         try {
-            $contentRepositoryId = SiteDetectionResult::fromRequest($this->request->getHttpRequest())
-                ->contentRepositoryId;
-        } catch (\RuntimeException) {
-            $contentRepositoryId = ContentRepositoryId::fromString('default');
+            $contentRepositoryId = ContentRepositoryId::fromString($this->defaultContentRepositoryForNewSites ?? '');
+        } catch (\InvalidArgumentException $e) {
+            throw new \RuntimeException('The default content repository for new sites configured in "Neos.Neos.sitePresets.default.contentRepository" is not valid.', 1736946907, $e);
         }
 
         try {
             $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
             $documentNodeTypes = $contentRepository->getNodeTypeManager()->getSubNodeTypes(NodeTypeNameFactory::forSite(), false);
-        } catch (ContentRepositoryNotFoundException) {
-            $documentNodeTypes = [];
+        } catch (ContentRepositoryNotFoundException $e) {
+            throw new \RuntimeException(sprintf('The default content repository for new sites "%s" could not be instantiated.', $contentRepositoryId->value), 1736946907, $e);
         }
-
 
         $sitePackages = $this->packageManager->getFilteredPackages('available', 'neos-site');
 
