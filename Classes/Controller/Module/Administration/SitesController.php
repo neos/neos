@@ -268,13 +268,14 @@ class SitesController extends AbstractModuleController
         }
 
         $documentNodeTypes = $contentRepository->getNodeTypeManager()->getSubNodeTypes(NodeTypeNameFactory::forSite(), false);
+        $liveWorkspace = $contentRepository->findWorkspaceByName(WorkspaceName::forLive());
 
         $sitePackages = $this->packageManager->getFilteredPackages('available', 'neos-site');
 
         $this->view->assignMultiple([
             'defaultContentRepositoryForNewSites' => $contentRepositoryId->value,
             // The live workspace has to be empty prior to importing, that's why we disable the functionality
-            'canImportFromPackage' => $this->siteRepository->findFirst() === null,
+            'canImportFromPackage' => $liveWorkspace === null,
             'sitePackages' => $sitePackages,
             'documentNodeTypes' => $documentNodeTypes
         ]);
