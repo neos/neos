@@ -263,14 +263,18 @@ class SitesController extends AbstractModuleController
 
         try {
             $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
-            $documentNodeTypes = $contentRepository->getNodeTypeManager()->getSubNodeTypes(NodeTypeNameFactory::forSite(), false);
         } catch (ContentRepositoryNotFoundException $e) {
-            throw new \RuntimeException(sprintf('The default content repository for new sites "%s" could not be instantiated.', $contentRepositoryId->value), 1736946907, $e);
+            throw new \RuntimeException(sprintf('The default content repository for new sites "%s" could not be instantiated.', $contentRepositoryId->value), 1736946907);
         }
+
+        $documentNodeTypes = $contentRepository->getNodeTypeManager()->getSubNodeTypes(NodeTypeNameFactory::forSite(), false);
 
         $sitePackages = $this->packageManager->getFilteredPackages('available', 'neos-site');
 
         $this->view->assignMultiple([
+            'defaultContentRepositoryForNewSites' => $contentRepositoryId->value,
+            // The live workspace has to be empty prior to importing, that's why we disable the functionality
+            'canImportFromPackage' => $this->siteRepository->findFirst() === null,
             'sitePackages' => $sitePackages,
             'documentNodeTypes' => $documentNodeTypes
         ]);
