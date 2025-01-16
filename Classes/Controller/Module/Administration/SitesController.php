@@ -16,11 +16,11 @@ namespace Neos\Neos\Controller\Module\Administration;
 
 use Neos\ContentRepository\Core\Feature\NodeRenaming\Command\ChangeNodeAggregateName;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregate;
-use Neos\ContentRepository\Core\SharedModel\Workspace\Workspace;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeNameIsAlreadyCovered;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeTypeNotFound;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeName;
+use Neos\ContentRepository\Core\SharedModel\Workspace\Workspace;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\ContentRepositoryRegistry\Exception\ContentRepositoryNotFoundException;
@@ -28,6 +28,7 @@ use Neos\Error\Messages\Message;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Package;
 use Neos\Flow\Package\PackageManager;
+use Neos\Flow\Security\Context as SecurityContext;
 use Neos\Flow\Session\SessionInterface;
 use Neos\Media\Domain\Repository\AssetCollectionRepository;
 use Neos\Neos\Controller\Module\AbstractModuleController;
@@ -39,12 +40,10 @@ use Neos\Neos\Domain\Model\Site;
 use Neos\Neos\Domain\Repository\DomainRepository;
 use Neos\Neos\Domain\Repository\SiteRepository;
 use Neos\Neos\Domain\Service\NodeTypeNameFactory;
+use Neos\Neos\Domain\Service\SiteImportService;
 use Neos\Neos\Domain\Service\SiteService;
 use Neos\Neos\Domain\Service\UserService;
-use Neos\Neos\FrontendRouting\SiteDetection\SiteDetectionResult;
-use Neos\SiteKickstarter\Generator\SitePackageGeneratorInterface;
-use Neos\SiteKickstarter\Service\SiteGeneratorCollectingService;
-use Neos\SiteKickstarter\Service\SitePackageGeneratorNameService;
+use Neos\Utility\Files;
 
 /**
  * The Neos Sites Management module controller
@@ -96,6 +95,18 @@ class SitesController extends AbstractModuleController
      * @Flow\InjectConfiguration("sitePresets.default.contentRepository")
      */
     protected $defaultContentRepositoryForNewSites;
+
+    /**
+     * @Flow\Inject
+     * @var SecurityContext
+     */
+    protected $securityContext;
+
+    /**
+     * @Flow\Inject
+     * @var SiteImportService
+     */
+    protected $siteImportService;
 
     #[Flow\Inject]
     protected UserService $domainUserService;
@@ -272,33 +283,35 @@ class SitesController extends AbstractModuleController
      * @Flow\Validate(argumentName="$packageKey", type="\Neos\Neos\Validation\Validator\PackageKeyValidator")
      * @return void
      */
-    /*public function importSiteAction($packageKey)
+    public function importSiteAction($packageKey)
     {
         try {
-            $this->siteImportService->importFromPackage($packageKey);
-            $this->addFlashMessage(
-                $this->getModuleLabel('sites.theSiteHasBeenImported.body'),
-                '',
-                Message::SEVERITY_OK,
-                [],
-                1412372266
-            );
-        } catch (\Exception $exception) {
-            $logMessage = $this->throwableStorage->logThrowable($exception);
-            $this->logger->error($logMessage, LogEnvironment::fromMethodName(__METHOD__));
-            $this->addFlashMessage(
-                $this->getModuleLabel(
-                    'sites.importError.body',
-                    [htmlspecialchars($packageKey), htmlspecialchars($exception->getMessage())]
-                ),
-                $this->getModuleLabel('sites.importError.title'),
-                Message::SEVERITY_ERROR,
-                [],
-                1412372375
-            );
+            $contentRepositoryId = ContentRepositoryId::fromString($this->defaultContentRepositoryForNewSites ?? '');
+        } catch (\InvalidArgumentException $e) {
+            throw new \RuntimeException('The default content repository for new sites configured in "Neos.Neos.sitePresets.default.contentRepository" is not valid.', 1736946907, $e);
         }
-        $this->unsetLastVisitedNodeAndRedirect('index');
-    }*/
+
+        $package = $this->packageManager->getPackage($packageKey);
+        $path = Files::concatenatePaths([$package->getPackagePath(), 'Resources/Private/Content']);
+
+        // CreateRootWorkspace was denied: Creation of root workspaces is currently only allowed with disabled authorization checks
+        $this->securityContext->withoutAuthorizationChecks(fn () => $this->siteImportService->importFromPath(
+            $contentRepositoryId,
+            $path,
+            fn () => null,
+            fn () => null
+        ));
+
+        $this->addFlashMessage(
+            $this->getModuleLabel('sites.theSiteHasBeenImported.body'),
+            '',
+            Message::SEVERITY_OK,
+            [],
+            1412372266
+        );
+
+        $this->redirect('index');
+    }
 
     /**
      * Create a new empty site.
