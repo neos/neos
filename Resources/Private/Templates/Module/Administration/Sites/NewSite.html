@@ -2,7 +2,13 @@
 <f:layout name="BackendSubModule" />
 
 <f:section name="content">
-	<h2>{neos:backend.translate(id: 'sites.new', value: 'New site', source: 'Modules')}</h2>
+	<h2>{neos:backend.translate(id: 'sites.new', value: 'New site', source: 'Modules')} <i>(Deprecated)</i></h2>
+
+	<br>
+	Using the sites management module for creation sites is deprecated please consider using the command line instead.
+	<br>
+	For example <code>./flow site:importall</code> for importing from a package or <code>./flow site:create</code> to create a new site.
+	<br>
 	All site creations will target the content repository: "{defaultContentRepositoryForNewSites}"
 
   <div class="neos-row-fluid">
