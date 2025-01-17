@@ -140,7 +140,7 @@ class WorkspaceCommandController extends CommandController
      * @param string|null $description Optional description of the workspace
      * @throws WorkspaceAlreadyExists
      */
-    public function createRootCommand(string $name, string $contentRepository = 'default', string $title = null, string $description = null): void
+    public function createRootCommand(string $name, string $contentRepository = 'default', ?string $title = null, ?string $description = null): void
     {
         $workspaceName = WorkspaceName::fromString($name);
         $contentRepositoryId = ContentRepositoryId::fromString($contentRepository);
@@ -165,7 +165,7 @@ class WorkspaceCommandController extends CommandController
      * @param string $contentRepository Identifier of the content repository. (Default: 'default')
      * @throws StopCommandException
      */
-    public function createPersonalCommand(string $workspace, string $owner, string $baseWorkspace = 'live', string $title = null, string $description = null, string $contentRepository = 'default'): void
+    public function createPersonalCommand(string $workspace, string $owner, string $baseWorkspace = 'live', ?string $title = null, ?string $description = null, string $contentRepository = 'default'): void
     {
         $contentRepositoryId = ContentRepositoryId::fromString($contentRepository);
         $workspaceOwner = $this->userService->getUser($owner);
@@ -197,7 +197,7 @@ class WorkspaceCommandController extends CommandController
      * @param string $contentRepository Identifier of the content repository. (Default: 'default')
      * @throws StopCommandException
      */
-    public function createSharedCommand(string $workspace, string $baseWorkspace = 'live', string $title = null, string $description = null, string $contentRepository = 'default'): void
+    public function createSharedCommand(string $workspace, string $baseWorkspace = 'live', ?string $title = null, ?string $description = null, string $contentRepository = 'default'): void
     {
         $contentRepositoryId = ContentRepositoryId::fromString($contentRepository);
         $workspaceName = WorkspaceName::fromString($workspace);

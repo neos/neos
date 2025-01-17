@@ -64,7 +64,7 @@ trait WorkspaceServiceTrait
      * @When the root workspace :workspaceName is created
      * @When the root workspace :workspaceName with title :title and description :description is created
      */
-    public function theRootWorkspaceIsCreated(string $workspaceName, string $title = null, string $description = null): void
+    public function theRootWorkspaceIsCreated(string $workspaceName, ?string $title = null, ?string $description = null): void
     {
         $this->tryCatchingExceptions(fn () => $this->getObject(WorkspaceService::class)->createRootWorkspace(
             $this->currentContentRepository->id,
@@ -272,7 +272,7 @@ trait WorkspaceServiceTrait
      * @When the role :role is assigned to workspace :workspaceName for group :groupName
      * @When the role :role is assigned to workspace :workspaceName for user :username
      */
-    public function theRoleIsAssignedToWorkspaceForGroupOrUser(string $role, string $workspaceName, string $groupName = null, string $username = null): void
+    public function theRoleIsAssignedToWorkspaceForGroupOrUser(string $role, string $workspaceName, ?string $groupName = null, ?string $username = null): void
     {
         if ($groupName !== null) {
             $subject = WorkspaceRoleSubject::createForGroup($groupName);
@@ -293,7 +293,7 @@ trait WorkspaceServiceTrait
      * @When the role for group :groupName is unassigned from workspace :workspaceName
      * @When the role for user :username is unassigned from workspace :workspaceName
      */
-    public function theRoleIsUnassignedFromWorkspace(string $workspaceName, string $groupName = null, string $username = null): void
+    public function theRoleIsUnassignedFromWorkspace(string $workspaceName, ?string $groupName = null, ?string $username = null): void
     {
         if ($groupName !== null) {
             $subject = WorkspaceRoleSubject::createForGroup($groupName);
