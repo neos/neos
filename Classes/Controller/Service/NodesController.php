@@ -110,7 +110,7 @@ class NodesController extends ActionController
         string $workspaceName = 'live',
         array $dimensions = [],
         array $nodeTypes = [NodeTypeNameFactory::NAME_DOCUMENT],
-        string $contextNode = null,
+        ?string $contextNode = null,
         array|string $nodeIdentifiers = []
     ): void {
         $searchTerm = SearchTerm::fulltext($searchTerm);

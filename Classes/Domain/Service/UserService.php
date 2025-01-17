@@ -286,7 +286,7 @@ class UserService
         $password,
         $firstName,
         $lastName,
-        array $roleIdentifiers = null,
+        ?array $roleIdentifiers = null,
         $authenticationProviderName = null
     ) {
         $user = new User();
@@ -317,7 +317,7 @@ class UserService
         $username,
         $password,
         User $user,
-        array $roleIdentifiers = null,
+        ?array $roleIdentifiers = null,
         $authenticationProviderName = null
     ) {
         if ($roleIdentifiers === null) {

@@ -456,7 +456,7 @@ class SitesController extends AbstractModuleController
      * @Flow\IgnoreValidation("$domain")
      * @return void
      */
-    public function newDomainAction(Domain $domain = null, Site $site = null)
+    public function newDomainAction(?Domain $domain = null, ?Site $site = null)
     {
         $this->view->assignMultiple([
             'domain' => $domain,

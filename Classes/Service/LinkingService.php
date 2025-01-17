@@ -191,7 +191,7 @@ class LinkingService
      * @return Node|AssetInterface|NULL
      * @deprecated with Neos 9
      */
-    public function convertUriToObject($uri, Node $contextNode = null)
+    public function convertUriToObject($uri, ?Node $contextNode = null)
     {
         return $this->newLinkHelper->convertUriToObject($uri, $contextNode);
     }
@@ -225,7 +225,7 @@ class LinkingService
     public function createNodeUri(
         ControllerContext $controllerContext,
         $node = null,
-        Node $baseNode = null,
+        ?Node $baseNode = null,
         $format = null,
         $absolute = false,
         array $arguments = [],
