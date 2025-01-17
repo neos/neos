@@ -128,7 +128,7 @@ class ContentCacheFlusher
      * @param NodeInterface $node The node which has changed in some way
      * @param Workspace|null $targetWorkspace An optional workspace to flush
      */
-    public function registerNodeChange(NodeInterface $node, Workspace $targetWorkspace = null): void
+    public function registerNodeChange(NodeInterface $node, ?Workspace $targetWorkspace = null): void
     {
         $this->addTagToFlush(ContentCache::TAG_EVERYTHING, 'which were tagged with "Everything".');
 
@@ -242,7 +242,7 @@ class ContentCacheFlusher
      *
      * @throws NodeTypeNotFoundException
      */
-    public function registerChangeOnNodeType(string $nodeTypeName, string $referenceNodeIdentifier = null, string $nodeTypePrefix = ''): void
+    public function registerChangeOnNodeType(string $nodeTypeName, ?string $referenceNodeIdentifier = null, string $nodeTypePrefix = ''): void
     {
         $this->addTagToFlush(ContentCache::TAG_EVERYTHING, 'which were tagged with "Everything".');
 

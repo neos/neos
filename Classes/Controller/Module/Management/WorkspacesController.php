@@ -397,7 +397,7 @@ class WorkspacesController extends AbstractModuleController
      * @throws \Neos\Flow\Property\Exception
      * @throws \Neos\Flow\Security\Exception
      */
-    public function publishOrDiscardNodesAction(array $nodes, $action, Workspace $selectedWorkspace = null)
+    public function publishOrDiscardNodesAction(array $nodes, $action, ?Workspace $selectedWorkspace = null)
     {
         $propertyMappingConfiguration = $this->propertyMapper->buildPropertyMappingConfiguration();
         $propertyMappingConfiguration->setTypeConverterOption(NodeConverter::class, NodeConverter::REMOVED_CONTENT_SHOWN, true);
@@ -733,7 +733,7 @@ class WorkspacesController extends AbstractModuleController
      * @param Workspace $excludedWorkspace If set, this workspace and all its child workspaces will be excluded from the list of returned workspaces
      * @return array
      */
-    protected function prepareBaseWorkspaceOptions(Workspace $excludedWorkspace = null)
+    protected function prepareBaseWorkspaceOptions(?Workspace $excludedWorkspace = null)
     {
         $baseWorkspaceOptions = [];
 

@@ -90,7 +90,7 @@ class NodesController extends ActionController
      * @param NodeInterface $contextNode a node to use as context for the search
      * @return void
      */
-    public function indexAction($searchTerm = '', array $nodeIdentifiers = [], $workspaceName = 'live', array $dimensions = [], array $nodeTypes = ['Neos.Neos:Document'], NodeInterface $contextNode = null)
+    public function indexAction($searchTerm = '', array $nodeIdentifiers = [], $workspaceName = 'live', array $dimensions = [], array $nodeTypes = ['Neos.Neos:Document'], ?NodeInterface $contextNode = null)
     {
         $contentContext = $this->createContentContext($workspaceName, $dimensions);
         if ($nodeIdentifiers === []) {
