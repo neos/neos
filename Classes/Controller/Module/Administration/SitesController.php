@@ -92,6 +92,9 @@ class SitesController extends AbstractModuleController
      * This is not 100% correct, but it is as good as we can get it to work right now
      * It works when the created site's name will use the configuration "*" which by default uses the default preset.
      *
+     * As proposed here https://github.com/neos/neos-development-collection/issues/4470#issuecomment-2432140074
+     * the site must have a field to define the contentRepositoryId to correctly create sites dynamically.
+     *
      * @Flow\InjectConfiguration("sitePresets.default.contentRepository")
      */
     protected $defaultContentRepositoryForNewSites;
@@ -268,54 +271,14 @@ class SitesController extends AbstractModuleController
         }
 
         $documentNodeTypes = $contentRepository->getNodeTypeManager()->getSubNodeTypes(NodeTypeNameFactory::forSite(), false);
-        $liveWorkspace = $contentRepository->findWorkspaceByName(WorkspaceName::forLive());
 
         $sitePackages = $this->packageManager->getFilteredPackages('available', 'neos-site');
 
         $this->view->assignMultiple([
             'defaultContentRepositoryForNewSites' => $contentRepositoryId->value,
-            // The live workspace has to be empty prior to importing, that's why we disable the functionality
-            'canImportFromPackage' => $liveWorkspace === null,
             'sitePackages' => $sitePackages,
             'documentNodeTypes' => $documentNodeTypes
         ]);
-    }
-
-    /**
-     * Import a site from site package.
-     *
-     * @param string $packageKey Package from where the import will come
-     * @Flow\Validate(argumentName="$packageKey", type="\Neos\Neos\Validation\Validator\PackageKeyValidator")
-     * @return void
-     */
-    public function importSiteAction($packageKey)
-    {
-        try {
-            $contentRepositoryId = ContentRepositoryId::fromString($this->defaultContentRepositoryForNewSites ?? '');
-        } catch (\InvalidArgumentException $e) {
-            throw new \RuntimeException('The default content repository for new sites configured in "Neos.Neos.sitePresets.default.contentRepository" is not valid.', 1736946907, $e);
-        }
-
-        $package = $this->packageManager->getPackage($packageKey);
-        $path = Files::concatenatePaths([$package->getPackagePath(), 'Resources/Private/Content']);
-
-        // CreateRootWorkspace was denied: Creation of root workspaces is currently only allowed with disabled authorization checks
-        $this->securityContext->withoutAuthorizationChecks(fn () => $this->siteImportService->importFromPath(
-            $contentRepositoryId,
-            $path,
-            fn () => null,
-            fn () => null
-        ));
-
-        $this->addFlashMessage(
-            $this->getModuleLabel('sites.theSiteHasBeenImported.body'),
-            '',
-            Message::SEVERITY_OK,
-            [],
-            1412372266
-        );
-
-        $this->redirect('index');
     }
 
     /**

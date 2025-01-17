@@ -2,45 +2,14 @@
 <f:layout name="BackendSubModule" />
 
 <f:section name="content">
-	<h2>{neos:backend.translate(id: 'sites.new', value: 'New site', source: 'Modules')} <i>(Deprecated)</i></h2>
-
-	<br>
-	Using the sites management module for creation sites is deprecated please consider using the command line instead.
-	<br>
-	For example <code>./flow site:importall</code> for importing from a package or <code>./flow site:create</code> to create a new site.
-	<br>
-	All site creations will target the content repository: "{defaultContentRepositoryForNewSites}"
+	<h2>{neos:backend.translate(id: 'sites.new', value: 'New site', source: 'Modules')}</h2>
 
   <div class="neos-row-fluid">
-    <f:form action="importSite">
-      <fieldset class="neos-span3">
-        <legend>{neos:backend.translate(id: 'sites.import', value: 'Import a site', source: 'Modules')}</legend>
-				<f:if condition="{canImportFromPackage ? false : true}">
-					NOTE: Currently it's only possible to import once into a content repository from a site package.
-					To reimport please prune the sites first via <code>./flow site:pruneall</code>.
-					<br><br>
-				</f:if>
-				<f:if condition="{sitePackages -> f:count()} > 0">
-          <f:then>
-            <div class="neos-control-group">
-              <label class="neos-control-label" for="site">{neos:backend.translate(id: 'sites.select', value: 'Select a site package', source: 'Modules')}</label>
-              <div class="neos-controls neos-select">
-                <f:form.select disabled="{canImportFromPackage ? false : true}" name="packageKey" options="{sitePackages}" optionLabelField="packageKey" optionValueField="packageKey" id="site" class="neos-span12" />
-              </div>
-            </div>
-            <f:form.submit disabled="{canImportFromPackage ? false : true}" value="{neos:backend.translate(id: 'sites.import', value: 'Import Site', source: 'Modules')}" class="neos-button neos-button-primary" />
-          </f:then>
-          <f:else>
-            <p>{neos:backend.translate(id: 'sites.noPackackeInfo', value: 'No site packages are available. Make sure you have an active site package.', source: 'Modules')}
-            </p>
-          </f:else>
-        </f:if>
-      </fieldset>
-    </f:form>
-
     <f:form action="createSiteNode">
-      <fieldset class="neos-span3 neos-offset1">
+      <fieldset class="neos-span3">
         <legend>{neos:backend.translate(id: 'sites.createBlank', value: 'Create a blank site', source: 'Modules')}</legend>
+				In the content repository: "{defaultContentRepositoryForNewSites}"
+
         <f:if condition="{sitePackages -> f:count()} > 0">
           <f:then>
             <div class="neos-control-group">
@@ -71,18 +40,6 @@
         </f:if>
       </fieldset>
     </f:form>
-
-		<div class="neos neos-row-fluid neos-span3">
-			<legend>Create a new site-package</legend>
-			NOTE: The functionality to create site packages via this module was removed as being too fragile.
-			To get started with neos head over to the setup:
-			<br>
-			<br>
-			<a href="/setup" class="neos-button neos-button-primary">/setup</a>
-			<br>
-			<br>
-			To kickstart a new package use: <code>./flow kickstart:site</code>
-		</div>
 
   </div>
   <div class="neos-footer">
