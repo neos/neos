@@ -23,7 +23,7 @@ readonly class AssetUsageIndexingProcessor
     /**
      * @param callable(string $message):void|null $callback
      */
-    public function buildIndex(ContentRepository $contentRepository, NodeTypeName $nodeTypeName, callable $callback = null): void
+    public function buildIndex(ContentRepository $contentRepository, NodeTypeName $nodeTypeName, ?callable $callback = null): void
     {
         $variationGraph = $contentRepository->getVariationGraph();
 

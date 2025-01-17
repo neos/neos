@@ -84,7 +84,7 @@ trait RoutingTrait
      * @Given A site exists for node name :nodeName and domain :domain
      * @Given A site exists for node name :nodeName and domain :domain and package :package
      */
-    public function theSiteExists(string $nodeName, string $domain = null, string $package = null): void
+    public function theSiteExists(string $nodeName, ?string $domain = null, ?string $package = null): void
     {
         $siteRepository = $this->getObject(SiteRepository::class);
         $persistenceManager = $this->getObject(PersistenceManagerInterface::class);

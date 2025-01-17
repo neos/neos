@@ -223,7 +223,7 @@ class UserService
      * @param string $authenticationProviderName
      * @return ?string The username or null if the given user does not have a backend account
      */
-    public function getUsername(User $user, string $authenticationProviderName = null): ?string
+    public function getUsername(User $user, ?string $authenticationProviderName = null): ?string
     {
         $authenticationProviderName = $authenticationProviderName ?: $this->defaultAuthenticationProviderName;
         foreach ($user->getAccounts() as $account) {
