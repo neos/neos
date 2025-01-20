@@ -96,27 +96,6 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     include: resource://Neos.Fusion/Private/Fusion/Root.fusion
     include: resource://Neos.Neos/Private/Fusion/Root.fusion
 
-    prototype(Neos.Neos:Test.RenderNodes) < prototype(Neos.Fusion:Component) {
-      nodes = ${value}
-      renderer = Neos.Fusion:Loop {
-        items = ${props.nodes}
-        itemName = 'node'
-        itemRenderer = ${node.aggregateId}
-        @glue = ','
-      }
-    }
-
-    prototype(Neos.Neos:Test.RenderStringDataStructure) < prototype(Neos.Fusion:Component) {
-      items = ${value}
-      renderer = Neos.Fusion:Loop {
-        items = ${props.items}
-        itemKey = 'key'
-        itemName = 'string'
-        itemRenderer = ${key + ':' + (string ? string + ' ' : '')}
-        @glue = "\n"
-      }
-    }
-
     prototype(Neos.Neos:Test.RenderNodesDataStructure) < prototype(Neos.Fusion:Component) {
       items = ${value}
       renderer = Neos.Fusion:Loop {
@@ -125,8 +104,11 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
         itemName = 'nodes'
         itemRenderer = Neos.Fusion:Join {
           name = ${key + ':' + (nodes ? ' ' : '')}
-          ids = Neos.Neos:Test.RenderNodes {
-            nodes = ${nodes}
+          ids = Neos.Fusion:Loop {
+            items = ${nodes}
+            itemName = 'node'
+            itemRenderer = ${node.aggregateId}
+            @glue = ','
           }
         }
         @glue = "\n"
@@ -378,12 +360,14 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
   Scenario: Unique
     When I execute the following Fusion code:
     """fusion
-    test = ${q([node,site,documentNode]).unique().get()}
-    test.@process.render = Neos.Neos:Test.RenderNodes
+    test = Neos.Fusion:DataStructure {
+      unique = ${q([node,site,documentNode]).unique().get()}
+      @process.render = Neos.Neos:Test.RenderNodesDataStructure
+    }
     """
     Then I expect the following Fusion rendering result:
     """
-    a1a4,a
+    unique: a1a4,a
     """
 
   Scenario: Remove
