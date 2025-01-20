@@ -28,7 +28,6 @@ use Neos\Error\Messages\Message;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Package;
 use Neos\Flow\Package\PackageManager;
-use Neos\Flow\Security\Context as SecurityContext;
 use Neos\Flow\Session\SessionInterface;
 use Neos\Media\Domain\Repository\AssetCollectionRepository;
 use Neos\Neos\Controller\Module\AbstractModuleController;
@@ -40,10 +39,8 @@ use Neos\Neos\Domain\Model\Site;
 use Neos\Neos\Domain\Repository\DomainRepository;
 use Neos\Neos\Domain\Repository\SiteRepository;
 use Neos\Neos\Domain\Service\NodeTypeNameFactory;
-use Neos\Neos\Domain\Service\SiteImportService;
 use Neos\Neos\Domain\Service\SiteService;
 use Neos\Neos\Domain\Service\UserService;
-use Neos\Utility\Files;
 
 /**
  * The Neos Sites Management module controller
@@ -96,20 +93,9 @@ class SitesController extends AbstractModuleController
      * the site must have a field to define the contentRepositoryId to correctly create sites dynamically.
      *
      * @Flow\InjectConfiguration("sitePresets.default.contentRepository")
+     * @var string|null
      */
     protected $defaultContentRepositoryForNewSites;
-
-    /**
-     * @Flow\Inject
-     * @var SecurityContext
-     */
-    protected $securityContext;
-
-    /**
-     * @Flow\Inject
-     * @var SiteImportService
-     */
-    protected $siteImportService;
 
     #[Flow\Inject]
     protected UserService $domainUserService;
@@ -293,11 +279,7 @@ class SitesController extends AbstractModuleController
     public function createSiteNodeAction($packageKey, $siteName, $nodeType)
     {
         try {
-            // CreateRootWorkspace was denied: Creation of root workspaces is currently only allowed with disabled authorization checks
-            $site = null;
-            $this->securityContext->withoutAuthorizationChecks(function () use (&$site, $packageKey, $siteName, $nodeType) {
-                $site = $this->siteService->createSite($packageKey, $siteName, $nodeType);
-            });
+            $site = $this->siteService->createSite($packageKey, $siteName, $nodeType);
         } catch (NodeTypeNotFound $exception) {
             $this->addFlashMessage(
                 $this->getModuleLabel('sites.siteCreationError.givenNodeTypeNotFound.body', [$nodeType]),

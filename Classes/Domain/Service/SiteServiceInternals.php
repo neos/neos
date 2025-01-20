@@ -30,6 +30,7 @@ use Neos\ContentRepository\Core\SharedModel\Exception\NodeTypeNotFound;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeVariantSelectionStrategy;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
+use Neos\Flow\Security\Context as SecurityContext;
 use Neos\Neos\Domain\Exception\SiteNodeTypeIsInvalid;
 use Neos\Neos\Domain\Model\Site;
 use Neos\Neos\Domain\Model\SiteNodeName;
@@ -49,6 +50,7 @@ readonly class SiteServiceInternals
     public function __construct(
         private ContentRepository $contentRepository,
         private WorkspaceService $workspaceService,
+        private SecurityContext $securityContext
     ) {
         $this->nodeTypeManager = $this->contentRepository->getNodeTypeManager();
         $this->interDimensionalVariationGraph = $this->contentRepository->getVariationGraph();
@@ -94,12 +96,15 @@ readonly class SiteServiceInternals
     {
         $liveWorkspace = $this->contentRepository->findWorkspaceByName(WorkspaceName::forLive());
         if ($liveWorkspace === null) {
-            $this->workspaceService->createRootWorkspace(
-                $this->contentRepository->id,
-                WorkspaceName::forLive(),
-                WorkspaceTitle::fromString('Public live workspace'),
-                WorkspaceDescription::empty(),
-                WorkspaceRoleAssignments::createForLiveWorkspace()
+            // CreateRootWorkspace was denied: Creation of root workspaces is currently only allowed with disabled authorization checks
+            $this->securityContext->withoutAuthorizationChecks(
+                fn () => $this->workspaceService->createRootWorkspace(
+                    $this->contentRepository->id,
+                    WorkspaceName::forLive(),
+                    WorkspaceTitle::fromString('Public live workspace'),
+                    WorkspaceDescription::empty(),
+                    WorkspaceRoleAssignments::createForLiveWorkspace()
+                )
             );
         }
 
