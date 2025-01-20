@@ -68,9 +68,13 @@ readonly class SiteServiceInternals
             );
         }
 
+        // todo only remove site node in base workspace and rebase dependant workspaces to avoid also the security hacks here.
         foreach ($this->contentRepository->findWorkspaces() as $workspace) {
-            $contentGraph = $this->contentRepository->getContentGraph($workspace->workspaceName);
-            $sitesNodeAggregate = $contentGraph->findRootNodeAggregateByType(
+            $contentGraph = null;
+            $this->securityContext->withoutAuthorizationChecks(function () use (&$contentGraph, $workspace) {
+                $contentGraph = $this->contentRepository->getContentGraph($workspace->workspaceName);
+            });
+            $sitesNodeAggregate = $contentGraph?->findRootNodeAggregateByType(
                 NodeTypeNameFactory::forSites()
             );
             if (!$sitesNodeAggregate) {
@@ -82,12 +86,14 @@ readonly class SiteServiceInternals
                 $siteNodeName->toNodeName()
             );
             if ($siteNodeAggregate instanceof NodeAggregate) {
-                $this->contentRepository->handle(RemoveNodeAggregate::create(
-                    $workspace->workspaceName,
-                    $siteNodeAggregate->nodeAggregateId,
-                    $arbitraryDimensionSpacePoint,
-                    NodeVariantSelectionStrategy::STRATEGY_ALL_VARIANTS,
-                ));
+                $this->securityContext->withoutAuthorizationChecks(
+                    fn () => $this->contentRepository->handle(RemoveNodeAggregate::create(
+                        $workspace->workspaceName,
+                        $siteNodeAggregate->nodeAggregateId,
+                        $arbitraryDimensionSpacePoint,
+                        NodeVariantSelectionStrategy::STRATEGY_ALL_VARIANTS,
+                    ))
+                );
             }
         }
     }
