@@ -3,7 +3,7 @@
 Content Repository ViewHelper Reference
 #######################################
 
-This reference was automatically generated from code on 2025-01-20
+This reference was automatically generated from code on 2025-01-21
 
 
 .. _`Content Repository ViewHelper Reference: PaginateViewHelper`:
