@@ -16,11 +16,15 @@ namespace Neos\Neos\Domain\Service;
 
 use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Command\ChangeBaseWorkspace;
+use Neos\ContentRepository\Core\Feature\WorkspaceModification\Exception\BaseWorkspaceEqualsWorkspaceException;
+use Neos\ContentRepository\Core\Feature\WorkspaceModification\Exception\BaseWorkspaceUnchangedException;
+use Neos\ContentRepository\Core\Feature\WorkspaceModification\Exception\CircularRelationBetweenWorkspacesException;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Exception\WorkspaceIsNotEmptyException;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\DiscardIndividualNodesFromWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\DiscardWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishIndividualNodesFromWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishWorkspace;
+use Neos\ContentRepository\Core\Feature\WorkspacePublication\Exception\NoChangesException;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Command\RebaseWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Dto\RebaseErrorHandlingStrategy;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Exception\PartialWorkspaceRebaseFailed;
@@ -77,7 +81,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed
+     * @throws WorkspaceRebaseFailed|NoChangesException
      */
     public function rebaseWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, RebaseErrorHandlingStrategy $rebaseErrorHandlingStrategy = RebaseErrorHandlingStrategy::STRATEGY_FAIL): void
     {
@@ -86,7 +90,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed
+     * @throws WorkspaceRebaseFailed|NoChangesException
      */
     public function publishWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): PublishingResult
     {
@@ -101,7 +105,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed
+     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|NoChangesException
      */
     public function publishChangesInSite(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $siteId): PublishingResult
     {
@@ -134,7 +138,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed
+     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|NoChangesException
      */
     public function publishChangesInDocument(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $documentId): PublishingResult
     {
@@ -167,7 +171,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed
+     * @throws WorkspaceRebaseFailed|NoChangesException
      */
     public function discardAllWorkspaceChanges(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): DiscardingResult
     {
@@ -182,7 +186,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed
+     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|NoChangesException
      */
     public function discardChangesInSite(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $siteId): DiscardingResult
     {
@@ -211,7 +215,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed
+     * @throws WorkspaceRebaseFailed|NoChangesException
      */
     public function discardChangesInDocument(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $documentId): DiscardingResult
     {
@@ -240,7 +244,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceIsNotEmptyException
+     * @throws BaseWorkspaceUnchangedException|WorkspaceIsNotEmptyException|BaseWorkspaceEqualsWorkspaceException|CircularRelationBetweenWorkspacesException
      */
     public function changeBaseWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceName $newBaseWorkspaceName): void
     {
@@ -255,7 +259,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed
+     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|NoChangesException
      */
     private function discardNodes(
         ContentRepository $contentRepository,
@@ -271,7 +275,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed
+     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|NoChangesException
      */
     private function publishNodes(
         ContentRepository $contentRepository,
