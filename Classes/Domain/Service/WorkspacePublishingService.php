@@ -23,6 +23,7 @@ use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishIndi
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Command\RebaseWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Dto\RebaseErrorHandlingStrategy;
+use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Exception\PartialWorkspaceRebaseFailed;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Exception\WorkspaceRebaseFailed;
 use Neos\ContentRepository\Core\NodeType\NodeTypeName;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
@@ -57,7 +58,6 @@ final class WorkspacePublishingService
     ) {
     }
 
-
     /**
      * @internal experimental api, until actually used by the Neos.Ui
      */
@@ -77,8 +77,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed is thrown if there are conflicts and the rebase strategy was {@see RebaseErrorHandlingStrategy::STRATEGY_FAIL}
-     * The workspace will be unchanged for this case.
+     * @throws WorkspaceRebaseFailed
      */
     public function rebaseWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, RebaseErrorHandlingStrategy $rebaseErrorHandlingStrategy = RebaseErrorHandlingStrategy::STRATEGY_FAIL): void
     {
@@ -87,8 +86,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
-     * No changes would be published for this case.
+     * @throws WorkspaceRebaseFailed
      */
     public function publishWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): PublishingResult
     {
@@ -103,8 +101,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
-     * No changes would be published for this case.
+     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed
      */
     public function publishChangesInSite(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $siteId): PublishingResult
     {
@@ -137,8 +134,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
-     * No changes would be published for this case.
+     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed
      */
     public function publishChangesInDocument(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $documentId): PublishingResult
     {
@@ -170,6 +166,9 @@ final class WorkspacePublishingService
         );
     }
 
+    /**
+     * @throws WorkspaceRebaseFailed
+     */
     public function discardAllWorkspaceChanges(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): DiscardingResult
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
@@ -183,8 +182,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
-     * No changes would be discarded for this case.
+     * @throws WorkspaceRebaseFailed
      */
     public function discardChangesInSite(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $siteId): DiscardingResult
     {
@@ -213,8 +211,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
-     * No changes would be discarded for this case.
+     * @throws WorkspaceRebaseFailed
      */
     public function discardChangesInDocument(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $documentId): DiscardingResult
     {
@@ -243,7 +240,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceIsNotEmptyException in case a switch is attempted while the workspace still has pending changes
+     * @throws WorkspaceIsNotEmptyException
      */
     public function changeBaseWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceName $newBaseWorkspaceName): void
     {
@@ -258,8 +255,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
-     * No changes would be discarded for this case.
+     * @throws WorkspaceRebaseFailed
      */
     private function discardNodes(
         ContentRepository $contentRepository,
@@ -275,8 +271,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed is thrown if the workspace was outdated and an automatic rebase failed due to conflicts.
-     * No changes would be published for this case.
+     * @throws WorkspaceRebaseFailed
      */
     private function publishNodes(
         ContentRepository $contentRepository,
