@@ -8,7 +8,7 @@
     <f:form action="createSiteNode">
       <fieldset class="neos-span3">
         <legend>{neos:backend.translate(id: 'sites.createBlank', value: 'Create a blank site', source: 'Modules')}</legend>
-				In the content repository: "{defaultContentRepositoryForNewSites}"
+				{neos:backend.translate(id: 'sites.creationContentRepository', value: 'In the content repository: "{defaultContentRepositoryForNewSites}"', source: 'Modules', arguments: {0: defaultContentRepositoryForNewSites})}
 
         <f:if condition="{sitePackages -> f:count()} > 0">
           <f:then>

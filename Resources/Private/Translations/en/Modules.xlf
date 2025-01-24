@@ -368,6 +368,9 @@
 			<trans-unit id="sites.createBlank" xml:space="preserve">
 				<source>Create a blank site</source>
 			</trans-unit>
+      <trans-unit id="sites.creationContentRepository" xml:space="preserve">
+				<source>In the content repository: "{0}"</source>
+			</trans-unit>
 			<trans-unit id="sites.documentType" xml:space="preserve">
 				<source>Select a document nodeType</source>
 			</trans-unit>
