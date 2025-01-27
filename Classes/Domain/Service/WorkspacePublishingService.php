@@ -18,7 +18,6 @@ use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\Feature\WorkspaceCommandSkipped;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Command\ChangeBaseWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Exception\BaseWorkspaceEqualsWorkspaceException;
-use Neos\ContentRepository\Core\Feature\WorkspaceModification\Exception\BaseWorkspaceUnchangedException;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Exception\CircularRelationBetweenWorkspacesException;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Exception\WorkspaceIsNotEmptyException;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\DiscardIndividualNodesFromWorkspace;
@@ -244,7 +243,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws BaseWorkspaceUnchangedException|WorkspaceIsNotEmptyException|BaseWorkspaceEqualsWorkspaceException|CircularRelationBetweenWorkspacesException
+     * @throws WorkspaceCommandSkipped|WorkspaceIsNotEmptyException|BaseWorkspaceEqualsWorkspaceException|CircularRelationBetweenWorkspacesException
      */
     public function changeBaseWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, WorkspaceName $newBaseWorkspaceName): void
     {
