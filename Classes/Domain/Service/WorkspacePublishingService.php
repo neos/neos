@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Neos\Neos\Domain\Service;
 
 use Neos\ContentRepository\Core\ContentRepository;
+use Neos\ContentRepository\Core\Feature\WorkspaceCommandSkipped;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Command\ChangeBaseWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Exception\BaseWorkspaceEqualsWorkspaceException;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Exception\BaseWorkspaceUnchangedException;
@@ -24,7 +25,6 @@ use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\DiscardIndi
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\DiscardWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishIndividualNodesFromWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Command\PublishWorkspace;
-use Neos\ContentRepository\Core\Feature\WorkspacePublication\Exception\NoChangesException;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Command\RebaseWorkspace;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Dto\RebaseErrorHandlingStrategy;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Exception\PartialWorkspaceRebaseFailed;
@@ -34,12 +34,12 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindClosestNodeFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregate;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
-use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateIds;
-use Neos\ContentRepository\Core\SharedModel\Workspace\Workspace as ContentRepositoryWorkspace;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateCurrentlyDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateIds;
+use Neos\ContentRepository\Core\SharedModel\Workspace\Workspace as ContentRepositoryWorkspace;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
@@ -81,7 +81,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed|NoChangesException
+     * @throws WorkspaceRebaseFailed|WorkspaceCommandSkipped
      */
     public function rebaseWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, RebaseErrorHandlingStrategy $rebaseErrorHandlingStrategy = RebaseErrorHandlingStrategy::STRATEGY_FAIL): void
     {
@@ -90,7 +90,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed|NoChangesException
+     * @throws WorkspaceRebaseFailed|WorkspaceCommandSkipped
      */
     public function publishWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): PublishingResult
     {
@@ -105,7 +105,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|NoChangesException
+     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|WorkspaceCommandSkipped
      */
     public function publishChangesInSite(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $siteId): PublishingResult
     {
@@ -138,7 +138,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|NoChangesException
+     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|WorkspaceCommandSkipped
      */
     public function publishChangesInDocument(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $documentId): PublishingResult
     {
@@ -171,7 +171,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed|NoChangesException
+     * @throws WorkspaceRebaseFailed|WorkspaceCommandSkipped
      */
     public function discardAllWorkspaceChanges(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): DiscardingResult
     {
@@ -186,7 +186,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|NoChangesException
+     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|WorkspaceCommandSkipped
      */
     public function discardChangesInSite(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $siteId): DiscardingResult
     {
@@ -215,7 +215,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed|NoChangesException
+     * @throws WorkspaceRebaseFailed|WorkspaceCommandSkipped
      */
     public function discardChangesInDocument(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateId $documentId): DiscardingResult
     {
@@ -259,7 +259,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|NoChangesException
+     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|WorkspaceCommandSkipped
      */
     private function discardNodes(
         ContentRepository $contentRepository,
@@ -275,7 +275,7 @@ final class WorkspacePublishingService
     }
 
     /**
-     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|NoChangesException
+     * @throws WorkspaceRebaseFailed|PartialWorkspaceRebaseFailed|WorkspaceCommandSkipped
      */
     private function publishNodes(
         ContentRepository $contentRepository,
