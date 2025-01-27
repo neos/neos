@@ -265,9 +265,7 @@ Feature: Workspace permission related features
       | CreateRootNodeAggregateWithNode     | {"nodeAggregateId":"c","nodeTypeName":"Neos.Neos:CustomRoot"}                                          |
       | MoveDimensionSpacePoint             | {"source":{"language":"de"},"target":{"language":"ch"}}                                                |
       | UpdateRootNodeAggregateDimensions   | {"nodeAggregateId":"root"}                                                                             |
-      | DiscardWorkspace                    | {}                                                                                                     |
-      | DiscardIndividualNodesFromWorkspace | {"nodesToDiscard":["a1"]}                                                                              |
-      | RebaseWorkspace                     | {}                                                                                                     |
+      | RebaseWorkspace                     | {"rebaseErrorHandlingStrategy": "force"}                                                               |
       # note, creating a core workspace will not grant permissions to it to the current user: Missing "read" permissions for base workspace "new-workspace"
       | CreateWorkspace                     | {"workspaceName":"new-workspace","baseWorkspaceName":"workspace","newContentStreamId":"any"}           |
 
@@ -315,6 +313,58 @@ Feature: Workspace permission related features
       | nodesToPublish | ["shernode-homes"] |
 
     And the command PublishWorkspace is executed with payload:
+      | Key           | Value       |
+      | workspaceName | "workspace" |
+
+    Examples:
+      | user         |
+      | owner        |
+      | collaborator |
+
+  Scenario Outline: Discarding a workspace without WRITE permissions
+    # make changes as owner
+    Given I am authenticated as owner
+
+    And the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId | nodeTypeName       | parentNodeAggregateId | workspaceName | originDimensionSpacePoint |
+      | shernode-homes  | Neos.Neos:Document | a                     | workspace     | {"language":"de"}         |
+      | other-node      | Neos.Neos:Document | a                     | workspace     | {"language":"de"}         |
+
+    # someone else attempts to discard
+    Given I am authenticated as <user>
+
+    And the command DiscardIndividualNodesFromWorkspace is executed with payload and exceptions are caught:
+      | Key            | Value                                  |
+      | workspaceName  | "workspace"                            |
+      | nodesToDiscard | ["shernode-homes"] |
+    Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
+
+    And the command DiscardWorkspace is executed with payload and exceptions are caught:
+      | Key           | Value       |
+      | workspaceName | "workspace" |
+    Then the last command should have thrown an exception of type "AccessDenied" with code 1729086686
+
+    Examples:
+      | user              |
+      | restricted_editor |
+      | simple_user       |
+      | uninvolved_editor |
+      | admin             |
+
+  Scenario Outline: Discarding a workspace with WRITE permissions
+    Given I am authenticated as <user>
+
+    And the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId | nodeTypeName       | parentNodeAggregateId | workspaceName | originDimensionSpacePoint |
+      | shernode-homes  | Neos.Neos:Document | a                     | workspace     | {"language":"de"}         |
+      | other-node      | Neos.Neos:Document | a                     | workspace     | {"language":"de"}         |
+
+    And the command DiscardIndividualNodesFromWorkspace is executed with payload:
+      | Key            | Value                                  |
+      | workspaceName  | "workspace"                            |
+      | nodesToDiscard | ["shernode-homes"] |
+
+    And the command DiscardWorkspace is executed with payload:
       | Key           | Value       |
       | workspaceName | "workspace" |
 
