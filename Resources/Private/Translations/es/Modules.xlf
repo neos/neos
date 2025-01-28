@@ -456,10 +456,6 @@
         <source>Yes, delete the site</source>
         <target state="final">Si, elimine este sitio</target>
       </trans-unit>
-      <trans-unit id="sites.import" xml:space="preserve" approved="yes">
-        <source>Import a site</source>
-        <target state="final">Importar un sitio</target>
-      </trans-unit>
       <trans-unit id="sites.select" xml:space="preserve" approved="yes">
         <source>Select a site package</source>
         <target state="final">Seleccionar sitio del paquete</target>
@@ -684,18 +680,6 @@ Haga clic en uno de los nodos para ver solo sus alternativas y variantes. Haga c
       <trans-unit id="sites.update.body" xml:space="preserve">
         <source>The site "{0}" has been updated.</source>
         <target state="translated">El sitio "{0}" ha sido actualizado.</target>
-      </trans-unit>
-      <trans-unit id="sites.theSiteHasBeenImported.body" xml:space="preserve">
-        <source>The site has been imported.</source>
-        <target state="translated">El sitio ha sido importado.</target>
-      </trans-unit>
-      <trans-unit id="sites.importError.title" xml:space="preserve">
-        <source>Import error</source>
-        <target state="translated">Error al importar</target>
-      </trans-unit>
-      <trans-unit id="sites.importError.body" xml:space="preserve">
-        <source>Error: During the import of the "Sites.xml" from the package "{0}" an exception occurred: {1}</source>
-        <target state="translated">Error: Durante la importación de "Sites.xml" del paquete "{0}" se ha producido una excepción: {1}</target>
       </trans-unit>
       <trans-unit id="sites.siteCreationError.siteWithSiteNodeNameAlreadyExists.title" xml:space="preserve">
         <source>Site creation error</source>

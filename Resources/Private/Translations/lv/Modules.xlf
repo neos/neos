@@ -456,10 +456,6 @@
         <source>Yes, delete the site</source>
         <target state="translated">Jā, dzēst vietni</target>
       </trans-unit>
-      <trans-unit id="sites.import" xml:space="preserve">
-        <source>Import a site</source>
-        <target state="translated">Importēt vietni</target>
-      </trans-unit>
       <trans-unit id="sites.select" xml:space="preserve">
         <source>Select a site package</source>
         <target state="translated">Izvēlieties vietnes pakotni</target>
@@ -684,18 +680,6 @@ Iezīmējiet vienu no mezgliem redzēsiet visus iespējamos elementu (mezglu) sa
       <trans-unit id="sites.update.body" xml:space="preserve">
         <source>The site "{0}" has been updated.</source>
         <target state="translated">Vietne "{0}" ir atjaunināta.</target>
-      </trans-unit>
-      <trans-unit id="sites.theSiteHasBeenImported.body" xml:space="preserve">
-        <source>The site has been imported.</source>
-        <target state="translated">Vietne tika importēta.</target>
-      </trans-unit>
-      <trans-unit id="sites.importError.title" xml:space="preserve">
-        <source>Import error</source>
-        <target state="translated">Importēšanas kļūda</target>
-      </trans-unit>
-      <trans-unit id="sites.importError.body" xml:space="preserve">
-        <source>Error: During the import of the "Sites.xml" from the package "{0}" an exception occurred: {1}</source>
-        <target state="translated">Kļūda: importējot "Vietnes.xml" no pakotnes "{0}", radās izņēmums: {1}</target>
       </trans-unit>
       <trans-unit id="sites.siteCreationError.siteWithSiteNodeNameAlreadyExists.title" xml:space="preserve">
         <source>Site creation error</source>

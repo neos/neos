@@ -456,10 +456,6 @@
         <source>Yes, delete the site</source>
         <target state="final">Ja, Seite löschen</target>
       </trans-unit>
-      <trans-unit id="sites.import" xml:space="preserve" approved="yes">
-        <source>Import a site</source>
-        <target state="final">Eine Seite importieren</target>
-      </trans-unit>
       <trans-unit id="sites.select" xml:space="preserve" approved="yes">
         <source>Select a site package</source>
         <target state="final">Wählen Sie ein Seitenpaket</target>
@@ -688,18 +684,6 @@ Klicken Sie auf einen der Knoten um nur die Fallbacks und Varianten für diesen 
       <trans-unit id="sites.update.body" xml:space="preserve">
         <source>The site "{0}" has been updated.</source>
         <target state="final">Die Seite "{0}" wurde aktualisiert.</target>
-      </trans-unit>
-      <trans-unit id="sites.theSiteHasBeenImported.body" xml:space="preserve">
-        <source>The site has been imported.</source>
-        <target state="final">Die Seite wurde importiert.</target>
-      </trans-unit>
-      <trans-unit id="sites.importError.title" xml:space="preserve">
-        <source>Import error</source>
-        <target state="final">Fehler beim Importieren</target>
-      </trans-unit>
-      <trans-unit id="sites.importError.body" xml:space="preserve">
-        <source>Error: During the import of the "Sites.xml" from the package "{0}" an exception occurred: {1}</source>
-        <target state="translated">Fehler: Während des Importierens von "Sites.xml" aus dem Package "{0}" trat ein Ausnahme-Fehler auf: {1}</target>
       </trans-unit>
       <trans-unit id="sites.siteCreationError.siteWithSiteNodeNameAlreadyExists.title" xml:space="preserve">
         <source>Site creation error</source>

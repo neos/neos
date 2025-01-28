@@ -456,10 +456,6 @@
         <source>Yes, delete the site</source>
         <target state="translated">Ja, verwijder de site</target>
       </trans-unit>
-      <trans-unit id="sites.import" xml:space="preserve">
-        <source>Import a site</source>
-        <target state="translated">Importeer een site</target>
-      </trans-unit>
       <trans-unit id="sites.select" xml:space="preserve">
         <source>Select a site package</source>
         <target state="translated">Selecteer een site pakket</target>
@@ -684,18 +680,6 @@ Hoe hoger de prioriteit, des te groter de ondoorzichtbaarheid. Klik op een van d
       <trans-unit id="sites.update.body" xml:space="preserve">
         <source>The site "{0}" has been updated.</source>
         <target state="translated">De site "{0}" is bijgewerkt.</target>
-      </trans-unit>
-      <trans-unit id="sites.theSiteHasBeenImported.body" xml:space="preserve">
-        <source>The site has been imported.</source>
-        <target state="translated">De site is geïmporteerd.</target>
-      </trans-unit>
-      <trans-unit id="sites.importError.title" xml:space="preserve">
-        <source>Import error</source>
-        <target state="translated">Importeerfout</target>
-      </trans-unit>
-      <trans-unit id="sites.importError.body" xml:space="preserve">
-        <source>Error: During the import of the "Sites.xml" from the package "{0}" an exception occurred: {1}</source>
-        <target state="translated">Fout: Tijdens het importeren van de "Sites.xml" van het pakket "{0}" is een uitzondering opgetreden: {1}</target>
       </trans-unit>
       <trans-unit id="sites.siteCreationError.siteWithSiteNodeNameAlreadyExists.title" xml:space="preserve">
         <source>Site creation error</source>
