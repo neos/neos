@@ -3169,6 +3169,83 @@ Options
 
 
 
+.. _`Neos Command Reference: NEOS.NEOS.SETUP`:
+
+Package *NEOS.NEOS.SETUP*
+-------------------------
+
+
+.. _`Neos Command Reference: NEOS.NEOS.SETUP neos.neos.setup:setup:imagehandler`:
+
+``neos.neos.setup:setup:imagehandler``
+**************************************
+
+****
+
+
+
+
+
+Options
+^^^^^^^
+
+``--driver``
+  driver
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.SETUP`:
+
+Package *NEOS.SETUP*
+--------------------
+
+
+.. _`Neos Command Reference: NEOS.SETUP neos.setup:setup:database`:
+
+``neos.setup:setup:database``
+*****************************
+
+**Configure the database connection for flow persistence**
+
+
+
+
+
+Options
+^^^^^^^
+
+``--driver``
+  Driver
+``--host``
+  Hostname or IP
+``--dbname``
+  Database name
+``--user``
+  Username
+``--password``
+  Password
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.SETUP neos.setup:setup:index`:
+
+``neos.setup:setup:index``
+**************************
+
+**Show information about the system health**
+
+
+
+
+
+
+
+
+
 .. _`Neos Command Reference: NEOS.SITEKICKSTARTER`:
 
 Package *NEOS.SITEKICKSTARTER*
