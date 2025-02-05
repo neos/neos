@@ -3,7 +3,7 @@
 FlowQuery Operation Reference
 =============================
 
-This reference was automatically generated from code on 2024-06-11
+This reference was automatically generated from code on 2025-02-05
 
 
 .. _`FlowQuery Operation Reference: add`:
@@ -751,6 +751,22 @@ Example usages:
      sort("risk", "DESC", "SORT_NUMERIC")
 
 :Implementation: Neos\\Neos\\Eel\\FlowQueryOperations\\SortOperation
+:Priority: 1
+:Final: No
+:Returns: void
+
+
+
+
+
+.. _`FlowQuery Operation Reference: unique`:
+
+unique
+------
+
+Removes duplicate items from the current context.
+
+:Implementation: Neos\\Eel\\FlowQuery\\Operations\\UniqueOperation
 :Priority: 1
 :Final: No
 :Returns: void
