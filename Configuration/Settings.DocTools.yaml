@@ -21,6 +21,7 @@ Neos:
           'Neos:MediaSignals': true
           'Neos:FlowQueryOperations': true
           'Neos:EelHelpers': true
+          'Neos:ContentRepositoryCommands': true
     commandReferences:
       'Neos:NeosCommands':
         title: 'Neos Command Reference'
@@ -180,3 +181,18 @@ Neos:
           classNamePattern: '/^(?!Neos\\Neos\\Ui\\).*Helper$/i'
         parser:
           implementationClassName: Neos\DocTools\Domain\Service\EelHelperClassParser
+      'Neos:ContentRepositoryCommands':
+        title: 'ContentRepository Command Reference'
+        savePathAndFilename: '%FLOW_PATH_PACKAGES%Neos/Neos.Neos/Documentation/References/ContentRepositoryCommandReference.rst'
+        affectedClasses:
+          interface: Neos\ContentRepository\Core\CommandHandler\CommandInterface
+        parser:
+          implementationClassName: 'Neos\DocTools\Domain\Service\ContentRepositoryCommandClassParser'
+
+  # This is needed for the Neos:ContentRepositoryCommands reference – without this the
+  # interface implementations cannot be found because the ReflectionService never looks
+  # at those classes. We set it during reference rendering in Jenkins…
+  # Flow:
+  #  object:
+  #    includeClasses:
+  #      'neos.contentrepositorycore': [ 'Neos\\ContentRepository\\Core\\Feature\\.*\\Command\\.*' ]

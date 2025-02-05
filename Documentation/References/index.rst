@@ -20,3 +20,4 @@ all Packages that are in a default (Demo Package) setup.
    CodingGuideLines/index
    Configuration/Configuration
    NodeMigrations
+   ContentRepositoryCommandReference
