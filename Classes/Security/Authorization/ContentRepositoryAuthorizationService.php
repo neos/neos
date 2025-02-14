@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Security\Authorization;
 
+use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTags;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
@@ -103,7 +104,8 @@ final readonly class ContentRepositoryAuthorizationService
      */
     public function getVisibilityConstraints(ContentRepositoryId $contentRepositoryId, array $roles): VisibilityConstraints
     {
-        $restrictedSubtreeTags = SubtreeTags::createEmpty();
+        // soft deletions are never visible by default
+        $restrictedSubtreeTags = SubtreeTags::createEmpty()->with(SubtreeTag::deleted());
         /** @var ReadNodePrivilege $privilege */
         foreach ($this->policyService->getAllPrivilegesByType(ReadNodePrivilege::class) as $privilege) {
             if (!$this->privilegeManager->isGrantedForRoles($roles, ReadNodePrivilege::class, new SubtreeTagPrivilegeSubject($privilege->getSubtreeTags(), $contentRepositoryId))) {
