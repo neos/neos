@@ -32,9 +32,6 @@ final class Change
 {
     public const AGGREGATE_DIMENSIONSPACEPOINT_HASH_PLACEHOLDER = 'AGGREGATE';
 
-    /**
-     * @param NodeAggregateId|null $removalAttachmentPoint {@see RemoveNodeAggregate::$removalAttachmentPoint} for docs
-     */
     public function __construct(
         public ContentStreamId $contentStreamId,
         public NodeAggregateId $nodeAggregateId,
@@ -44,7 +41,6 @@ final class Change
         public bool $changed,
         public bool $moved,
         public bool $deleted,
-        public ?NodeAggregateId $removalAttachmentPoint = null
     ) {
     }
 
@@ -64,7 +60,6 @@ final class Change
                 'changed' => (int)$this->changed,
                 'moved' => (int)$this->moved,
                 'deleted' => (int)$this->deleted,
-                'removalAttachmentPoint' => $this->removalAttachmentPoint?->value
             ]);
         } catch (DbalException $e) {
             throw new \RuntimeException(sprintf('Failed to insert Change to database: %s', $e->getMessage()), 1727272723, $e);
@@ -81,7 +76,6 @@ final class Change
                     'changed' => (int)$this->changed,
                     'moved' => (int)$this->moved,
                     'deleted' => (int)$this->deleted,
-                    'removalAttachmentPoint' => $this->removalAttachmentPoint?->value
                 ],
                 [
                     'contentStreamId' => $this->contentStreamId->value,
@@ -109,10 +103,7 @@ final class Change
             (bool)$databaseRow['created'],
             (bool)$databaseRow['changed'],
             (bool)$databaseRow['moved'],
-            (bool)$databaseRow['deleted'],
-            isset($databaseRow['removalAttachmentPoint'])
-                ? NodeAggregateId::fromString($databaseRow['removalAttachmentPoint'])
-                : null
+            (bool)$databaseRow['deleted']
         );
     }
 }

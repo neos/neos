@@ -113,8 +113,6 @@ class ChangeProjection implements ProjectionInterface
             DbalSchemaFactory::columnForDimensionSpacePoint('originDimensionSpacePoint', $platform)->setNotnull(false),
             DbalSchemaFactory::columnForDimensionSpacePointHash('originDimensionSpacePointHash', $platform)->setNotnull(true),
             (new Column('deleted', Type::getType(Types::BOOLEAN)))->setNotnull(true),
-            // Despite the name suggesting this might be an anchor point of sorts, this is a nodeAggregateId type
-            DbalSchemaFactory::columnForNodeAggregateId('removalAttachmentPoint', $platform)->setNotnull(false)
         ]);
 
         $changeTable->setPrimaryKey([
@@ -287,7 +285,7 @@ class ChangeProjection implements ProjectionInterface
             $this->dbal->executeStatement(
                 'INSERT INTO ' . $this->tableNamePrefix . '
                         (contentStreamId, nodeAggregateId, originDimensionSpacePoint,
-                         originDimensionSpacePointHash, created, deleted, changed, moved, removalAttachmentPoint)
+                         originDimensionSpacePointHash, created, deleted, changed, moved)
                     VALUES (
                         :contentStreamId,
                         :nodeAggregateId,
@@ -296,16 +294,14 @@ class ChangeProjection implements ProjectionInterface
                         0,
                         1,
                         0,
-                        0,
-                        :removalAttachmentPoint
+                        0
                     )
                 ',
                 [
                     'contentStreamId' => $event->contentStreamId->value,
                     'nodeAggregateId' => $event->nodeAggregateId->value,
                     'originDimensionSpacePoint' => json_encode($occupiedDimensionSpacePoint),
-                    'originDimensionSpacePointHash' => $occupiedDimensionSpacePoint->hash,
-                    'removalAttachmentPoint' => $event->removalAttachmentPoint?->value,
+                    'originDimensionSpacePointHash' => $occupiedDimensionSpacePoint->hash
                 ]
             );
         }
