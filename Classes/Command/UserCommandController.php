@@ -347,6 +347,48 @@ class UserCommandController extends CommandController
             }
         }
     }
+    
+    /**
+     * Remove a role from a user
+     *
+     * This command allows for removal of a specific role from an existing user.
+     *
+     * If an authentication provider was specified, the user will be determined by an account identified by "username"
+     * related to the given provider. However, once a user has been found, the role will be removed from <b>all</b>
+     * existing accounts related to that user, regardless of its authentication provider.
+     *
+     * @param string $username The username of the user (globbing is supported)
+     * @param string $role Role to be removed from the user, for example "Neos.Neos:Administrator" or just "Administrator"
+     * @param string $newRoleName Role to be removed from the user, for example "Neos.Neos:Administrator" or just "Administrator"
+     * @param string $authenticationProvider Name of the authentication provider to use. Example: "Neos.Neos:Backend"
+     *
+     * @return void
+     */
+    public function renameRoleCommand($username, $role, $newRoleName, $authenticationProvider = null)
+    {
+        $users = $this->findUsersByUsernamePattern($username, $authenticationProvider);
+        if (empty($users)) {
+            $this->outputLine('No users that match name-pattern "%s" do exist.', [$username]);
+            $this->quit(1);
+        }
+        
+        foreach ($users as $user) {
+            $username = $this->userService->getUsername($user, $authenticationProvider);
+            try {
+                if (in_array($role, $this->userService->getAllRoles($user))) {
+                    $this->userService->removeRoleFromUser($user, $role);
+                    $this->userService->addRoleToUser($user, $newRoleName);
+                    
+                    $this->outputLine('Renamed role "%s" to "%s" for user "%s".', [$role, $newRoleName, $username]);
+                } else {
+                    $this->outputLine('User "%s" did not have the role "%s" assigned.', [$username, $role]);
+                }
+            } catch (NoSuchRoleException $exception) {
+                $this->outputLine('The role "%s" does not exist.', [$role]);
+                $this->quit(2);
+            }
+        }
+    }
 
     /**
      * Find all users the match the given username with globbing support
