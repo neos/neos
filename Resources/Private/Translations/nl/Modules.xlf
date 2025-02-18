@@ -885,6 +885,14 @@ Hoe hoger de prioriteit, des te groter de ondoorzichtbaarheid. Klik op een van d
         <source>Sort by last login</source>
         <target state="translated">Sorteren op laatste login</target>
       </trans-unit>
+      <trans-unit id="sites.creationContentRepository" xml:space="preserve">
+        <source>In the content repository: "{0}"</source>
+        <target state="translated">In de contentopslag: "{0}"</target>
+      </trans-unit>
+      <trans-unit id="branding.link.title" xml:space="preserve">
+        <source>Go back to your starting module</source>
+        <target state="translated">Ga terug naar de startmodule</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>
