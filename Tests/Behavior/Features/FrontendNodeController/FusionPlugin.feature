@@ -53,7 +53,7 @@ Feature: Tests for sub-request on the frontend node controller in case of the "N
       | a1              | a                     | Neos.Neos:Test.DocumentType | {"uriPathSegment": "a1", "title": "Node a1"} | a1       |
       | a2              | a                     | Neos.Neos:Test.DocumentType | {"uriPathSegment": "a2", "title": "Node a3"} | a3       |
       | a1a             | a1                    | Neos.Neos:Content.MyPlugin  | {"myPluginProp": "hello from the node"}      | a1a      |
-    And A site exists for node name "a" and domain "http://localhost"
+    And A site exists for node name "a" and domain "http://localhost" and package Vendor.Site
     And the sites configuration is:
     """yaml
     Neos:
@@ -70,7 +70,7 @@ Feature: Tests for sub-request on the frontend node controller in case of the "N
   Scenario: Default output
     When I declare the following controller 'Vendor\Site\Controller\MyPluginController':
     """php
-    // <?php
+    <?php
     namespace Vendor\Site\Controller;
 
     use Neos\Flow\Mvc\Controller\ActionController;
@@ -116,16 +116,10 @@ Feature: Tests for sub-request on the frontend node controller in case of the "N
             $this->response->setHttpHeader('X-Custom-Plugin-Header', 'MHS');
             return 'body contents';
         }
-
-        public static function getPublicActionMethods($objectManager)
-        {
-            // hack, as this class is not proxied reflection doesnt work and doesnt return the desired public action methods
-            return array_fill_keys(get_class_methods(get_called_class()), true);
-        }
     }
     """
 
-    When the sites Fusion code is:
+    When the Fusion code for package Vendor.Site is:
     """fusion
     prototype(Neos.Neos:Test.DocumentType) < prototype(Neos.Fusion:Component) {
 
@@ -256,7 +250,7 @@ Feature: Tests for sub-request on the frontend node controller in case of the "N
 
     When I declare the following controller 'Vendor\Site\Controller\MyPluginWithFusionController':
     """php
-    // <?php
+    <?php
     namespace Vendor\Site\Controller;
 
     use Neos\Flow\Mvc\View\ViewInterface;
@@ -284,16 +278,10 @@ Feature: Tests for sub-request on the frontend node controller in case of the "N
         {
             $this->view->assign('node', $this->request->getInternalArgument('__node'));
         }
-
-        public static function getPublicActionMethods($objectManager)
-        {
-            // hack, as this class is not proxied reflection doesnt work and doesnt return the desired public action methods
-            return array_fill_keys(get_class_methods(get_called_class()), true);
-        }
     }
     """
 
-    When the sites Fusion code is:
+    When the Fusion code for package Vendor.Site is:
     """fusion
     prototype(Neos.Neos:Test.DocumentType) < prototype(Neos.Fusion:Component) {
 

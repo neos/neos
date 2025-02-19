@@ -74,22 +74,19 @@ trait FrontendNodeControllerTrait
      */
     public function iDeclareTheFollowingController(string $fullyQualifiedClassName, PyStringNode $expectedResult): void
     {
-        eval($expectedResult->getRaw());
+        eval(
+            /** make the controller implement our hacked {@see BehatRuntimeActionController} instead and remove the php tag */
+            str_replace(
+                ['extends ActionController', '<?php'],
+                ['extends \\BehatRuntimeActionController', ''],
+                $expectedResult->getRaw()
+            )
+        );
 
-        $controllerInstance = new ('\\' . $fullyQualifiedClassName)();
+        /** @var class-string<BehatRuntimeActionController> $controllerClassName */
+        $controllerClassName = '\\' . ltrim($fullyQualifiedClassName, '\\');
 
-        if ($controllerInstance instanceof \Neos\Flow\Mvc\Controller\ActionController) {
-            // run flow property injection code of parent class ActionController not ActionController_Original manually as the extended classes is not proxied and doesnt call $this->Flow_Proxy_injectProperties();
-            $ref = new \ReflectionClass(get_parent_class($controllerInstance));
-            $method = $ref->getMethod('Flow_Proxy_injectProperties');
-            $method->invoke($controllerInstance);
-        }
-
-        $objectManager = $this->getObject(\Neos\Flow\ObjectManagement\ObjectManager::class);
-        $objects = \Neos\Utility\ObjectAccess::getProperty($objectManager, 'objects', true);
-        $objects[get_class($controllerInstance)]['i'] = $controllerInstance;
-        $objects[get_class($controllerInstance)]['l'] = strtolower(get_class($controllerInstance));
-        $objectManager->setObjects($objects);
+        $controllerClassName::registerInstance();
     }
 
     /**
@@ -109,20 +106,11 @@ trait FrontendNodeControllerTrait
     }
 
     /**
-     * @Then I expect the following response header:
-     */
-    public function iExpectTheFollowingResponseHeader(PyStringNode $expectedResult): void
-    {
-        Assert::assertNotNull($this->frontendNodeControllerResponse);
-        Assert::assertSame($expectedResult->getRaw(), $this->frontendNodeControllerResponse->getBody()->getContents());
-    }
-
-    /**
      * @Then I expect the following response:
      */
     public function iExpectTheFollowingResponse(PyStringNode $expectedResult): void
     {
         Assert::assertNotNull($this->frontendNodeControllerResponse);
-        Assert::assertEquals($expectedResult->getRaw(), str_replace("\r\n", "\n", Message::toString($this->frontendNodeControllerResponse)));
+        Assert::assertEquals($expectedResult->getRaw(), str_replace("\r\n", "\n", Message::toString($this->frontendNodeControllerResponse->withoutHeader('Content-Length'))));
     }
 }
