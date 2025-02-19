@@ -16,6 +16,7 @@ namespace Neos\Neos\FrontendRouting;
 
 use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
@@ -264,17 +265,19 @@ final class EventSourcedFrontendNodeRoutePartHandler extends AbstractRoutePart i
         }
         $currentRequestSiteDetectionResult = SiteDetectionResult::fromRouteParameters($parameters);
 
-        $nodeAddress = $routeValues[$this->name];
+        $nodeRouteValue = $routeValues[$this->name];
 
-        if (is_string($nodeAddress)) {
+        if ($nodeRouteValue instanceof Node) {
+            $nodeAddress = NodeAddress::fromNode($nodeRouteValue);
+        } elseif ($nodeRouteValue instanceof NodeAddress) {
+            $nodeAddress = $nodeRouteValue;
+        } elseif (is_string($nodeRouteValue)) {
             try {
-                $nodeAddress = NodeAddress::fromJsonString($nodeAddress);
+                $nodeAddress = NodeAddress::fromJsonString($nodeRouteValue);
             } catch (\InvalidArgumentException) {
                 return false;
             }
-        }
-
-        if (!$nodeAddress instanceof NodeAddress) {
+        } else {
             return false;
         }
 
