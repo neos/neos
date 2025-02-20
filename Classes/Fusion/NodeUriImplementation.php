@@ -16,19 +16,39 @@ namespace Neos\Neos\Fusion;
 
 use GuzzleHttp\Psr7\ServerRequest;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
-use Neos\Flow\Mvc\ActionRequest;
-use Neos\Neos\FrontendRouting\NodeAddressFactory;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Log\Utility\LogEnvironment;
+use Neos\Flow\Mvc\ActionRequest;
 use Neos\Flow\Mvc\Exception\NoMatchingRouteException;
-use Neos\Flow\Mvc\Routing\UriBuilder;
 use Neos\Fusion\FusionObjects\AbstractFusionObject;
-use Neos\Neos\FrontendRouting\NodeUriBuilder;
+use Neos\Neos\FrontendRouting\NodeUriBuilderFactory;
+use Neos\Neos\FrontendRouting\Options;
+use Neos\Neos\Utility\LegacyNodePathNormalizer;
+use Neos\Neos\Utility\NodePathResolver;
 use Psr\Log\LoggerInterface;
 
 /**
  * Create a link to a node
+ *
+ * If the node is passed as string the base node is required.
+ * Following string syntax is allowed:
+ *
+ *  - /<Neos.Neos:Sites>/my-site/main
+ *  - some/relative/path
+ *
+ * Deprecated syntax:
+ *
+ *  - /sites/site/absolute/path
+ *  - ~/site-relative/path
+ *  - ~
+ *
+ * Not supported syntax:
+ *
+ *  - ./neos/info
+ *  - ../foo/../../bar
+ *
  */
 class NodeUriImplementation extends AbstractFusionObject
 {
@@ -45,21 +65,31 @@ class NodeUriImplementation extends AbstractFusionObject
     protected $systemLogger;
 
     /**
-     * A node object or a string node path or NULL to resolve the current document node
+     * @Flow\Inject
+     * @var NodeUriBuilderFactory
      */
-    public function getNode(): Node|string|null
-    {
-        return $this->fusionValue('node');
-    }
+    protected $nodeUriBuilderFactory;
+
+    /**
+     * @Flow\Inject
+     * @var NodePathResolver
+     */
+    protected $nodeAddressNormalizer;
+
+    /**
+     * @Flow\Inject
+     * @var LegacyNodePathNormalizer
+     */
+    protected $legacyNodePathNormalizer;
 
     /**
      * The requested format, for example "html"
      *
      * @return string
      */
-    public function getFormat()
+    public function getFormat(): string
     {
-        return $this->fusionValue('format');
+        return (string)$this->fusionValue('format');
     }
 
     /**
@@ -97,73 +127,75 @@ class NodeUriImplementation extends AbstractFusionObject
      *
      * @return string
      */
-    public function getBaseNodeName()
+    public function getBaseNodeName(): string
     {
-        return $this->fusionValue('baseNodeName');
+        return $this->fusionValue('baseNodeName') ?: 'documentNode';
     }
 
     /**
      * Render the Uri.
      *
      * @return string The rendered URI or NULL if no URI could be resolved for the given node
-     * @throws \Neos\Flow\Mvc\Routing\Exception\MissingActionNameException
      */
     public function evaluate()
     {
-        $baseNode = null;
-        $baseNodeName = $this->getBaseNodeName() ?: 'documentNode';
-        $currentContext = $this->runtime->getCurrentContext();
-        if (isset($currentContext[$baseNodeName])) {
-            $baseNode = $currentContext[$baseNodeName];
-        } else {
-            throw new \RuntimeException(sprintf('Could not find a node instance in Fusion context with name "%s" and no node instance was given to the node argument. Set a node instance in the Fusion context or pass a node object to resolve the URI.', $baseNodeName), 1373100400);
-        }
-        $node = $this->getNode();
-        if ($node instanceof Node) {
-            $contentRepository = $this->contentRepositoryRegistry->get(
-                $node->contentRepositoryId
-            );
-            $nodeAddressFactory = NodeAddressFactory::create($contentRepository);
-            $nodeAddress = $nodeAddressFactory->createFromNode($node);
-        } else {
-            throw new \RuntimeException(sprintf('Passing node as %s is not supported yet.', get_debug_type($node)));
-        }
-        /* TODO implement us see https://github.com/neos/neos-development-collection/issues/4524 {@see \Neos\Neos\ViewHelpers\Uri\NodeViewHelper::resolveNodeAddressFromString} for an example implementation
-        elseif ($node === '~') {
-        $nodeAddress = $this->nodeAddressFactory->createFromNode($node);
-        $nodeAddress = $nodeAddress->withNodeAggregateId(
-        $siteNode->nodeAggregateId
-        );
-        } elseif (is_string($node) && substr($node, 0, 7) === 'node://') {
-        $nodeAddress = $this->nodeAddressFactory->createFromNode($node);
-        $nodeAddress = $nodeAddress->withNodeAggregateId(
-        NodeAggregateId::fromString(\mb_substr($node, 7))
-        );*/
+        $node = $this->fusionValue('node');
+        if (is_string($node)) {
+            $currentContext = $this->runtime->getCurrentContext();
+            $baseNode = $currentContext[$this->getBaseNodeName()] ?? null;
+            if (!$baseNode instanceof Node) {
+                throw new \RuntimeException(sprintf(
+                    'If "node" is passed as string a base node in must be set in "%s". Given: %s',
+                    $this->getBaseNodeName(),
+                    get_debug_type($baseNode)
+                ), 1719996392);
+            }
 
-        $uriBuilder = new UriBuilder();
+            $possibleAbsoluteNodePath = $this->legacyNodePathNormalizer->tryResolveLegacyPathSyntaxToAbsoluteNodePath($node, $baseNode);
+            $nodeAddress = $this->nodeAddressNormalizer->resolveNodeAddressByPath(
+                $possibleAbsoluteNodePath ?? $node,
+                $baseNode
+            );
+        } elseif ($node instanceof Node) {
+            $nodeAddress = NodeAddress::fromNode($node);
+        } else {
+            throw new \RuntimeException(sprintf(
+                'The "node" argument can only be a string or an instance of `Node`. Given: %s',
+                get_debug_type($node)
+            ), 1719996456);
+        }
+
         $possibleRequest = $this->runtime->fusionGlobals->get('request');
         if ($possibleRequest instanceof ActionRequest) {
-            $uriBuilder->setRequest($possibleRequest);
+            $nodeUriBuilder = $this->nodeUriBuilderFactory->forActionRequest($possibleRequest);
         } else {
-            // unfortunately, the uri-builder always needs a request at hand and cannot build uris without
-            // even, if the default param merging would not be required
+            // unfortunately, the uri-builder always needs a request at hand and cannot build uris without it
             // this will improve with a reformed uri building:
-            // https://github.com/neos/flow-development-collection/pull/2744
-            $uriBuilder->setRequest(
-                ActionRequest::fromHttpRequest(ServerRequest::fromGlobals())
-            );
+            // https://github.com/neos/flow-development-collection/issues/3354
+            $nodeUriBuilder = $this->nodeUriBuilderFactory->forActionRequest(ActionRequest::fromHttpRequest(ServerRequest::fromGlobals()));
         }
-        $uriBuilder
-            ->setFormat($this->getFormat())
-            ->setCreateAbsoluteUri($this->isAbsolute())
-            ->setArguments($this->getAdditionalParams())
-            ->setSection($this->getSection());
+
+        $options = $this->isAbsolute() ? Options::createForceAbsolute() : Options::createEmpty();
+        $format = $this->getFormat() ?: $possibleRequest->getFormat();
+        if ($format && $format !== 'html') {
+            $options = $options->withCustomFormat($format);
+        }
+        if ($routingArguments = $this->getAdditionalParams()) {
+            $options = $options->withCustomRoutingArguments($routingArguments);
+        }
 
         try {
-            return (string)NodeUriBuilder::fromUriBuilder($uriBuilder)->uriFor($nodeAddress);
+            $resolvedUri = $nodeUriBuilder->uriFor($nodeAddress, $options);
         } catch (NoMatchingRouteException) {
-            $this->systemLogger->warning(sprintf('Could not resolve "%s" to a node uri. Arguments: %s', $node->aggregateId->value, json_encode($uriBuilder->getLastArguments())), LogEnvironment::fromMethodName(__METHOD__));
+            // todo log arguments?
+            $this->systemLogger->warning(sprintf('Could not resolve "%s" to a node uri.', $nodeAddress->aggregateId->value), LogEnvironment::fromMethodName(__METHOD__));
+            return '';
         }
-        return '';
+
+        if ($this->getSection() !== '') {
+            $resolvedUri = $resolvedUri->withFragment($this->getSection());
+        }
+
+        return (string)$resolvedUri;
     }
 }

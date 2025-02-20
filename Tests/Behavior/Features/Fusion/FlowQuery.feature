@@ -46,12 +46,12 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
       | Key                | Value           |
       | workspaceName      | "live"          |
       | newContentStreamId | "cs-identifier" |
-    And I am in workspace "live"
+    And I am in workspace "live" and dimension space point {}
     And the command CreateRootNodeAggregateWithNode is executed with payload:
       | Key             | Value             |
       | nodeAggregateId | "root"            |
       | nodeTypeName    | "Neos.Neos:Sites" |
-    And I am in content stream "cs-identifier" and dimension space point {}
+    Given the current date and time is "2024-09-22T12:00:00+01:00"
     And the following CreateNodeAggregateWithNode commands are executed:
       | nodeAggregateId | parentNodeAggregateId | nodeTypeName                  | initialPropertyValues                                                | nodeName |
       | a               | root                  | Neos.Neos:Site                | {"title": "Node a"}                                                  | a        |
@@ -72,6 +72,11 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
       | a1b3            | a1b                   | Neos.Neos:Test.DocumentType1  | {"uriPathSegment": "a1b3", "title": "Node a1b3"}                     | a1b3     |
       | a1c             | a1                    | Neos.Neos:Test.DocumentType1  | {"uriPathSegment": "a1c", "title": "Node a1c", "hiddenInMenu": true} | a1c      |
       | a1c1            | a1c                   | Neos.Neos:Test.DocumentType1  | {"uriPathSegment": "a1c1", "title": "Node a1c1"}                     | a1c1     |
+    Given the current date and time is "2024-09-22T18:00:00+01:00"
+    And the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId | parentNodeAggregateId | nodeTypeName                  | initialPropertyValues                                                | nodeName |
+      | a2              | a                     | Neos.Neos:Test.DocumentType1  | {"uriPathSegment": "a2", "title": "Node a2"}                         | a2       |
+
     And A site exists for node name "a" and domain "http://localhost"
     And the sites configuration is:
     """yaml
@@ -91,27 +96,6 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     include: resource://Neos.Fusion/Private/Fusion/Root.fusion
     include: resource://Neos.Neos/Private/Fusion/Root.fusion
 
-    prototype(Neos.Neos:Test.RenderNodes) < prototype(Neos.Fusion:Component) {
-      nodes = ${value}
-      renderer = Neos.Fusion:Loop {
-        items = ${props.nodes}
-        itemName = 'node'
-        itemRenderer = ${node.nodeAggregateId.value}
-        @glue = ','
-      }
-    }
-
-    prototype(Neos.Neos:Test.RenderStringDataStructure) < prototype(Neos.Fusion:Component) {
-      items = ${value}
-      renderer = Neos.Fusion:Loop {
-        items = ${props.items}
-        itemKey = 'key'
-        itemName = 'string'
-        itemRenderer = ${key + ':' + (string ? string + ' ' : '')}
-        @glue = "\n"
-      }
-    }
-
     prototype(Neos.Neos:Test.RenderNodesDataStructure) < prototype(Neos.Fusion:Component) {
       items = ${value}
       renderer = Neos.Fusion:Loop {
@@ -120,8 +104,11 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
         itemName = 'nodes'
         itemRenderer = Neos.Fusion:Join {
           name = ${key + ':' + (nodes ? ' ' : '')}
-          ids = Neos.Neos:Test.RenderNodes {
-            nodes = ${nodes}
+          ids = Neos.Fusion:Loop {
+            items = ${nodes}
+            itemName = 'node'
+            itemRenderer = ${node.aggregateId}
+            @glue = ','
           }
         }
         @glue = "\n"
@@ -373,12 +360,14 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
   Scenario: Unique
     When I execute the following Fusion code:
     """fusion
-    test = ${q([node,site,documentNode]).unique().get()}
-    test.@process.render = Neos.Neos:Test.RenderNodes
+    test = Neos.Fusion:DataStructure {
+      unique = ${q([node,site,documentNode]).unique().get()}
+      @process.render = Neos.Neos:Test.RenderNodesDataStructure
+    }
     """
     Then I expect the following Fusion rendering result:
     """
-    a1a4,a
+    unique: a1a4,a
     """
 
   Scenario: Remove
@@ -396,15 +385,41 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     nothingToRemove: a1a4,a1a4,a1a4
     """
 
-  Scenario: Node accessors (final Node access operations)
+  Scenario: Sort
+    When I execute the following Fusion code:
+    """fusion
+    test = Neos.Fusion:DataStructure {
+      @context {
+        a2 = ${q(site).find('#a2').get(0)}
+        a1a1 = ${q(site).find('#a1a1').get(0)}
+        a1a2 = ${q(site).find('#a1a2').get(0)}
+        a1a3 = ${q(site).find('#a1a3').get(0)}
+        a1a4 = ${q(site).find('#a1a4').get(0)}
+      }
+      unsorted = ${q([a1a3, a1a4, a1a1, a1a2]).get()}
+      sortByTitleAsc = ${q([a1a3, a1a4, a1a1, a1a2]).sort("title", "ASC").get()}
+      sortByUriDesc = ${q([a1a3, a1a4, a1a1, a1a2]).sort("uriPathSegment", "DESC").get()}
+      # a2 is "older"
+      sortByDateAsc = ${q([a2, a1a1]).sortByTimestamp("created", "ASC").get()}
+      @process.render = Neos.Neos:Test.RenderNodesDataStructure
+    }
+    """
+    Then I expect the following Fusion rendering result:
+    """
+    unsorted: a1a3,a1a4,a1a1,a1a2
+    sortByTitleAsc: a1a1,a1a2,a1a3,a1a4
+    sortByUriDesc: a1a4,a1a3,a1a2,a1a1
+    sortByDateAsc: a1a1,a2
+    """
+
+  Scenario: Node field accessors
     When the Fusion context node is "a1"
     When I execute the following Fusion code:
     """fusion
     test = Neos.Fusion:DataStructure {
-      property = ${q(node).property('title')}
-      identifier = ${q(node).id()}
-      label = ${q(node).label()}
-      nodeTypeName = ${q(node).nodeTypeName()}
+      property = ${node.properties.title}
+      identifier = ${node.aggregateId}
+      nodeTypeName = ${node.nodeTypeName}
       @process.render = ${Json.stringify(value, ['JSON_PRETTY_PRINT'])}
     }
     """
@@ -413,29 +428,42 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     {
         "property": "Node a1",
         "identifier": "a1",
+        "nodeTypeName": "Neos.Neos:Test.DocumentType1"
+    }
+    """
+
+  Scenario: Node label rendering
+    When the Fusion context node is "a1"
+    When I execute the following Fusion code:
+    """fusion
+    test = Neos.Fusion:DataStructure {
+      label = ${Neos.Node.label(node)}
+      nodeTypeName = ${node.nodeTypeName}
+      @process.render = ${Json.stringify(value, ['JSON_PRETTY_PRINT'])}
+    }
+    """
+    Then I expect the following Fusion rendering result:
+    """
+    {
         "label": "Neos.Neos:Test.DocumentType1 (a1)",
         "nodeTypeName": "Neos.Neos:Test.DocumentType1"
     }
     """
-    # if the node type config is empty, the operation should still work
+    # if the node type config is empty, the label rendering should still work
     When I change the node types in content repository "default" to:
     """yaml
     """
     When I execute the following Fusion code:
     """fusion
     test = Neos.Fusion:DataStructure {
-      property = ${q(node).property('title')}
-      identifier = ${q(node).id()}
-      label = ${q(node).label()}
-      nodeTypeName = ${q(node).nodeTypeName()}
+      label = ${Neos.Node.label(node)}
+      nodeTypeName = ${node.nodeTypeName}
       @process.render = ${Json.stringify(value, ['JSON_PRETTY_PRINT'])}
     }
     """
     Then I expect the following Fusion rendering result:
     """
     {
-        "property": "Node a1",
-        "identifier": "a1",
         "label": "Neos.Neos:Test.DocumentType1 (a1)",
         "nodeTypeName": "Neos.Neos:Test.DocumentType1"
     }

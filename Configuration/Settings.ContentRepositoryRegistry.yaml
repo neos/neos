@@ -3,8 +3,15 @@ Neos:
     presets:
       'default':
 
-        userIdProvider:
-          factoryObjectName: Neos\Neos\UserIdProvider\UserIdProviderFactory
+        authProvider:
+          factoryObjectName: Neos\Neos\Security\ContentRepositoryAuthProvider\ContentRepositoryAuthProviderFactory
+
+        contentGraphProjection:
+          catchUpHooks:
+            'Neos.Neos:FlushContentCache':
+              factoryObjectName: Neos\Neos\Fusion\Cache\GraphProjectorCatchUpHookForCacheFlushingFactory
+            'Neos.Neos:AssetUsage':
+              factoryObjectName: Neos\Neos\AssetUsage\CatchUpHook\AssetUsageCatchUpHookFactory
 
         projections:
           'Neos.Neos:DocumentUriPathProjection':
@@ -15,9 +22,3 @@ Neos:
 
           'Neos.Neos:PendingChangesProjection':
             factoryObjectName: Neos\Neos\PendingChangesProjection\ChangeProjectionFactory
-          'Neos.ContentRepository:ContentGraph':
-            catchUpHooks:
-              'Neos.Neos:FlushContentCache':
-                factoryObjectName: Neos\Neos\Fusion\Cache\GraphProjectorCatchUpHookForCacheFlushingFactory
-          'Neos.Neos:AssetUsage':
-            factoryObjectName: Neos\Neos\AssetUsage\Projection\AssetUsageProjectionFactory

@@ -15,13 +15,15 @@ declare(strict_types=1);
 namespace Neos\Neos\Service\Controller;
 
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
+use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Mvc\View\JsonView;
 use Neos\Flow\ObjectManagement\ObjectManagerInterface;
-use Neos\Utility\ObjectAccess;
 use Neos\Flow\Reflection\ReflectionService;
 use Neos\Neos\Exception as NeosException;
 use Neos\Neos\Service\DataSource\DataSourceInterface;
+use Neos\Utility\ObjectAccess;
 
 /**
  * Data Source Controller
@@ -30,6 +32,9 @@ use Neos\Neos\Service\DataSource\DataSourceInterface;
  */
 class DataSourceController extends AbstractServiceController
 {
+    #[Flow\Inject]
+    protected ContentRepositoryRegistry $contentRepositoryRegistry;
+
     /**
      * @var array<string,class-string>
      */
@@ -39,10 +44,9 @@ class DataSourceController extends AbstractServiceController
 
     /**
      * @param string $dataSourceIdentifier
-     * @param Node $node
      * @throws NeosException
      */
-    public function indexAction($dataSourceIdentifier, Node $node = null): void
+    public function indexAction($dataSourceIdentifier, ?string $node = null): void
     {
         $dataSources = static::getDataSources($this->objectManager);
 
@@ -63,9 +67,22 @@ class DataSourceController extends AbstractServiceController
         unset($arguments['dataSourceIdentifier']);
         unset($arguments['node']);
 
-        $values = $dataSource->getData($node, $arguments);
+        $values = $dataSource->getData($this->deserializeNodeFromNodeAddress($node), $arguments);
 
         $this->view->assign('value', $values);
+    }
+
+    private function deserializeNodeFromNodeAddress(?string $stringFormattedNodeAddress): ?Node
+    {
+        if (!$stringFormattedNodeAddress) {
+            return null;
+        }
+
+        $nodeAddress = NodeAddress::fromJsonString($stringFormattedNodeAddress);
+
+        $contentRepository = $this->contentRepositoryRegistry->get($nodeAddress->contentRepositoryId);
+        return $contentRepository->getContentSubgraph($nodeAddress->workspaceName, $nodeAddress->dimensionSpacePoint)
+            ->findNodeById($nodeAddress->aggregateId);
     }
 
     /**

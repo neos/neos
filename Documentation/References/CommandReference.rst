@@ -19,7 +19,7 @@ commands that may be available, use::
 
   ./flow help
 
-The following reference was automatically generated from code on 2024-05-24
+The following reference was automatically generated from code on 2025-02-11
 
 
 .. _`Neos Command Reference: NEOS.FLOW`:
@@ -620,6 +620,8 @@ Options
   Whether to do a dry run or not
 ``--quiet``
   If set, only the executed migration versions will be output, one per line
+``--migration-folder``
+  Provide alternative platform folder name (as in "Mysql"), otherwise configured connection is used.
 
 
 
@@ -663,6 +665,8 @@ Options
   A file to write SQL to, instead of executing it
 ``--dry-run``
   Whether to do a dry run or not
+``--migration-folder``
+  Provide alternative platform folder name (as in "Mysql"), otherwise configured connection is used.
 
 
 
@@ -714,6 +718,8 @@ Options
   Only include tables/sequences matching the filter expression regexp
 ``--force``
   Generate migrations even if there are migrations left to execute
+``--migration-folder``
+  Provide alternative platform folder name (as in "Mysql"), otherwise configured connection is used.
 
 
 
@@ -748,6 +754,8 @@ Options
 
 ``--show-migrations``
   Output a list of all migrations and their status
+``--migration-folder``
+  Provide alternative platform folder name (as in "Mysql"), otherwise configured connection is used.
 
 
 
@@ -790,6 +798,8 @@ Options
   The migration to mark as migrated
 ``--delete``
   The migration to mark as not migrated
+``--migration-folder``
+  Provide alternative platform folder name (as in "Mysql"), otherwise configured connection is used.
 
 
 
@@ -2144,64 +2154,6 @@ Package *NEOS.NEOS*
 -------------------
 
 
-.. _`Neos Command Reference: NEOS.NEOS neos.neos:cr:export`:
-
-``neos.neos:cr:export``
-***********************
-
-**Export the events from the specified content repository**
-
-
-
-Arguments
-^^^^^^^^^
-
-``--path``
-  The path for storing the result
-
-
-
-Options
-^^^^^^^
-
-``--content-repository``
-  The content repository identifier
-``--verbose``
-  If set, all notices will be rendered
-
-
-
-
-
-.. _`Neos Command Reference: NEOS.NEOS neos.neos:cr:import`:
-
-``neos.neos:cr:import``
-***********************
-
-**Import the events from the path into the specified content repository**
-
-
-
-Arguments
-^^^^^^^^^
-
-``--path``
-  The path of the stored events like resource://Neos.Demo/Private/Content
-
-
-
-Options
-^^^^^^^
-
-``--content-repository``
-  The content repository identifier
-``--verbose``
-  If set, all notices will be rendered
-
-
-
-
-
 .. _`Neos Command Reference: NEOS.NEOS neos.neos:domain:activate`:
 
 ``neos.neos:domain:activate``
@@ -2401,6 +2353,73 @@ Arguments
 
 
 
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:site:exportall`:
+
+``neos.neos:site:exportall``
+****************************
+
+**Export sites**
+
+This command exports all sites of the content repository.
+
+If a path is specified, this command creates the directory if needed and exports into that.
+
+If a package key is specified, this command exports to the private resources
+directory of the given package (Resources/Private/Content).
+
+
+
+Options
+^^^^^^^
+
+``--package-key``
+  Package key specifying the package containing the sites content
+``--path``
+  relative or absolute path and filename to the export files
+``--content-repository``
+  contentRepository
+``--verbose``
+  verbose
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:site:importall`:
+
+``neos.neos:site:importall``
+****************************
+
+**Import sites**
+
+This command allows importing sites from the given path/package. The format must
+be identical to that produced by the exportAll command.
+
+If a path is specified, this command expects the corresponding directory to contain the exported files
+
+If a package key is specified, this command expects the export files to be located in the private resources
+directory of the given package (Resources/Private/Content).
+
+**Note that the live workspace has to be empty prior to importing.**
+
+
+
+Options
+^^^^^^^
+
+``--package-key``
+  Package key specifying the package containing the sites content
+``--path``
+  relative or absolute path and filename to the export files
+``--content-repository``
+  contentRepository
+``--verbose``
+  verbose
+
+
+
+
+
 .. _`Neos Command Reference: NEOS.NEOS neos.neos:site:list`:
 
 ``neos.neos:site:list``
@@ -2416,22 +2435,26 @@ Arguments
 
 
 
-.. _`Neos Command Reference: NEOS.NEOS neos.neos:site:prune`:
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:site:pruneall`:
 
-``neos.neos:site:prune``
-************************
+``neos.neos:site:pruneall``
+***************************
 
-**Remove site with content and related data (with globbing)**
-
-In the future we need some more sophisticated cleanup.
-
-Arguments
-^^^^^^^^^
-
-``--site-node``
-  Name for site root nodes to clear only content of this sites (globbing is supported)
+**This will completely prune the data of the specified content repository and remove all site-records.**
 
 
+
+
+
+Options
+^^^^^^^
+
+``--content-repository``
+  Prune the cr without confirmation. This cannot be reverted!
+``--force``
+  force
+``--verbose``
+  verbose
 
 
 
@@ -2729,14 +2752,125 @@ Options
 
 
 
-.. _`Neos Command Reference: NEOS.NEOS neos.neos:workspace:create`:
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:workspace:assignrole`:
 
-``neos.neos:workspace:create``
-******************************
+``neos.neos:workspace:assignrole``
+**********************************
 
-**Create a new workspace**
+**Assign a workspace role to the given user/user group**
 
-This command creates a new workspace.
+Without explicit workspace roles, only administrators can change the corresponding workspace.
+With this command, a user or group (represented by a Flow role identifier) can be granted one of the two roles:
+- viewer: Can read from the workspace
+- collaborator: Can read from and write to the workspace
+- manager: Can read from and write to the workspace and manage it (i.e. change metadata & role assignments)
+
+Examples:
+
+To grant editors read and write access to a (shared) workspace: *./flow workspace:assignrole some-workspace "Neos.Neos:AbstractEditor" collaborator*
+
+To grant a specific user read, write and manage access to a workspace: *./flow workspace:assignrole some-workspace admin manager --type user*
+
+{@see WorkspaceRole}
+
+Arguments
+^^^^^^^^^
+
+``--workspace``
+  Name of the workspace, for example "some-workspace
+``--subject``
+  The user/group that should be assigned. By default, this is expected to be a Flow role identifier (e.g. 'Neos.Neos:AbstractEditor') – if $type is 'user', this is the username (aka account identifier) of a Neos user
+``--role``
+  Role to assign, either 'viewer', 'collaborator' or 'manager' – a viewer can only read from the workspace, a collaborator can read and write from/to the workspace. A manager can _on top_ change the workspace metadata & roles itself
+
+
+
+Options
+^^^^^^^
+
+``--content-repository``
+  Identifier of the content repository. (Default: 'default')
+``--type``
+  Type of role, either 'group' (default) or 'user' – if 'group', $subject is expected to be a Flow role identifier, otherwise the username (aka account identifier) of a Neos user
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:workspace:createpersonal`:
+
+``neos.neos:workspace:createpersonal``
+**************************************
+
+**Create a new personal workspace for the specified user**
+
+
+
+Arguments
+^^^^^^^^^
+
+``--workspace``
+  Name of the workspace, for example "christmas-campaign
+``--owner``
+  The username (aka account identifier) of a User to own the workspace
+
+
+
+Options
+^^^^^^^
+
+``--base-workspace``
+  Name of the base workspace. If none is specified, "live" is assumed.
+``--title``
+  Human friendly title of the workspace, for example "Christmas Campaign
+``--description``
+  A description explaining the purpose of the new workspace
+``--content-repository``
+  Identifier of the content repository. (Default: 'default')
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:workspace:createroot`:
+
+``neos.neos:workspace:createroot``
+**********************************
+
+**Create a new root workspace for a content repository**
+
+NOTE: By default, only administrators can access workspaces without role assignments. Use *workspace:assignrole* to add workspace permissions
+
+Arguments
+^^^^^^^^^
+
+``--name``
+  Name of the new root
+
+
+
+Options
+^^^^^^^
+
+``--content-repository``
+  Identifier of the content repository. (Default: 'default')
+``--title``
+  Optional title of the workspace
+``--description``
+  Optional description of the workspace
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:workspace:createshared`:
+
+``neos.neos:workspace:createshared``
+************************************
+
+**Create a new shared workspace**
+
+NOTE: By default, only administrators can access workspaces without role assignments. Use *workspace:assignrole* to add workspace permissions
 
 Arguments
 ^^^^^^^^^
@@ -2755,37 +2889,8 @@ Options
   Human friendly title of the workspace, for example "Christmas Campaign
 ``--description``
   A description explaining the purpose of the new workspace
-``--owner``
-  The identifier of a User to own the workspace
-``--content-repository-identifier``
-  
-
-
-
-
-
-.. _`Neos Command Reference: NEOS.NEOS neos.neos:workspace:createroot`:
-
-``neos.neos:workspace:createroot``
-**********************************
-
-**Create a new root workspace for a content repository.**
-
-
-
-Arguments
-^^^^^^^^^
-
-``--name``
-  
-
-
-
-Options
-^^^^^^^
-
-``--content-repository-identifier``
-  
+``--content-repository``
+  Identifier of the content repository. (Default: 'default')
 
 
 
@@ -2814,16 +2919,10 @@ Options
 
 ``--force``
   Delete the workspace and all of its contents
-``--content-repository-identifier``
-  contentRepositoryIdentifier
+``--content-repository``
+  The name of the content repository. (Default: 'default')
 
 
-
-Related commands
-^^^^^^^^^^^^^^^^
-
-``neos.neos:workspace:discard``
-  Discard changes in workspace
 
 
 
@@ -2847,8 +2946,8 @@ Arguments
 Options
 ^^^^^^^
 
-``--content-repository-identifier``
-  
+``--content-repository``
+  Identifier of the content repository. (Default: 'default')
 
 
 
@@ -2868,8 +2967,8 @@ Options
 Options
 ^^^^^^^
 
-``--content-repository-identifier``
-  contentRepositoryIdentifier
+``--content-repository``
+  The name of the content repository. (Default: 'default')
 
 
 
@@ -2895,8 +2994,8 @@ Arguments
 Options
 ^^^^^^^
 
-``--content-repository-identifier``
-  
+``--content-repository``
+  Identifier of the content repository. (Default: 'default')
 
 
 
@@ -2922,8 +3021,8 @@ Arguments
 Options
 ^^^^^^^
 
-``--content-repository-identifier``
-  
+``--content-repository``
+  Identifier of the content repository. (Default: 'default')
 ``--force``
   Rebase all events that do not conflict
 
@@ -2945,10 +3044,203 @@ Options
 Options
 ^^^^^^^
 
-``--content-repository-identifier``
-  contentRepositoryIdentifier
+``--content-repository``
+  The name of the content repository. (Default: 'default')
 ``--force``
-  force
+  
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:workspace:setdescription`:
+
+``neos.neos:workspace:setdescription``
+**************************************
+
+**Set/change the description of a workspace**
+
+
+
+Arguments
+^^^^^^^^^
+
+``--workspace``
+  Name of the workspace, for example "some-workspace
+``--new-description``
+  Human friendly description of the workspace
+
+
+
+Options
+^^^^^^^
+
+``--content-repository``
+  Identifier of the content repository. (Default: 'default')
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:workspace:settitle`:
+
+``neos.neos:workspace:settitle``
+********************************
+
+**Set/change the title of a workspace**
+
+
+
+Arguments
+^^^^^^^^^
+
+``--workspace``
+  Name of the workspace, for example "some-workspace
+``--new-title``
+  Human friendly title of the workspace, for example "Some workspace
+
+
+
+Options
+^^^^^^^
+
+``--content-repository``
+  Identifier of the content repository. (Default: 'default')
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:workspace:show`:
+
+``neos.neos:workspace:show``
+****************************
+
+**Display details for the specified workspace**
+
+
+
+Arguments
+^^^^^^^^^
+
+``--workspace``
+  Name of the workspace to show
+
+
+
+Options
+^^^^^^^
+
+``--content-repository``
+  The name of the content repository. (Default: 'default')
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:workspace:unassignrole`:
+
+``neos.neos:workspace:unassignrole``
+************************************
+
+**Unassign a workspace role from the given user/user group**
+
+
+
+Arguments
+^^^^^^^^^
+
+``--workspace``
+  Name of the workspace, for example "some-workspace
+``--subject``
+  The user/group that should be unassigned. By default, this is expected to be a Flow role identifier (e.g. 'Neos.Neos:AbstractEditor') – if $type is 'user', this is the username (aka account identifier) of a Neos user
+
+
+
+Options
+^^^^^^^
+
+``--content-repository``
+  Identifier of the content repository. (Default: 'default')
+``--type``
+  Type of role, either 'group' (default) or 'user' – if 'group', $subject is expected to be a Flow role identifier, otherwise the username (aka account identifier) of a Neos user
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.NEOS.SETUP`:
+
+Package *NEOS.NEOS.SETUP*
+-------------------------
+
+
+.. _`Neos Command Reference: NEOS.NEOS.SETUP neos.neos.setup:setup:imagehandler`:
+
+``neos.neos.setup:setup:imagehandler``
+**************************************
+
+****
+
+
+
+
+
+Options
+^^^^^^^
+
+``--driver``
+  driver
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.SETUP`:
+
+Package *NEOS.SETUP*
+--------------------
+
+
+.. _`Neos Command Reference: NEOS.SETUP neos.setup:setup:database`:
+
+``neos.setup:setup:database``
+*****************************
+
+**Configure the database connection for flow persistence**
+
+
+
+
+
+Options
+^^^^^^^
+
+``--driver``
+  Driver
+``--host``
+  Hostname or IP
+``--dbname``
+  Database name
+``--user``
+  Username
+``--password``
+  Password
+
+
+
+
+
+.. _`Neos Command Reference: NEOS.SETUP neos.setup:setup:index`:
+
+``neos.setup:setup:index``
+**************************
+
+**Show information about the system health**
+
+
+
+
 
 
 
@@ -2967,15 +3259,13 @@ Package *NEOS.SITEKICKSTARTER*
 
 **Kickstart a new site package**
 
-This command generates a new site package with basic Fusion and Sites.xml
+This command generates a new site package with basic Fusion
 
 Arguments
 ^^^^^^^^^
 
 ``--package-key``
   The packageKey for your site
-``--site-name``
-  The siteName of your site
 
 
 

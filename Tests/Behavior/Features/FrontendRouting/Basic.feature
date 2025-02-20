@@ -44,7 +44,6 @@ Feature: Basic routing functionality (match & resolve document nodes in one dime
     #        earl-o-documentbourgh
     #      nody-mc-nodeface
     #
-    And I am in workspace "live" and dimension space point {}
     And the following CreateNodeAggregateWithNode commands are executed:
       | nodeAggregateId        | parentNodeAggregateId  | nodeTypeName                   | initialPropertyValues                    | nodeName |
       | shernode-homes         | lady-eleonode-rootford | Neos.Neos:Test.Routing.Page    | {"uriPathSegment": "ignore-me"}          | node1    |
@@ -114,7 +113,7 @@ Feature: Basic routing functionality (match & resolve document nodes in one dime
 
     # !!! when caches were still enabled (without calling DocumentUriPathFinder->disableCache()), the replay below will
     # show really "interesting" (non-correct) results. This was bug #4253.
-    When I replay the "Neos\Neos\FrontendRouting\Projection\DocumentUriPathProjection" projection
+    When I replay the "Neos.Neos:DocumentUriPathProjection" projection
     Then the node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough-updated-b"
     And the node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough-updated-b/earl-document"
 

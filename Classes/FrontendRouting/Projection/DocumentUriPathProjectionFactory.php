@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Neos\Neos\FrontendRouting\Projection;
 
 use Doctrine\DBAL\Connection;
-use Neos\ContentRepository\Core\Factory\ProjectionFactoryDependencies;
+use Neos\ContentRepository\Core\Factory\SubscriberFactoryDependencies;
 use Neos\ContentRepository\Core\Projection\ProjectionFactoryInterface;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 
@@ -35,7 +35,7 @@ final class DocumentUriPathProjectionFactory implements ProjectionFactoryInterfa
 
 
     public function build(
-        ProjectionFactoryDependencies $projectionFactoryDependencies,
+        SubscriberFactoryDependencies $projectionFactoryDependencies,
         array $options,
     ): DocumentUriPathProjection {
 

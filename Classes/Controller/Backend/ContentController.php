@@ -16,6 +16,7 @@ namespace Neos\Neos\Controller\Backend;
 
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Mvc\Controller\ActionController;
@@ -38,8 +39,6 @@ use Neos\Media\Exception\ThumbnailServiceException;
 use Neos\Media\TypeConverter\AssetInterfaceConverter;
 use Neos\Media\TypeConverter\ImageInterfaceArrayPresenter;
 use Neos\Neos\Controller\BackendUserTranslationTrait;
-use Neos\Neos\FrontendRouting\NodeAddressFactory;
-use Neos\Neos\FrontendRouting\SiteDetection\SiteDetectionResult;
 use Neos\Neos\TypeConverter\EntityToIdentityConverter;
 use Neos\Neos\Utility\NodeTypeWithFallbackProvider;
 
@@ -146,18 +145,15 @@ class ContentController extends ActionController
      */
     public function uploadAssetAction(Asset $asset, string $metadata, string $node, string $propertyName)
     {
-        $nodeAddressString = $node;
-        $contentRepositoryId = SiteDetectionResult::fromRequest($this->request->getHttpRequest())
-            ->contentRepositoryId;
-        $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
-        $nodeAddress = NodeAddressFactory::create($contentRepository)->createFromUriString($nodeAddressString);
+        $nodeAddress = NodeAddress::fromJsonString($node);
 
+        $contentRepository = $this->contentRepositoryRegistry->get($nodeAddress->contentRepositoryId);
         $node = $contentRepository->getContentGraph($nodeAddress->workspaceName)
             ->getSubgraph(
                 $nodeAddress->dimensionSpacePoint,
                 VisibilityConstraints::withoutRestrictions()
             )
-            ->findNodeById($nodeAddress->nodeAggregateId);
+            ->findNodeById($nodeAddress->aggregateId);
 
 
         $this->response->setContentType('application/json');

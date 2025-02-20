@@ -15,36 +15,34 @@ declare(strict_types=1);
 namespace Neos\Neos\PendingChangesProjection;
 
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\DBALException;
-use Doctrine\DBAL\Schema\AbstractSchemaManager;
+use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Schema\Column;
+use Doctrine\DBAL\Schema\SchemaException;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\Types;
-use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\DimensionSpace\OriginDimensionSpacePoint;
 use Neos\ContentRepository\Core\EventStore\EventInterface;
+use Neos\ContentRepository\Core\Feature\ContentStreamRemoval\Event\ContentStreamWasRemoved;
 use Neos\ContentRepository\Core\Feature\DimensionSpaceAdjustment\Event\DimensionSpacePointWasMoved;
 use Neos\ContentRepository\Core\Feature\NodeCreation\Event\NodeAggregateWithNodeWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeModification\Event\NodePropertiesWereSet;
 use Neos\ContentRepository\Core\Feature\NodeMove\Event\NodeAggregateWasMoved;
 use Neos\ContentRepository\Core\Feature\NodeReferencing\Event\NodeReferencesWereSet;
 use Neos\ContentRepository\Core\Feature\NodeRemoval\Event\NodeAggregateWasRemoved;
+use Neos\ContentRepository\Core\Feature\NodeRenaming\Event\NodeAggregateNameWasChanged;
+use Neos\ContentRepository\Core\Feature\NodeTypeChange\Event\NodeAggregateTypeWasChanged;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeGeneralizationVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodePeerVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeSpecializationVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasTagged;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasUntagged;
-use Neos\ContentRepository\Core\Feature\WorkspaceCreation\Event\RootWorkspaceWasCreated;
-use Neos\ContentRepository\Core\Infrastructure\DbalCheckpointStorage;
 use Neos\ContentRepository\Core\Infrastructure\DbalSchemaDiff;
 use Neos\ContentRepository\Core\Infrastructure\DbalSchemaFactory;
-use Neos\ContentRepository\Core\Projection\CheckpointStorageStatusType;
 use Neos\ContentRepository\Core\Projection\ProjectionInterface;
 use Neos\ContentRepository\Core\Projection\ProjectionStatus;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
-use Neos\EventStore\Model\Event\SequenceNumber;
 use Neos\EventStore\Model\EventEnvelope;
 
 /**
@@ -54,49 +52,31 @@ use Neos\EventStore\Model\EventEnvelope;
  */
 class ChangeProjection implements ProjectionInterface
 {
-    private const DEFAULT_TEXT_COLLATION = 'utf8mb4_unicode_520_ci';
-
     /**
      * @var ChangeFinder|null Cache for the ChangeFinder returned by {@see getState()},
      * so that always the same instance is returned
      */
     private ?ChangeFinder $changeFinder = null;
 
-    /**
-     * @var array<string>|null
-     */
-    private ?array $liveContentStreamIdsRuntimeCache = null;
-    private DbalCheckpointStorage $checkpointStorage;
-
     public function __construct(
         private readonly Connection $dbal,
         private readonly string $tableNamePrefix,
     ) {
-        $this->checkpointStorage = new DbalCheckpointStorage(
-            $this->dbal,
-            $this->tableNamePrefix . '_checkpoint',
-            self::class
-        );
     }
 
-
+    /**
+     * @return void
+     * @throws DBALException
+     */
     public function setUp(): void
     {
         foreach ($this->determineRequiredSqlStatements() as $statement) {
             $this->dbal->executeStatement($statement);
         }
-        $this->checkpointStorage->setUp();
     }
 
     public function status(): ProjectionStatus
     {
-        $checkpointStorageStatus = $this->checkpointStorage->status();
-        if ($checkpointStorageStatus->type === CheckpointStorageStatusType::ERROR) {
-            return ProjectionStatus::error($checkpointStorageStatus->details);
-        }
-        if ($checkpointStorageStatus->type === CheckpointStorageStatusType::SETUP_REQUIRED) {
-            return ProjectionStatus::setupRequired($checkpointStorageStatus->details);
-        }
         try {
             $this->dbal->connect();
         } catch (\Throwable $e) {
@@ -115,26 +95,25 @@ class ChangeProjection implements ProjectionInterface
 
     /**
      * @return array<string>
+     * @throws DBALException
+     * @throws SchemaException
      */
     private function determineRequiredSqlStatements(): array
     {
         $connection = $this->dbal;
-        $schemaManager = $connection->getSchemaManager();
-        if (!$schemaManager instanceof AbstractSchemaManager) {
-            throw new \RuntimeException('Failed to retrieve Schema Manager', 1625653914);
-        }
+        $platform = $this->dbal->getDatabasePlatform();
 
         $changeTable = new Table($this->tableNamePrefix, [
-            DbalSchemaFactory::columnForContentStreamId('contentStreamId')->setNotNull(true),
+            DbalSchemaFactory::columnForContentStreamId('contentStreamId', $platform)->setNotNull(true),
             (new Column('created', Type::getType(Types::BOOLEAN)))->setNotnull(true),
             (new Column('changed', Type::getType(Types::BOOLEAN)))->setNotnull(true),
             (new Column('moved', Type::getType(Types::BOOLEAN)))->setNotnull(true),
-            DbalSchemaFactory::columnForNodeAggregateId('nodeAggregateId')->setNotNull(true),
-            DbalSchemaFactory::columnForDimensionSpacePoint('originDimensionSpacePoint')->setNotNull(false),
-            DbalSchemaFactory::columnForDimensionSpacePointHash('originDimensionSpacePointHash')->setNotNull(true),
+            DbalSchemaFactory::columnForNodeAggregateId('nodeAggregateId', $platform)->setNotnull(true),
+            DbalSchemaFactory::columnForDimensionSpacePoint('originDimensionSpacePoint', $platform)->setNotnull(false),
+            DbalSchemaFactory::columnForDimensionSpacePointHash('originDimensionSpacePointHash', $platform)->setNotnull(true),
             (new Column('deleted', Type::getType(Types::BOOLEAN)))->setNotnull(true),
             // Despite the name suggesting this might be an anchor point of sorts, this is a nodeAggregateId type
-            DbalSchemaFactory::columnForNodeAggregateId('removalAttachmentPoint')->setNotNull(false)
+            DbalSchemaFactory::columnForNodeAggregateId('removalAttachmentPoint', $platform)->setNotnull(false)
         ]);
 
         $changeTable->setPrimaryKey([
@@ -143,46 +122,20 @@ class ChangeProjection implements ProjectionInterface
             'originDimensionSpacePointHash'
         ]);
 
-        $liveContentStreamsTable = new Table($this->tableNamePrefix . '_livecontentstreams', [
-            DbalSchemaFactory::ColumnForContentStreamId('contentstreamid')->setNotNull(true),
-            (new Column('workspacename', Type::getType(Types::STRING)))->setLength(255)->setDefault('')->setNotnull(true)->setCustomSchemaOption('collation', self::DEFAULT_TEXT_COLLATION)
-        ]);
-        $liveContentStreamsTable->setPrimaryKey(['contentstreamid']);
+        $schema = DbalSchemaFactory::createSchemaWithTables($connection, [$changeTable]);
+        $statements = DbalSchemaDiff::determineRequiredSqlStatements($connection, $schema);
 
-        $schema = DbalSchemaFactory::createSchemaWithTables($schemaManager, [$changeTable, $liveContentStreamsTable]);
-        return DbalSchemaDiff::determineRequiredSqlStatements($connection, $schema);
+        return $statements;
     }
 
-    public function reset(): void
+    public function resetState(): void
     {
         $this->dbal->exec('TRUNCATE ' . $this->tableNamePrefix);
-        $this->dbal->exec('TRUNCATE ' . $this->tableNamePrefix . '_livecontentstreams');
-        $this->checkpointStorage->acquireLock();
-        $this->checkpointStorage->updateAndReleaseLock(SequenceNumber::none());
-    }
-
-    public function canHandle(EventInterface $event): bool
-    {
-        return in_array($event::class, [
-            RootWorkspaceWasCreated::class,
-            NodeAggregateWasMoved::class,
-            NodePropertiesWereSet::class,
-            NodeReferencesWereSet::class,
-            NodeAggregateWithNodeWasCreated::class,
-            SubtreeWasTagged::class,
-            SubtreeWasUntagged::class,
-            NodeAggregateWasRemoved::class,
-            DimensionSpacePointWasMoved::class,
-            NodeGeneralizationVariantWasCreated::class,
-            NodeSpecializationVariantWasCreated::class,
-            NodePeerVariantWasCreated::class
-        ]);
     }
 
     public function apply(EventInterface $event, EventEnvelope $eventEnvelope): void
     {
         match ($event::class) {
-            RootWorkspaceWasCreated::class => $this->whenRootWorkspaceWasCreated($event),
             NodeAggregateWasMoved::class => $this->whenNodeAggregateWasMoved($event),
             NodePropertiesWereSet::class => $this->whenNodePropertiesWereSet($event),
             NodeReferencesWereSet::class => $this->whenNodeReferencesWereSet($event),
@@ -194,13 +147,11 @@ class ChangeProjection implements ProjectionInterface
             NodeSpecializationVariantWasCreated::class => $this->whenNodeSpecializationVariantWasCreated($event),
             NodeGeneralizationVariantWasCreated::class => $this->whenNodeGeneralizationVariantWasCreated($event),
             NodePeerVariantWasCreated::class => $this->whenNodePeerVariantWasCreated($event),
-            default => throw new \InvalidArgumentException(sprintf('Unsupported event %s', get_debug_type($event))),
+            NodeAggregateTypeWasChanged::class => $this->whenNodeAggregateTypeWasChanged($event),
+            NodeAggregateNameWasChanged::class => $this->whenNodeAggregateNameWasChanged($event),
+            ContentStreamWasRemoved::class => $this->whenContentStreamWasRemoved($event),
+            default => null,
         };
-    }
-
-    public function getCheckpointStorage(): DbalCheckpointStorage
-    {
-        return $this->checkpointStorage;
     }
 
     public function getState(): ChangeFinder
@@ -214,43 +165,33 @@ class ChangeProjection implements ProjectionInterface
         return $this->changeFinder;
     }
 
-    private function whenRootWorkspaceWasCreated(RootWorkspaceWasCreated $event): void
-    {
-        try {
-            $this->dbal->insert($this->tableNamePrefix . '_livecontentstreams', [
-                'contentStreamId' => $event->newContentStreamId->value,
-                'workspaceName' => $event->workspaceName->value,
-            ]);
-        } catch (DBALException $e) {
-            throw new \RuntimeException(sprintf(
-                'Failed to insert root content stream id of the root workspace "%s": %s',
-                $event->workspaceName->value,
-                $e->getMessage()
-            ), 1689933563, $e);
-        }
-    }
-
     private function whenNodeAggregateWasMoved(NodeAggregateWasMoved $event): void
     {
+        if ($event->workspaceName->isLive()) {
+            return;
+        }
+
         $affectedDimensionSpacePoints = iterator_to_array($event->succeedingSiblingsForCoverage->toDimensionSpacePointSet());
-        $arbitraryDimensionSpacePoint = reset($affectedDimensionSpacePoints);
-        if ($arbitraryDimensionSpacePoint instanceof DimensionSpacePoint) {
+        foreach ($affectedDimensionSpacePoints as $affectedDimensionSpacePoint) {
             // always the case due to constraint enforcement (at least one DSP is selected and must have a succeeding sibling or null)
 
-            // WORKAROUND: we simply use the event's first DSP here as the origin dimension space point.
-            // But this DSP is not necessarily occupied.
-            // @todo properly handle this by storing the necessary information in the projection
+            // We simply use the events DSPs here to store them as `Change` in even if the DSP is not necessarily  occupied.
+            // this is not problematic as the DSP should only be used for providing additional information where a change has effects instead of locating its origin
+            // todo possibly rename in the `Change` the field to '$affectedDimensionSpacePoint' field instead, as well use it now like that.
 
             $this->markAsMoved(
                 $event->getContentStreamId(),
                 $event->getNodeAggregateId(),
-                OriginDimensionSpacePoint::fromDimensionSpacePoint($arbitraryDimensionSpacePoint)
+                OriginDimensionSpacePoint::fromDimensionSpacePoint($affectedDimensionSpacePoint)
             );
         }
     }
 
     private function whenNodePropertiesWereSet(NodePropertiesWereSet $event): void
     {
+        if ($event->workspaceName->isLive()) {
+            return;
+        }
         $this->markAsChanged(
             $event->contentStreamId,
             $event->nodeAggregateId,
@@ -260,10 +201,13 @@ class ChangeProjection implements ProjectionInterface
 
     private function whenNodeReferencesWereSet(NodeReferencesWereSet $event): void
     {
+        if ($event->workspaceName->isLive()) {
+            return;
+        }
         foreach ($event->affectedSourceOriginDimensionSpacePoints as $dimensionSpacePoint) {
             $this->markAsChanged(
                 $event->contentStreamId,
-                $event->sourceNodeAggregateId,
+                $event->nodeAggregateId,
                 $dimensionSpacePoint
             );
         }
@@ -271,6 +215,9 @@ class ChangeProjection implements ProjectionInterface
 
     private function whenNodeAggregateWithNodeWasCreated(NodeAggregateWithNodeWasCreated $event): void
     {
+        if ($event->workspaceName->isLive()) {
+            return;
+        }
         $this->markAsCreated(
             $event->contentStreamId,
             $event->nodeAggregateId,
@@ -280,6 +227,9 @@ class ChangeProjection implements ProjectionInterface
 
     private function whenSubtreeWasTagged(SubtreeWasTagged $event): void
     {
+        if ($event->workspaceName->isLive()) {
+            return;
+        }
         foreach ($event->affectedDimensionSpacePoints as $dimensionSpacePoint) {
             $this->markAsChanged(
                 $event->contentStreamId,
@@ -291,6 +241,9 @@ class ChangeProjection implements ProjectionInterface
 
     private function whenSubtreeWasUntagged(SubtreeWasUntagged $event): void
     {
+        if ($event->workspaceName->isLive()) {
+            return;
+        }
         foreach ($event->affectedDimensionSpacePoints as $dimensionSpacePoint) {
             $this->markAsChanged(
                 $event->contentStreamId,
@@ -302,11 +255,11 @@ class ChangeProjection implements ProjectionInterface
 
     private function whenNodeAggregateWasRemoved(NodeAggregateWasRemoved $event): void
     {
-        if ($this->isLiveContentStream($event->contentStreamId)) {
+        if ($event->workspaceName->isLive()) {
             return;
         }
 
-        $this->dbal->executeUpdate(
+        $this->dbal->executeStatement(
             'DELETE FROM ' . $this->tableNamePrefix . '
                 WHERE
                     contentStreamId = :contentStreamId
@@ -325,7 +278,7 @@ class ChangeProjection implements ProjectionInterface
         );
 
         foreach ($event->affectedOccupiedDimensionSpacePoints as $occupiedDimensionSpacePoint) {
-            $this->dbal->executeUpdate(
+            $this->dbal->executeStatement(
                 'INSERT INTO ' . $this->tableNamePrefix . '
                         (contentStreamId, nodeAggregateId, originDimensionSpacePoint,
                          originDimensionSpacePointHash, created, deleted, changed, moved, removalAttachmentPoint)
@@ -376,6 +329,9 @@ class ChangeProjection implements ProjectionInterface
 
     private function whenNodeSpecializationVariantWasCreated(NodeSpecializationVariantWasCreated $event): void
     {
+        if ($event->workspaceName->isLive()) {
+            return;
+        }
         $this->markAsCreated(
             $event->contentStreamId,
             $event->nodeAggregateId,
@@ -385,6 +341,9 @@ class ChangeProjection implements ProjectionInterface
 
     private function whenNodeGeneralizationVariantWasCreated(NodeGeneralizationVariantWasCreated $event): void
     {
+        if ($event->workspaceName->isLive()) {
+            return;
+        }
         $this->markAsCreated(
             $event->contentStreamId,
             $event->nodeAggregateId,
@@ -394,11 +353,41 @@ class ChangeProjection implements ProjectionInterface
 
     private function whenNodePeerVariantWasCreated(NodePeerVariantWasCreated $event): void
     {
+        if ($event->workspaceName->isLive()) {
+            return;
+        }
         $this->markAsCreated(
             $event->contentStreamId,
             $event->nodeAggregateId,
             $event->peerOrigin
         );
+    }
+
+    private function whenNodeAggregateTypeWasChanged(NodeAggregateTypeWasChanged $event): void
+    {
+        if ($event->workspaceName->isLive()) {
+            return;
+        }
+        $this->markAggregateAsChanged(
+            $event->contentStreamId,
+            $event->nodeAggregateId,
+        );
+    }
+
+    private function whenNodeAggregateNameWasChanged(NodeAggregateNameWasChanged $event): void
+    {
+        if ($event->workspaceName->isLive()) {
+            return;
+        }
+        $this->markAggregateAsChanged(
+            $event->contentStreamId,
+            $event->nodeAggregateId,
+        );
+    }
+
+    private function whenContentStreamWasRemoved(ContentStreamWasRemoved $event): void
+    {
+        $this->removeChangesForContentStreamId($event->contentStreamId);
     }
 
     private function markAsChanged(
@@ -410,6 +399,19 @@ class ChangeProjection implements ProjectionInterface
             $contentStreamId,
             $nodeAggregateId,
             $originDimensionSpacePoint,
+            static function (Change $change) {
+                $change->changed = true;
+            }
+        );
+    }
+
+    private function markAggregateAsChanged(
+        ContentStreamId $contentStreamId,
+        NodeAggregateId $nodeAggregateId,
+    ): void {
+        $this->modifyChangeForAggregate(
+            $contentStreamId,
+            $nodeAggregateId,
             static function (Change $change) {
                 $change->changed = true;
             }
@@ -453,14 +455,27 @@ class ChangeProjection implements ProjectionInterface
         OriginDimensionSpacePoint $originDimensionSpacePoint,
         callable $modifyFn
     ): void {
-        if ($this->isLiveContentStream($contentStreamId)) {
-            return;
-        }
-
         $change = $this->getChange($contentStreamId, $nodeAggregateId, $originDimensionSpacePoint);
 
         if ($change === null) {
             $change = new Change($contentStreamId, $nodeAggregateId, $originDimensionSpacePoint, false, false, false, false);
+            $modifyFn($change);
+            $change->addToDatabase($this->dbal, $this->tableNamePrefix);
+        } else {
+            $modifyFn($change);
+            $change->updateToDatabase($this->dbal, $this->tableNamePrefix);
+        }
+    }
+
+    private function modifyChangeForAggregate(
+        ContentStreamId $contentStreamId,
+        NodeAggregateId $nodeAggregateId,
+        callable $modifyFn
+    ): void {
+        $change = $this->getChangeForAggregate($contentStreamId, $nodeAggregateId);
+
+        if ($change === null) {
+            $change = new Change($contentStreamId, $nodeAggregateId, null, false, false, false, false);
             $modifyFn($change);
             $change->addToDatabase($this->dbal, $this->tableNamePrefix);
         } else {
@@ -490,11 +505,37 @@ AND n.originDimensionSpacePointHash = :originDimensionSpacePointHash',
         return $changeRow ? Change::fromDatabaseRow($changeRow) : null;
     }
 
-    private function isLiveContentStream(ContentStreamId $contentStreamId): bool
+    private function getChangeForAggregate(
+        ContentStreamId $contentStreamId,
+        NodeAggregateId $nodeAggregateId,
+    ): ?Change {
+        $changeRow = $this->dbal->executeQuery(
+            'SELECT n.* FROM ' . $this->tableNamePrefix . ' n
+WHERE n.contentStreamId = :contentStreamId
+AND n.nodeAggregateId = :nodeAggregateId
+AND n.origindimensionspacepointhash = :origindimensionspacepointhash',
+            [
+                'contentStreamId' => $contentStreamId->value,
+                'nodeAggregateId' => $nodeAggregateId->value,
+                'origindimensionspacepointhash' => Change::AGGREGATE_DIMENSIONSPACEPOINT_HASH_PLACEHOLDER
+            ]
+        )->fetchAssociative();
+
+        return $changeRow ? Change::fromDatabaseRow($changeRow) : null;
+    }
+
+    private function removeChangesForContentStreamId(ContentStreamId $contentStreamId): void
     {
-        if ($this->liveContentStreamIdsRuntimeCache === null) {
-            $this->liveContentStreamIdsRuntimeCache = $this->dbal->fetchFirstColumn('SELECT contentstreamid FROM ' . $this->tableNamePrefix . '_livecontentstreams');
-        }
-        return in_array($contentStreamId->value, $this->liveContentStreamIdsRuntimeCache, true);
+        $statement = <<<SQL
+            DELETE FROM {$this->tableNamePrefix}
+            WHERE
+                contentStreamId = :contentStreamId
+        SQL;
+        $this->dbal->executeStatement(
+            $statement,
+            [
+                'contentStreamId' => $contentStreamId->value,
+            ]
+        );
     }
 }

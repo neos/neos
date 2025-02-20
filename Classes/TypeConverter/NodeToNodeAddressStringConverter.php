@@ -15,27 +15,19 @@ declare(strict_types=1);
 namespace Neos\Neos\TypeConverter;
 
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Property\PropertyMappingConfigurationInterface;
 use Neos\Flow\Property\TypeConverter\AbstractTypeConverter;
-use Neos\Neos\FrontendRouting\NodeAddressFactory;
 
 /**
- * To be removed legacy fragment for property mapping nodes in controllers.
- * MUST not be used and MUST be removed before Neos 9 release.
- * See issue: https://github.com/neos/neos-development-collection/issues/4873
- *
  * @Flow\Scope("singleton")
- * @deprecated must be removed before Neos 9 release!!!
  */
 class NodeToNodeAddressStringConverter extends AbstractTypeConverter
 {
-    /**
-     * @Flow\Inject
-     * @var ContentRepositoryRegistry
-     */
-    protected $contentRepositoryRegistry;
+    #[Flow\Inject]
+    protected ContentRepositoryRegistry $contentRepositoryRegistry;
 
     /**
      * @var array<int,string>
@@ -62,11 +54,8 @@ class NodeToNodeAddressStringConverter extends AbstractTypeConverter
         $source,
         $targetType = null,
         array $subProperties = [],
-        PropertyMappingConfigurationInterface $configuration = null
+        ?PropertyMappingConfigurationInterface $configuration = null
     ) {
-        $contentRepository = $this->contentRepositoryRegistry->get(
-            $source->contentRepositoryId
-        );
-        return NodeAddressFactory::create($contentRepository)->createFromNode($source)->serializeForUri();
+        return NodeAddress::fromNode($source)->toJson();
     }
 }

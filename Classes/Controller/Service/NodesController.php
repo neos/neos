@@ -23,9 +23,13 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\AbsoluteNodePath;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentSubgraphInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindChildNodesFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindDescendantNodesFilter;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\NodeType\ExpandedNodeTypeCriteria;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\NodeType\NodeTypeCriteria;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\SearchTerm\SearchTerm;
+use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\SearchTerm\SearchTermMatcher;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregate;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
@@ -35,7 +39,6 @@ use Neos\Flow\Property\PropertyMapper;
 use Neos\FluidAdaptor\View\TemplateView;
 use Neos\Neos\Controller\BackendUserTranslationTrait;
 use Neos\Neos\Domain\Service\NodeTypeNameFactory;
-use Neos\Neos\FrontendRouting\NodeAddressFactory;
 use Neos\Neos\FrontendRouting\SiteDetection\SiteDetectionResult;
 use Neos\Neos\Ui\Domain\Service\NodePropertyConverterService;
 use Neos\Neos\View\Service\NodeJsonView;
@@ -107,9 +110,14 @@ class NodesController extends ActionController
         string $workspaceName = 'live',
         array $dimensions = [],
         array $nodeTypes = [NodeTypeNameFactory::NAME_DOCUMENT],
-        string $contextNode = null,
+        ?string $contextNode = null,
         array|string $nodeIdentifiers = []
     ): void {
+        $searchTerm = SearchTerm::fulltext($searchTerm);
+        $nodeTypeCriteria = NodeTypeCriteria::create(
+            NodeTypeNames::fromStringArray($nodeTypes),
+            NodeTypeNames::createEmpty()
+        );
         $nodeIds = $nodeIds ?: $nodeIdentifiers;
         $nodeIds = is_array($nodeIds) ? $nodeIds : [$nodeIds];
         $contentRepositoryId = SiteDetectionResult::fromRequest($this->request->getHttpRequest())
@@ -122,7 +130,7 @@ class NodesController extends ActionController
         $nodeAddress = null;
         if (!$nodePath) {
             $nodeAddress = $contextNode
-                ? NodeAddressFactory::create($contentRepository)->createFromUriString($contextNode)
+                ? NodeAddress::fromJsonString($contextNode)
                 : null;
         }
 
@@ -139,30 +147,37 @@ class NodesController extends ActionController
             );
         }
 
+        $nodes = [];
         if ($nodeIds === [] && (!is_null($nodeAddress) || !is_null($nodePath))) {
             if (!is_null($nodeAddress)) {
-                $entryNode = $subgraph->findNodeById($nodeAddress->nodeAggregateId);
+                $entryNode = $subgraph->findNodeById($nodeAddress->aggregateId);
             } else {
                 /** @var AbsoluteNodePath $nodePath */
                 $entryNode = $subgraph->findNodeByAbsolutePath($nodePath);
             }
 
-            $nodes = !is_null($entryNode) ? $subgraph->findDescendantNodes(
-                $entryNode->aggregateId,
-                FindDescendantNodesFilter::create(
-                    nodeTypes: NodeTypeCriteria::create(
-                        NodeTypeNames::fromStringArray($nodeTypes),
-                        NodeTypeNames::createEmpty()
-                    ),
-                    searchTerm: $searchTerm,
-                )
-            ) : [];
+            if (!is_null($entryNode)) {
+                $nodes = $subgraph->findDescendantNodes(
+                    $entryNode->aggregateId,
+                    FindDescendantNodesFilter::create(
+                        nodeTypes: $nodeTypeCriteria,
+                        searchTerm: $searchTerm,
+                    )
+                );
+                if (
+                    SearchTermMatcher::matchesNode($entryNode, $searchTerm)
+                    && ExpandedNodeTypeCriteria::create($nodeTypeCriteria, $contentRepository->getNodeTypeManager())
+                        ->matches($entryNode->nodeTypeName)
+                ) {
+                    // include the starting node if it matches
+                    $nodes = $nodes->prepend($entryNode);
+                }
+            }
         } else {
-            if (!empty($searchTerm)) {
+            if ($searchTerm->term !== '') {
                 throw new \RuntimeException('Combination of $nodeIdentifiers and $searchTerm not supported');
             }
 
-            $nodes = [];
             foreach ($nodeIds as $nodeAggregateId) {
                 $node = $subgraph->findNodeById(
                     NodeAggregateId::fromString($nodeAggregateId)
@@ -221,7 +236,7 @@ class NodesController extends ActionController
             }
         });
 
-        $nodeAddress = NodeAddressFactory::create($contentRepository)->createFromNode($node)->serializeForUri();
+        $nodeAddress = NodeAddress::fromNode($node)->toJson();
 
         $this->view->assignMultiple([
             'node' => $node,
@@ -316,17 +331,15 @@ class NodesController extends ActionController
             // If the node exists in another dimension, we want to know how many nodes in the rootline are also
             // missing for the target dimension. This is needed in the UI to tell the user if nodes will be
             // materialized recursively upwards in the rootline. To find the node path for the given identifier,
-            // we just use the first result. This is a safe assumption at least for "Document" nodes (aggregate=true),
-            // because they are always moved in-sync.
-            if ($nodeTypeManager->getNodeType($nodeAggregate->nodeTypeName)?->isAggregate()) {
+            // we just use the first result. This is a safe assumption at least for "Document" nodes ,
+            // because they are always moved in-sync by default via (options.moveNodeStrategy=gatherAll).
+            if ($nodeTypeManager->getNodeType($nodeAggregate->nodeTypeName)?->isOfType(NodeTypeNameFactory::NAME_DOCUMENT)) {
                 // TODO: we would need the SourceDimensions parameter (as in Create()) to ensure the correct
                 // rootline is traversed. Here, we, as a workaround, simply use the 1st aggregate for now.
 
                 $missingNodesOnRootline = 0;
                 while (
-                    $parentAggregate = self::firstNodeAggregate(
-                        $contentGraph->findParentNodeAggregates($identifier)
-                    )
+                    $parentAggregate = $contentGraph->findParentNodeAggregates($identifier)->first()
                 ) {
                     if (!$parentAggregate->coversDimensionSpacePoint($dimensionSpacePoint)) {
                         $missingNodesOnRootline++;
@@ -344,18 +357,6 @@ class NodesController extends ActionController
                 }
             }
         }
-    }
-
-    /**
-     * @param iterable<NodeAggregate> $nodeAggregates
-     * @return NodeAggregate|null
-     */
-    private static function firstNodeAggregate(iterable $nodeAggregates): ?NodeAggregate
-    {
-        foreach ($nodeAggregates as $nodeAggregate) {
-            return $nodeAggregate;
-        }
-        return null;
     }
 
     /**
