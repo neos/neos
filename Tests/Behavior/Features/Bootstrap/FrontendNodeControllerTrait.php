@@ -74,18 +74,18 @@ trait FrontendNodeControllerTrait
      */
     public function iDeclareTheFollowingController(string $fullyQualifiedClassName, PyStringNode $expectedResult): void
     {
-        eval(
-            /** make the controller implement our hacked {@see BehatRuntimeActionController} instead and remove the php tag */
-            str_replace(
-                ['extends ActionController', '<?php'],
-                ['extends \\BehatRuntimeActionController', ''],
-                $expectedResult->getRaw()
-            )
-        );
+        $controllerCode = $expectedResult->getRaw();
+        if (str_starts_with($controllerCode, '<?php')) {
+            $controllerCode = substr($controllerCode, strlen('<?php'));
+        }
+        eval($controllerCode);
 
         /** @var class-string<BehatRuntimeActionController> $controllerClassName */
         $controllerClassName = '\\' . ltrim($fullyQualifiedClassName, '\\');
 
+        if (!in_array(BehatRuntimeActionController::class, class_parents($controllerClassName), true)) {
+            throw new \RuntimeException(sprintf('The controller %s must implement %s for testing', $controllerClassName, BehatRuntimeActionController::class), 1740068618);
+        }
         $controllerClassName::registerInstance();
     }
 

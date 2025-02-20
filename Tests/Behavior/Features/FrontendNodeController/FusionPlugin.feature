@@ -73,10 +73,9 @@ Feature: Tests for sub-request on the frontend node controller in case of the "N
     <?php
     namespace Vendor\Site\Controller;
 
-    use Neos\Flow\Mvc\Controller\ActionController;
     use Neos\FluidAdaptor\View\StandaloneView;
 
-    class MyPluginController extends ActionController
+    class MyPluginController extends \BehatRuntimeActionController
     {
         protected $defaultViewObjectName = StandaloneView::class;
 
@@ -254,10 +253,9 @@ Feature: Tests for sub-request on the frontend node controller in case of the "N
     namespace Vendor\Site\Controller;
 
     use Neos\Flow\Mvc\View\ViewInterface;
-    use Neos\Flow\Mvc\Controller\ActionController;
     use Neos\Fusion\View\FusionView;
 
-    class MyPluginWithFusionController extends ActionController
+    class MyPluginWithFusionController extends \BehatRuntimeActionController
     {
         protected $defaultViewObjectName = FusionView::class;
 
