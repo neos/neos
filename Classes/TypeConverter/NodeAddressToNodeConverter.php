@@ -29,7 +29,7 @@ class NodeAddressToNodeConverter extends AbstractTypeConverter
     /**
      * @var array<int,string>
      */
-    protected $sourceTypes = ['string'];
+    protected $sourceTypes = ['string', 'array'];
 
     /**
      * @var string
@@ -44,6 +44,11 @@ class NodeAddressToNodeConverter extends AbstractTypeConverter
     #[Flow\Inject]
     protected ContentRepositoryRegistry $contentRepositoryRegistry;
 
+    public function canConvertFrom($source, $targetType)
+    {
+        return is_string($source) || (is_array($source) && array_key_exists('__contextNodePath', $source));
+    }
+
     /**
      * @param string $source
      * @param string $targetType
@@ -56,6 +61,9 @@ class NodeAddressToNodeConverter extends AbstractTypeConverter
         array $subProperties = [],
         ?PropertyMappingConfigurationInterface $configuration = null
     ) {
+        if (is_array($source)) {
+            $source = $source['__contextNodePath'];
+        }
         $nodeAddress = NodeAddress::fromJsonString($source);
         $contentRepository = $this->contentRepositoryRegistry->get($nodeAddress->contentRepositoryId);
         $subgraph = $contentRepository->getContentSubgraph($nodeAddress->workspaceName, $nodeAddress->dimensionSpacePoint);

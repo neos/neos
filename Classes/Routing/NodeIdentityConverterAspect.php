@@ -18,28 +18,55 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Aop\JoinPointInterface;
+use Neos\Neos\TypeConverter\NodeAddressToNodeConverter;
 
 /**
- * Aspect to convert a node object to its context node path. This is used in URI
- * building in order to make linking to nodes a lot easier.
+ * Aspect to convert a node object to a node address string.
+ * This is used in URI building in order to simplify resolving routes with node object route values.
  *
- * On the long term, type converters should be able to convert the reverse direction
- * as well, and then this aspect could be removed.
+ * Resolving routes
+ * ----------------
  *
- * @deprecated todo remove / repair me for Neos 9: https://github.com/neos/neos-development-collection/issues/5069
+ * Currently, the router only accepts either primitive php values or flow entities which are encoded via
+ * {@see \Neos\Flow\Persistence\AbstractPersistenceManager::convertObjectToIdentityArray()} to array('__identity' => <persistent-object-id>)
+ * A simile json node address would work already:
+ *
+ *    $uriBuilder->uriFor(
+ *         'someThing',
+ *         ['node' => NodeAddress::fromNode($source)->toJson()]
+ *     );
+ *
+ * A non flow entity object will raise an exception: Tried to convert an object of type "Node" to an identity array, but it is unknown to the Persistence Manager.
+ * To continue allowing actual node instances passed we convert the node to array('__contextNodePath' => <json-node-address>).
+ *
+ *    $uriBuilder->uriFor(
+ *         'someThing',
+ *         ['node' => $node]
+ *    );
+ *
+ * Its enforced upstream that we need to convert to an array with the json address.
+ *
+ * Matching routes
+ * ---------------
+ *
+ * When invoking the controller the route values are transformed based on the actions signature.
+ * The following action will invoke the {@see NodeAddressToNodeConverter}.
+ * It has to work with array or string format - the json node address string and the json node address inside an array.
+ *
+ *     public function indexAction(Node $node);
+ *
+ * For more information and a possibly clean solution see https://github.com/neos/neos-development-collection/issues/5069
+ *
  * @Flow\Scope("singleton")
  * @Flow\Aspect
  */
 class NodeIdentityConverterAspect
 {
     /**
-     * Convert the object to its context path, if we deal with ContentRepository nodes.
-     *
      * @Flow\Around("method(Neos\Flow\Persistence\AbstractPersistenceManager->convertObjectToIdentityArray())")
-     * @param JoinPointInterface $joinPoint the joinpoint
-     * @return string|array<string,string> the context path to be used for routing
+     * @return array<mixed>
      */
-    public function convertNodeToContextPathForRouting(JoinPointInterface $joinPoint): array|string
+    public function convertNodeToContextPathForRouting(JoinPointInterface $joinPoint): array
     {
         $objectArgument = $joinPoint->getMethodArgument('object');
         if ($objectArgument instanceof Node) {

@@ -54,7 +54,7 @@ Feature: Tests for the "Neos.Fusion:ActionUri" Fusion prototype
     And the Fusion context request URI is "http://localhost"
     And the Fusion renderingMode is "frontend"
 
-  Scenario: Build a node's frontend route manually (NOT RECOMMENDED AT ALL)
+  Scenario: Build routes with nodes
     And the Fusion context node is "a1"
     When I execute the following Fusion code:
     """fusion
@@ -63,10 +63,19 @@ Feature: Tests for the "Neos.Fusion:ActionUri" Fusion prototype
 
     test = Neos.Fusion:DataStructure {
       @process.toString = ${Array.join(Array.map(value, (v, k) => k + ': ' + v), String.chr(10))}
-      uriWithNodeInstance = Neos.Fusion:ActionUri {
+      # Build a node's frontend route manually (NOT RECOMMENDED AT ALL)
+      frontendUriWithNodeInstance = Neos.Fusion:ActionUri {
         package = 'Neos.Neos'
         controller = 'Frontend\\Node'
         action = 'show'
+        arguments {
+          node = ${node}
+        }
+      }
+      previewUriWithNodeInstance = Neos.Fusion:ActionUri {
+        package = 'Neos.Neos'
+        controller = 'Frontend\\Node'
+        action = 'preview'
         arguments {
           node = ${node}
         }
@@ -75,5 +84,6 @@ Feature: Tests for the "Neos.Fusion:ActionUri" Fusion prototype
     """
     Then I expect the following Fusion rendering result:
     """
-    uriWithNodeInstance: /a1
+    frontendUriWithNodeInstance: /a1
+    previewUriWithNodeInstance: /neos/preview?node%5B__contextNodePath%5D=%7B%22contentRepositoryId%22%3A%22default%22%2C%22workspaceName%22%3A%22live%22%2C%22dimensionSpacePoint%22%3A%5B%5D%2C%22aggregateId%22%3A%22a1%22%7D
     """
