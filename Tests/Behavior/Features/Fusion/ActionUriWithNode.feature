@@ -85,5 +85,5 @@ Feature: Tests for the "Neos.Fusion:ActionUri" Fusion prototype
     Then I expect the following Fusion rendering result:
     """
     frontendUriWithNodeInstance: /a1
-    previewUriWithNodeInstance: /neos/preview?node%5B__contextNodePath%5D=%7B%22contentRepositoryId%22%3A%22default%22%2C%22workspaceName%22%3A%22live%22%2C%22dimensionSpacePoint%22%3A%5B%5D%2C%22aggregateId%22%3A%22a1%22%7D
+    previewUriWithNodeInstance: /neos/preview?node=%7B%22contentRepositoryId%22%3A%22default%22%2C%22workspaceName%22%3A%22live%22%2C%22dimensionSpacePoint%22%3A%5B%5D%2C%22aggregateId%22%3A%22a1%22%7D
     """
