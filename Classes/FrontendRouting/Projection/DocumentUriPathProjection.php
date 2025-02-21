@@ -399,7 +399,8 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 $interdimensionalSibling->dimensionSpacePoint->hash
             ));
             if ($parentNode !== null) {
-                $uriPathSegment = basename($sourceNode->getUriPath());
+                $uriPathSegments = explode('/', $sourceNode->getUriPath());
+                $uriPathSegment = $uriPathSegments[array_key_last($uriPathSegments)];
                 $uriPath = $parentNode->getUriPath() === ''
                     ? $uriPathSegment
                     : $parentNode->getUriPath() . '/' . $uriPathSegment;
@@ -550,9 +551,10 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
             if (!isset($newPropertyValues['uriPathSegment']) && !in_array('uriPathSegment', $unsetPropertyNames)) {
                 continue;
             }
+
             $oldUriPath = $node->getUriPath();
             $uriPathSegments = explode('/', $oldUriPath);
-            $uriPathSegments[array_key_last($uriPathSegments)] = ($newPropertyValues['uriPathSegment'] ?? '') ?: $event->nodeAggregateId;
+            $uriPathSegments[array_key_last($uriPathSegments)] = ($newPropertyValues['uriPathSegment'] ?? '') ?: $event->nodeAggregateId->value;
             $newUriPath = implode('/', $uriPathSegments);
 
             $this->updateNodeQuery(
@@ -891,7 +893,6 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         $this->updateNode($node, $updatedNodeData);
     }
 
-
     private function whenDimensionSpacePointWasMoved(DimensionSpacePointWasMoved $event): void
     {
         if ($event->workspaceName->isLive()) {
@@ -914,7 +915,6 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
             );
         }
     }
-
 
     private function whenDimensionShineThroughWasAdded(DimensionShineThroughWasAdded $event): void
     {
