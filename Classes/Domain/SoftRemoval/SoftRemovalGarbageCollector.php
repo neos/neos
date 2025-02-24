@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Domain\SoftRemoval;
 
+use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\Feature\NodeRemoval\Command\RemoveNodeAggregate;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
@@ -40,9 +41,11 @@ final readonly class SoftRemovalGarbageCollector
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
 
-        $liveSoftRemovalsForDimension = $this->findNodeAggregatesInWorkspaceByExplicitRemovedTag($contentRepository->getContentGraph(WorkspaceName::forLive()));
+        $liveSoftRemovals = $this->findNodeAggregatesInWorkspaceByExplicitRemovedTag($contentRepository->getContentGraph(WorkspaceName::forLive()));
 
-        foreach ($liveSoftRemovalsForDimension as $softRemoval) {
+        $softRemovalsAcrossWorkspaces = $this->subtractFromSoftRemovalsWhichAreNotSoftRemovedInOtherWorkspaces($liveSoftRemovals, $contentRepository);
+
+        foreach ($softRemovalsAcrossWorkspaces as $softRemoval) {
             foreach ($softRemoval->dimensionSpacePointSet as $dimensionSpacePoint) {
                 try {
                     $contentRepository->handle(RemoveNodeAggregate::create(
@@ -58,6 +61,44 @@ final readonly class SoftRemovalGarbageCollector
                 }
             }
         }
+    }
+
+    /**
+     * If a workspace is outdated and does not have the soft deletion yet, but knows the node we cannot safely remove the node as
+     * the user can still make changes to that node or children any time in the future - or might have done so already.
+     * Heavily outdated workspaces might not even know the node yet and thus impose NO conflict.
+     */
+    private function subtractFromSoftRemovalsWhichAreNotSoftRemovedInOtherWorkspaces(NodeAggregateIdsWithDimensionSpacePoints $liveSoftRemovals, ContentRepository $contentRepository): NodeAggregateIdsWithDimensionSpacePoints
+    {
+        /** @var array<string,NodeAggregateIdWithDimensionSpacePoints> $softRemovedNodesAcrossWorkspaces */
+        $softRemovedNodesAcrossWorkspaces = array_combine(
+            array_map(fn (NodeAggregateIdWithDimensionSpacePoints $node) => $node->nodeAggregateId->value, iterator_to_array($liveSoftRemovals)),
+            iterator_to_array($liveSoftRemovals),
+        );
+
+        foreach ($contentRepository->findWorkspaces() as $workspace) {
+            if ($workspace->isRootWorkspace()) {
+                // todo ignore base workspaces of Live!
+                continue;
+            }
+            $contentGraph = $contentRepository->getContentGraph($workspace->workspaceName);
+
+            foreach ($softRemovedNodesAcrossWorkspaces as $key => $softRemovedNode) {
+                $nodeAggregateInWorkspace = $contentGraph->findNodeAggregateById($softRemovedNode->nodeAggregateId);
+                if ($nodeAggregateInWorkspace === null) {
+                    continue;
+                }
+                $softDeletedDimensionsInWorkspace = $nodeAggregateInWorkspace->getDimensionSpacePointsTaggedWith(SubtreeTag::removed());
+                $notSoftDeletedDimensionsInWorkspace = $nodeAggregateInWorkspace->coveredDimensionSpacePoints->getDifference($softDeletedDimensionsInWorkspace);
+
+                $softRemovedNodesAcrossWorkspaces[$key] = NodeAggregateIdWithDimensionSpacePoints::create(
+                    $softRemovedNode->nodeAggregateId,
+                    $softRemovedNode->dimensionSpacePointSet->getDifference($notSoftDeletedDimensionsInWorkspace)
+                );
+            }
+        }
+
+        return NodeAggregateIdsWithDimensionSpacePoints::fromArray($softRemovedNodesAcrossWorkspaces);
     }
 
     private function findNodeAggregatesInWorkspaceByExplicitRemovedTag(ContentGraphInterface $contentGraph): NodeAggregateIdsWithDimensionSpacePoints
