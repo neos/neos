@@ -33,23 +33,54 @@ Feature: Tests for soft removal garbage collection
       | Key             | Value                    |
       | nodeAggregateId | "lady-eleonode-rootford" |
       | nodeTypeName    | "Neos.Neos:Sites"        |
+    And the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId        | parentNodeAggregateId  | nodeTypeName       |
+      | sir-david-nodenborough | lady-eleonode-rootford | Neos.Neos:Site     |
+      | nody-mc-nodeface       | sir-david-nodenborough | Neos.Neos:Document |
     And the command CreateWorkspace is executed with payload:
       | Key                | Value            |
       | workspaceName      | "user-workspace" |
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
-    And the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId        | parentNodeAggregateId  | nodeTypeName       |
-      | sir-david-nodenborough | lady-eleonode-rootford | Neos.Neos:Site     |
-      | nody-mc-nodeface       | sir-david-nodenborough | Neos.Neos:Document |
 
   Scenario: Soft removal of a node that only exists in a root workspace
+    And the command CreateNodeAggregateWithNode is executed with payload:
+      | Key                   | Value                    |
+      | nodeAggregateId       | "nonly-lively"           |
+      | nodeTypeName          | "Neos.Neos:Document"     |
+      | parentNodeAggregateId | "sir-david-nodenborough" |
+
+    When the command TagSubtree is executed with payload:
+      | Key                          | Value                 |
+      | nodeAggregateId              | "nonly-lively"        |
+      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"  |
+      | tag                          | "removed"             |
+    And soft removal garbage collection is run for content repository default
+
+    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 6 is of type "NodeAggregateWasRemoved" with payload:
+      | Key                                  | Expected                                        |
+      | workspaceName                        | "live"                                          |
+      | contentStreamId                      | "cs-identifier"                                 |
+      | nodeAggregateId                      | "nonly-lively"                                  |
+      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
+      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+
+  Scenario: Soft removal of a node which is published to live
+    And I am in workspace "user-workspace"
     When the command TagSubtree is executed with payload:
       | Key                          | Value                 |
       | nodeAggregateId              | "nody-mc-nodeface"    |
       | coveredDimensionSpacePoint   | {"example": "source"} |
       | nodeVariantSelectionStrategy | "allSpecializations"  |
       | tag                          | "removed"             |
+
+    When the command PublishWorkspace is executed with payload:
+      | Key                | Value                      |
+      | workspaceName      | "user-workspace"           |
+      | newContentStreamId | "new-user-workspace-cs-id" |
+
     And soft removal garbage collection is run for content repository default
 
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
