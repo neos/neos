@@ -1,0 +1,57 @@
+Feature: Tests for soft removal garbage collection
+
+  Background:
+    Given using the following content dimensions:
+      | Identifier | Values                         | Generalizations                         |
+      | example    | general, source, special, peer | special->source->general, peer->general |
+    And using the following node types:
+    """yaml
+    'Neos.ContentRepository:Root': {}
+    'Neos.Neos:Sites':
+      superTypes:
+        'Neos.ContentRepository:Root': true
+    'Neos.Neos:Document':
+      properties:
+        title:
+          type: string
+        uriPathSegment:
+          type: string
+    'Neos.Neos:Site':
+      superTypes:
+        'Neos.Neos:Document': true
+    """
+    And using identifier "default", I define a content repository
+    And I am in content repository "default"
+    And I am user identified by "initiating-user-identifier"
+
+    When the command CreateRootWorkspace is executed with payload:
+      | Key                | Value           |
+      | workspaceName      | "live"          |
+      | newContentStreamId | "cs-identifier" |
+    And I am in workspace "live" and dimension space point {"example": "source"}
+    And the command CreateRootNodeAggregateWithNode is executed with payload:
+      | Key             | Value                    |
+      | nodeAggregateId | "lady-eleonode-rootford" |
+      | nodeTypeName    | "Neos.Neos:Sites"        |
+    And the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId        | parentNodeAggregateId  | nodeTypeName       |
+      | sir-david-nodenborough | lady-eleonode-rootford | Neos.Neos:Site     |
+      | nody-mc-nodeface       | sir-david-nodenborough | Neos.Neos:Document |
+
+  Scenario: Soft removal of a node that only exists in a root workspace
+    When the command TagSubtree is executed with payload:
+      | Key                          | Value                 |
+      | nodeAggregateId              | "nody-mc-nodeface"    |
+      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"  |
+      | tag                          | "removed"             |
+    And soft removal garbage collection is run for content repository default
+
+    Then I expect exactly 4 events to be published on stream "cs-identifier"
+    And event at index 3 is of type "NodeAggregateWasRemoved" with payload:
+      | Key                                  | Expected                                        |
+      | workspaceName                        | "live"                                          |
+      | contentStreamId                      | "cs-identifier"                                 |
+      | nodeAggregateId                      | "nody-mc-nodeface"                              |
+      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
+      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
