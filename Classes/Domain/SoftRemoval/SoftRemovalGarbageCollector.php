@@ -23,6 +23,5 @@ final readonly class SoftRemovalGarbageCollector
 {
     public function run(ContentRepository $contentRepository): void
     {
-        \Neos\Flow\var_dump('huhu');
     }
 }
