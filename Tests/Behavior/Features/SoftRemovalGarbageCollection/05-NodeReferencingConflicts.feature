@@ -52,7 +52,7 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
 
-  Scenario: Garbage collection will ignore a soft removal if the node has unpublished property changes in another workspace
+  Scenario: Garbage collection will ignore a soft removal in dimension if the node has unpublished reference changes in another workspace
     When the command TagSubtree is executed with payload:
       | Key                          | Value                 |
       | workspaceName                | "live"                |
@@ -62,20 +62,21 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | tag                          | "removed"             |
 
     And I am in workspace "user-workspace"
-    And the command SetNodeProperties is executed with payload:
-      | Key                       | Value                                   |
-      | workspaceName             | "user-workspace"                        |
-      | nodeAggregateId           | "nodingers-cat"                         |
-      | originDimensionSpacePoint | {"example": "source"}                   |
-      | propertyValues            | {"title": "Modified in user workspace"} |
+    And the command SetNodeReferences is executed with payload:
+      | Key                       | Value                                                                                    |
+      | sourceNodeAggregateId     | "nodingers-cat"                                                                          |
+      | originDimensionSpacePoint | {"example": "source"}                                                                    |
+      | references                | [{"referenceName": "myReference", "references": [{"target": "sir-david-nodenborough"}]}] |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
+
     Then I expect the following hard removal conflicts to be impending:
-      | nodeAggregateId | dimensionSpacePoints    |
+      | nodeAggregateId | dimensionSpacePoints                            |
       | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
 
-    When soft removal garbage collection is run for content repository default
+    And soft removal garbage collection is run for content repository default
+
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
     And event at index 5 is of type "SubtreeWasTagged" with payload:
       | Key                          | Expected                                        |
@@ -85,7 +86,7 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
       | tag                          | "removed"                                       |
 
-  Scenario: Garbage collection will ignore a soft removal if one of the node's descendants has unpublished property changes in another workspace
+  Scenario: Garbage collection will ignore a soft removal in dimension if one of the node's descendants has unpublished reference changes in another workspace
     When the command TagSubtree is executed with payload:
       | Key                          | Value                 |
       | workspaceName                | "live"                |
@@ -95,21 +96,24 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | tag                          | "removed"             |
 
     And I am in workspace "user-workspace"
-    And the command SetNodeProperties is executed with payload:
-      | Key                       | Value                                   |
-      | workspaceName             | "user-workspace"                        |
-      | nodeAggregateId           | "nodingers-kitten"                      |
-      | originDimensionSpacePoint | {"example": "source"}                   |
-      | propertyValues            | {"title": "Modified in user workspace"} |
+    And the command SetNodeReferences is executed with payload:
+      | Key                             | Value                                                                                    |
+      | workspaceName                   | "user-workspace"                                                                         |
+      | sourceNodeAggregateId           | "nodingers-kitten"                                                                       |
+      | sourceOriginDimensionSpacePoint | {"example": "source"}                                                                    |
+      | references                      | [{"referenceName": "myReference", "references": [{"target": "sir-david-nodenborough"}]}] |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
+
     Then I expect the following hard removal conflicts to be impending:
-      | nodeAggregateId | dimensionSpacePoints    |
+      | nodeAggregateId | dimensionSpacePoints                            |
       | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
 
-    When soft removal garbage collection is run for content repository default
+    And soft removal garbage collection is run for content repository default
+
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
+
     And event at index 5 is of type "SubtreeWasTagged" with payload:
       | Key                          | Expected                                        |
       | workspaceName                | "live"                                          |
@@ -118,7 +122,7 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
       | tag                          | "removed"                                       |
 
-  Scenario: Garbage collection will ignore a soft removal if there are property changes in an affected dimension space point
+  Scenario: Garbage collection will ignore a soft removal if there are reference changes in an affected dimension space point
     When the command TagSubtree is executed with payload:
       | Key                          | Value                  |
       | workspaceName                | "live"                 |
@@ -128,30 +132,30 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | tag                          | "removed"              |
 
     And I am in workspace "user-workspace"
-    And the command SetNodeProperties is executed with payload:
-      | Key                       | Value                                   |
-      | workspaceName             | "user-workspace"                        |
-      | nodeAggregateId           | "nodingers-cat"                |
-      | originDimensionSpacePoint | {"example": "source"}                   |
-      | propertyValues            | {"title": "Modified in user workspace"} |
+    And the command SetNodeReferences is executed with payload:
+      | Key                             | Value                                                                                    |
+      | workspaceName                   | "user-workspace"                                                                         |
+      | sourceNodeAggregateId           | "nodingers-cat"                                                                          |
+      | sourceOriginDimensionSpacePoint | {"example": "source"}                                                                    |
+      | references                      | [{"referenceName": "myReference", "references": [{"target": "sir-david-nodenborough"}]}] |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
     Then I expect the following hard removal conflicts to be impending:
-      | nodeAggregateId | dimensionSpacePoints |
-      | nodingers-cat | [{"example": "special"}] |
+      | nodeAggregateId | dimensionSpacePoints     |
+      | nodingers-cat   | [{"example": "special"}] |
 
     When soft removal garbage collection is run for content repository default
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
     And event at index 5 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                        |
-      | workspaceName                | "live"                                          |
-      | contentStreamId              | "cs-identifier"                                 |
-      | nodeAggregateId              | "nodingers-cat"                                 |
+      | Key                          | Expected                 |
+      | workspaceName                | "live"                   |
+      | contentStreamId              | "cs-identifier"          |
+      | nodeAggregateId              | "nodingers-cat"          |
       | affectedDimensionSpacePoints | [{"example": "special"}] |
-      | tag                          | "removed"                                       |
+      | tag                          | "removed"                |
 
-  Scenario: Garbage collection will transform a soft removal if there are unrelated property changes in another workspace
+  Scenario: Garbage collection will transform a soft removal if there are unrelated reference changes in another workspace
     When the command TagSubtree is executed with payload:
       | Key                          | Value                 |
       | workspaceName                | "live"                |
@@ -161,12 +165,12 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | tag                          | "removed"             |
 
     And I am in workspace "user-workspace"
-    And the command SetNodeProperties is executed with payload:
-      | Key                       | Value                                   |
-      | workspaceName             | "user-workspace"                        |
-      | nodeAggregateId           | "sir-david-nodenborough"                |
-      | originDimensionSpacePoint | {"example": "source"}                   |
-      | propertyValues            | {"title": "Modified in user workspace"} |
+    And the command SetNodeReferences is executed with payload:
+      | Key                             | Value                                                                           |
+      | workspaceName                   | "user-workspace"                                                                |
+      | sourceNodeAggregateId           | "sir-david-nodenborough"                                                        |
+      | sourceOriginDimensionSpacePoint | {"example": "source"}                                                           |
+      | references                      | [{"referenceName": "myReference", "references": [{"target": "nodingers-cat"}]}] |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
@@ -183,16 +187,16 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
-  Scenario: Garbage collection will transform a soft removal if there are property changes in an unrelated dimension space point
+  Scenario: Garbage collection will transform a soft removal if there are reference changes in an unrelated dimension space point
     When the command CreateNodeVariant is executed with payload:
-      | Key             | Value                  |
-      | workspaceName                | "live"                 |
-      | nodeAggregateId | "sir-david-nodenborough"        |
-      | sourceOrigin    | {"example": "source"}  |
-      | targetOrigin    | {"example": "general"} |
+      | Key             | Value                    |
+      | workspaceName   | "live"                   |
+      | nodeAggregateId | "sir-david-nodenborough" |
+      | sourceOrigin    | {"example": "source"}    |
+      | targetOrigin    | {"example": "general"}   |
     And the command CreateNodeVariant is executed with payload:
       | Key             | Value                  |
-      | workspaceName                | "live"                 |
+      | workspaceName   | "live"                 |
       | nodeAggregateId | "nodingers-cat"        |
       | sourceOrigin    | {"example": "source"}  |
       | targetOrigin    | {"example": "general"} |
@@ -203,17 +207,17 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | Key                          | Value                  |
       | workspaceName                | "live"                 |
       | nodeAggregateId              | "nodingers-cat"        |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | coveredDimensionSpacePoint   | {"example": "special"} |
       | nodeVariantSelectionStrategy | "allSpecializations"   |
       | tag                          | "removed"              |
 
     And I am in workspace "user-workspace"
-    And the command SetNodeProperties is executed with payload:
-      | Key                       | Value                                   |
-      | workspaceName             | "user-workspace"                        |
-      | nodeAggregateId           | "nodingers-cat"                |
-      | originDimensionSpacePoint | {"example": "general"}                   |
-      | propertyValues            | {"title": "Modified in user workspace"} |
+    And the command SetNodeReferences is executed with payload:
+      | Key                             | Value                                                                                    |
+      | workspaceName                   | "user-workspace"                                                                         |
+      | sourceNodeAggregateId           | "nodingers-cat"                                                                          |
+      | sourceOriginDimensionSpacePoint | {"example": "general"}                                                                   |
+      | references                      | [{"referenceName": "myReference", "references": [{"target": "sir-david-nodenborough"}]}] |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
@@ -228,4 +232,4 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | contentStreamId                      | "cs-identifier"          |
       | nodeAggregateId                      | "nodingers-cat"          |
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]  |
-      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+      | affectedCoveredDimensionSpacePoints  | [{"example": "special"}] |

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Neos\Neos\Domain\SoftRemoval;
 
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
+use Neos\ContentRepository\Core\DimensionSpace\OriginDimensionSpacePoint;
 use Neos\ContentRepository\Core\EventStore\EventInterface;
 use Neos\ContentRepository\Core\Feature\Common\EmbedsNodeAggregateId;
 use Neos\ContentRepository\Core\Feature\Common\EmbedsWorkspaceName;
@@ -118,7 +119,10 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
             NodeAggregateWasMoved::class => $eventInstance->succeedingSiblingsForCoverage->toDimensionSpacePointSet(),
             NodePropertiesWereSet::class => $eventInstance->affectedDimensionSpacePoints,
             NodeAggregateWithNodeWasCreated::class => $eventInstance->succeedingSiblingsForCoverage->toDimensionSpacePointSet(),
-            NodeReferencesWereSet::class => $eventInstance->affectedSourceOriginDimensionSpacePoints->toDimensionSpacePointSet(),
+            NodeReferencesWereSet::class => DimensionSpacePointSet::fromArray(array_merge(...array_map(
+                fn (OriginDimensionSpacePoint $sourceOrigin): array => $nodeAggregate->getCoverageByOccupant($sourceOrigin)->points,
+                array_values($eventInstance->affectedSourceOriginDimensionSpacePoints->getPoints())
+            ))),
             SubtreeWasTagged::class,
             SubtreeWasUntagged::class => $eventInstance->affectedDimensionSpacePoints,
             NodePeerVariantWasCreated::class => DimensionSpacePointSet::fromArray([$eventInstance->peerOrigin->toDimensionSpacePoint(), $eventInstance->sourceOrigin->toDimensionSpacePoint()]),
