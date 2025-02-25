@@ -26,14 +26,10 @@ use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Event\WorkspaceWasRebase
 use Neos\ContentRepository\Core\Projection\CatchUpHook\CatchUpHookInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
-use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindAncestorNodesFilter;
-use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregate;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdsWithDimensionSpacePoints;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdWithDimensionSpacePoints;
-use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
-use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\Subscription\SubscriptionStatus;
 use Neos\EventStore\Model\EventEnvelope;
 
@@ -73,13 +69,11 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
             return;
         }
 
-        $nodeOrAncestorIsSoftRemoved = $this->nodeAggregateIsSoftRemovedInDimension($nodeAggregate, $dimensionSpacePoints);
+        $explicitlySoftRemovedAncestors = $this->findClosestExplicitlySoftRemovedNodes($contentGraph, $nodeAggregate, $dimensionSpacePoints);
 
-        if (!$nodeOrAncestorIsSoftRemoved) {
+        if ($explicitlySoftRemovedAncestors->isEmpty()) {
             return;
         }
-
-        $explicitlySoftRemovedAncestors = $this->findExplicitlySoftRemovedParents($contentGraph, $eventInstance->getNodeAggregateId(), $dimensionSpacePoints);
 
         $this->objectionRepository->addObjection(
             $this->contentRepositoryId,
@@ -156,13 +150,11 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
             return;
         }
 
-        $nodeOrAncestorIsSoftRemoved = $this->nodeAggregateIsSoftRemovedInDimension($nodeAggregate, $dimensionSpacePoints);
+        $explicitlySoftRemovedAncestors = $this->findClosestExplicitlySoftRemovedNodes($contentGraph, $nodeAggregate, $dimensionSpacePoints);
 
-        if (!$nodeOrAncestorIsSoftRemoved) {
+        if ($explicitlySoftRemovedAncestors->isEmpty()) {
             return;
         }
-
-        $explicitlySoftRemovedAncestors = $this->findExplicitlySoftRemovedParents($contentGraph, $eventInstance->getNodeAggregateId(), $dimensionSpacePoints);
 
         $this->objectionRepository->addObjection(
             $this->contentRepositoryId,
@@ -171,23 +163,23 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
         );
     }
 
-    private function findExplicitlySoftRemovedParents(ContentGraphInterface $contentGraph, NodeAggregateId $nodeAggregateId, DimensionSpacePointSet $dimensionSpacePoints): NodeAggregateIdsWithDimensionSpacePoints
+    private function findClosestExplicitlySoftRemovedNodes(ContentGraphInterface $contentGraph, NodeAggregate $entryNodeAggregate, DimensionSpacePointSet $dimensionSpacePoints): NodeAggregateIdsWithDimensionSpacePoints
     {
         /** @var array<NodeAggregate> $stack */
-        $stack = iterator_to_array($contentGraph->findParentNodeAggregates($nodeAggregateId));
+        $stack = [$entryNodeAggregate];
 
         $explicitlySoftRemovedAncestors = NodeAggregateIdsWithDimensionSpacePoints::create();
         while ($stack !== []) {
-            $parentNodeAggregate = array_shift($stack);
-            if ($this->nodeAggregateIsSoftRemovedInDimension($parentNodeAggregate, $dimensionSpacePoints)) {
-                $explicitlySoftRemoved = $parentNodeAggregate->getDimensionSpacePointsTaggedWith(SubtreeTag::removed());
+            $nodeAggregate = array_shift($stack);
+            if ($this->nodeAggregateIsSoftRemovedInDimension($nodeAggregate, $dimensionSpacePoints)) {
+                $explicitlySoftRemoved = $nodeAggregate->getDimensionSpacePointsTaggedWith(SubtreeTag::removed());
                 if (!$explicitlySoftRemoved->isEmpty()) { // todo difference with $dimensionSpacePoints???
                     $explicitlySoftRemovedAncestors = $explicitlySoftRemovedAncestors->with(NodeAggregateIdWithDimensionSpacePoints::create(
-                        $parentNodeAggregate->nodeAggregateId,
+                        $nodeAggregate->nodeAggregateId,
                         $dimensionSpacePoints
                     ));
                 }
-                $stack = [...$stack, ...iterator_to_array($contentGraph->findParentNodeAggregates($parentNodeAggregate->nodeAggregateId))];
+                $stack = [...$stack, ...iterator_to_array($contentGraph->findParentNodeAggregates($nodeAggregate->nodeAggregateId))];
             }
         }
 

@@ -83,6 +83,7 @@ final readonly class SoftRemovalGarbageCollector
             $contentGraph = $contentRepository->getContentGraph($workspace->workspaceName);
 
             foreach ($softRemovedNodesAcrossWorkspaces as $softRemovedNode) {
+                // todo use in () query instead of many
                 $nodeAggregateInWorkspace = $contentGraph->findNodeAggregateById($softRemovedNode->nodeAggregateId);
                 if ($nodeAggregateInWorkspace === null) {
                     continue;
@@ -126,7 +127,7 @@ final readonly class SoftRemovalGarbageCollector
 
     private function findNodeAggregatesInWorkspaceByExplicitRemovedTag(ContentGraphInterface $contentGraph): NodeAggregateIdsWithDimensionSpacePoints
     {
-        // todo super expensive, filter via sql!
+        // todo super expensive, filter via sql! getNodeAggregatesTaggedBy
         $softRemovedNodes = [];
 
         /** @var array<NodeAggregate> $stack */
