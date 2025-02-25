@@ -53,78 +53,10 @@ Feature: Tests for soft removal garbage collection objections
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
 
-  Scenario: Garbage collection will ignore a soft removal if the node exists unremoved in another workspace
-    When the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
-    And soft removal garbage collection is run for content repository default
+  #
+  # CreateNodeAggregateWithNode
+  #
 
-    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 6 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                        |
-      | workspaceName                | "live"                                          |
-      | contentStreamId              | "cs-identifier"                                 |
-      | nodeAggregateId              | "nodingers-cat"                                 |
-      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
-      | tag                          | "removed"                                       |
-
-  # CreateNodeAggregateWithNode conflict prevention
-  Scenario: Garbage collection will ignore a soft removal if the node has unpublished newly created children in another workspace
-    When the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
-    And I am in workspace "user-workspace"
-    And the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId        | parentNodeAggregateId | nodeTypeName       |
-      | nodingers-other-kitten | nodingers-cat         | Neos.Neos:Document |
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
-
-    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 6 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                        |
-      | workspaceName                | "live"                                          |
-      | contentStreamId              | "cs-identifier"                                 |
-      | nodeAggregateId              | "nodingers-cat"                                 |
-      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
-      | tag                          | "removed"                                       |
-
-  # CreateNodeAggregateWithNode conflict prevention (descendants)
-  Scenario: Garbage collection will ignore a soft removal if the node has unpublished newly created descendants in another workspace
-    When the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
-    And I am in workspace "user-workspace"
-    And the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId             | parentNodeAggregateId | nodeTypeName       |
-      | nodingers-kittens-plaything | nodingers-kitten      | Neos.Neos:Document |
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
-
-    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 6 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                        |
-      | workspaceName                | "live"                                          |
-      | contentStreamId              | "cs-identifier"                                 |
-      | nodeAggregateId              | "nodingers-cat"                                 |
-      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
-      | tag                          | "removed"                                       |
 
   # CreateNodeVariant conflict prevention
   Scenario: Garbage collection will ignore a soft removal if the node has unpublished newly created variants in another workspace

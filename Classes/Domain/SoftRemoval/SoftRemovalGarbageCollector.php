@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Neos\Neos\Domain\SoftRemoval;
 
 use Neos\ContentRepository\Core\ContentRepository;
+use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
+use Neos\ContentRepository\Core\DimensionSpace\VariantType;
 use Neos\ContentRepository\Core\Feature\NodeRemoval\Command\RemoveNodeAggregate;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
@@ -34,7 +36,7 @@ final readonly class SoftRemovalGarbageCollector
 {
     public function __construct(
         private ContentRepositoryRegistry $contentRepositoryRegistry,
-        private SoftRemovalObjectionRepository $objectionRepository
+        private ImpendingHardRemovalConflictRepository $impendingConflictRepository,
     ) {
     }
 
@@ -46,21 +48,38 @@ final readonly class SoftRemovalGarbageCollector
 
         $softRemovalsAcrossWorkspaces = $this->subtractNodesWhichAreNotSoftRemovedInOtherWorkspaces($liveSoftRemovals, $contentRepository);
 
-        $softRemovalsWithoutObjections = $this->subtractObjections($softRemovalsAcrossWorkspaces, $contentRepositoryId);
-
+        $softRemovalsWithoutObjections = $this->subtractObjections($softRemovalsAcrossWorkspaces, $contentRepository);
         foreach ($softRemovalsWithoutObjections as $softRemovedNode) {
-            foreach ($softRemovedNode->dimensionSpacePointSet as $dimensionSpacePoint) {
-                try {
+            if ($softRemovedNode->dimensionSpacePointSet->isEmpty()) {
+                // only objections
+                continue;
+            }
+            $generalizationsToRemoveWithAllSpecializations = $softRemovedNode->dimensionSpacePointSet->points;
+            foreach ($softRemovedNode->dimensionSpacePointSet as $dimensionSpacePointA) {
+                foreach ($softRemovedNode->dimensionSpacePointSet as $dimensionSpacePointB) {
+                    switch ($contentRepository->getVariationGraph()->getVariantType(
+                        $dimensionSpacePointA,
+                        $dimensionSpacePointB
+                    )) {
+                        case VariantType::TYPE_SPECIALIZATION:
+                            unset($generalizationsToRemoveWithAllSpecializations[$dimensionSpacePointA->hash]);
+                            break;
+                        default:
+                    }
+                }
+            }
+            foreach ($generalizationsToRemoveWithAllSpecializations as $generalization) {
+                if (
+                    $contentRepository->getVariationGraph()->getSpecializationSet($generalization)
+                        ->getDifference($softRemovedNode->dimensionSpacePointSet)
+                        ->isEmpty()
+                ) {
                     $contentRepository->handle(RemoveNodeAggregate::create(
                         WorkspaceName::forLive(),
                         $softRemovedNode->nodeAggregateId,
-                        $dimensionSpacePoint,
+                        $generalization,
                         NodeVariantSelectionStrategy::STRATEGY_ALL_SPECIALIZATIONS
                     ));
-                } catch (\Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateCurrentlyDoesNotExist) {
-                    // todo avoid beforehand
-                    // a) grouping dimensions so the later STRATEGY_ALL_SPECIALIZATIONS will do it in reverse
-                    // b) remove parents first and then a possible child removal, not in reverse
                 }
             }
         }
@@ -105,20 +124,26 @@ final readonly class SoftRemovalGarbageCollector
      * Workspace that are already synchronised with live know the soft deletions. This means that all pending changes have been rebased
      * on live and at the time of the rebase each of the events was aware of soft deletion. The objections are remembered via hook and will be checked here.
      */
-    private function subtractObjections(NodeAggregateIdsWithDimensionSpacePoints $softRemovals, ContentRepositoryId $contentRepositoryId): NodeAggregateIdsWithDimensionSpacePoints
+    private function subtractObjections(NodeAggregateIdsWithDimensionSpacePoints $softRemovals, ContentRepository $contentRepository): NodeAggregateIdsWithDimensionSpacePoints
     {
         $softRemovalsWithoutObjections = $softRemovals;
 
-        $objections = $this->objectionRepository->getAllObjections($contentRepositoryId);
+        $objections = $this->impendingConflictRepository->findAllConflicts($contentRepository->id);
 
         foreach ($softRemovalsWithoutObjections as $softRemovedNode) {
             $objection = $objections->get($softRemovedNode->nodeAggregateId);
             if ($objection === null) {
                 continue;
             }
+            $objectionGeneralizationSet = DimensionSpacePointSet::fromArray([]);
+            foreach ($objection->dimensionSpacePointSet as $dimensionSpacePoint) {
+                $objectionGeneralizationSet = $objectionGeneralizationSet->getUnion(
+                    $contentRepository->getVariationGraph()->getIndexedGeneralizations($dimensionSpacePoint)
+                );
+            }
             $softRemovalsWithoutObjections = $softRemovalsWithoutObjections->with(NodeAggregateIdWithDimensionSpacePoints::create(
                 $softRemovedNode->nodeAggregateId,
-                $softRemovedNode->dimensionSpacePointSet->getDifference($objection->dimensionSpacePointSet)
+                $softRemovedNode->dimensionSpacePointSet->getDifference($objectionGeneralizationSet)
             ));
         }
 

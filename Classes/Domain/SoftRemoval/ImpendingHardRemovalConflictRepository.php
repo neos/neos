@@ -13,18 +13,18 @@ use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 
 /** @internal */
-final readonly class SoftRemovalObjectionRepository
+final readonly class ImpendingHardRemovalConflictRepository
 {
-    private const TABLE_NAME_OBJECTION = 'neos_neos_soft_removal_objection';
+    private const CONFLICT_TABLE_NAME = 'neos_neos_impending_hard_removal_conflict';
 
     public function __construct(
         private Connection $dbal
     ) {
     }
 
-    public function getAllObjections(ContentRepositoryId $contentRepositoryId): NodeAggregateIdsWithDimensionSpacePoints
+    public function findAllConflicts(ContentRepositoryId $contentRepositoryId): NodeAggregateIdsWithDimensionSpacePoints
     {
-        $table = self::TABLE_NAME_OBJECTION;
+        $table = self::CONFLICT_TABLE_NAME;
         $query = <<<SQL
             SELECT
                 node_aggregate_id, dimension_space_points
@@ -59,9 +59,12 @@ final readonly class SoftRemovalObjectionRepository
         return NodeAggregateIdsWithDimensionSpacePoints::fromArray($objections);
     }
 
-    public function addObjection(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName, NodeAggregateIdsWithDimensionSpacePoints $softRemovals): void
-    {
-        $table = self::TABLE_NAME_OBJECTION;
+    public function addConflict(
+        ContentRepositoryId $contentRepositoryId,
+        WorkspaceName $workspaceName,
+        NodeAggregateIdsWithDimensionSpacePoints $softRemovals
+    ): void {
+        $table = self::CONFLICT_TABLE_NAME;
         $query = <<<SQL
             SELECT
                 dimension_space_points
@@ -101,17 +104,17 @@ final readonly class SoftRemovalObjectionRepository
         }
     }
 
-    public function flushWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
+    public function pruneConflictsForWorkspace(ContentRepositoryId $contentRepositoryId, WorkspaceName $workspaceName): void
     {
-        $this->dbal->delete(self::TABLE_NAME_OBJECTION, [
+        $this->dbal->delete(self::CONFLICT_TABLE_NAME, [
             'content_repository_id' => $contentRepositoryId->value,
             'workspace_name' => $workspaceName->value
         ]);
     }
 
-    public function pruneContentRepository(ContentRepositoryId $contentRepositoryId): void
+    public function pruneConflictsForContentRepository(ContentRepositoryId $contentRepositoryId): void
     {
-        $this->dbal->delete(self::TABLE_NAME_OBJECTION, [
+        $this->dbal->delete(self::CONFLICT_TABLE_NAME, [
             'content_repository_id' => $contentRepositoryId->value
         ]);
     }

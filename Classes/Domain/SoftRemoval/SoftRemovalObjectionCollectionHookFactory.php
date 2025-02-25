@@ -15,7 +15,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInt
 final readonly class SoftRemovalObjectionCollectionHookFactory implements CatchUpHookFactoryInterface
 {
     public function __construct(
-        private SoftRemovalObjectionRepository $softRemovalObjectionRepository
+        private ImpendingHardRemovalConflictRepository $softRemovalObjectionRepository
     ) {
     }
 

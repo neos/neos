@@ -1,4 +1,4 @@
-Feature: Tests for soft removal garbage collection
+Feature: Tests for soft removal garbage collection without impending conflicts
 
   Background:
     Given using the following content dimensions:
@@ -36,22 +36,43 @@ Feature: Tests for soft removal garbage collection
     And the following CreateNodeAggregateWithNode commands are executed:
       | nodeAggregateId        | parentNodeAggregateId  | nodeTypeName       |
       | sir-david-nodenborough | lady-eleonode-rootford | Neos.Neos:Site     |
-      | nody-mc-nodeface       | sir-david-nodenborough | Neos.Neos:Document |
+      | nodingers-cat          | sir-david-nodenborough | Neos.Neos:Document |
     And the command CreateWorkspace is executed with payload:
       | Key                | Value            |
       | workspaceName      | "user-workspace" |
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
 
-  Scenario: Soft removal of a node that only exists in a root workspace
+  Scenario: Garbage collection will ignore a soft removal if the node exists unremoved in another workspace
+    When the command TagSubtree is executed with payload:
+      | Key                          | Value                 |
+      | workspaceName                | "live"                |
+      | nodeAggregateId              | "nodingers-cat"       |
+      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"  |
+      | tag                          | "removed"             |
+    And soft removal garbage collection is run for content repository default
+
+    Then I expect exactly 5 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 4 is of type "SubtreeWasTagged" with payload:
+      | Key                          | Expected                                        |
+      | workspaceName                | "live"                                          |
+      | contentStreamId              | "cs-identifier"                                 |
+      | nodeAggregateId              | "nodingers-cat"                                 |
+      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
+      | tag                          | "removed"                                       |
+
+  Scenario: Garbage collection will transform a soft removal of a node that only exists in a root workspace
     And the command CreateNodeAggregateWithNode is executed with payload:
       | Key                   | Value                    |
+      | workspaceName         | "live"                   |
       | nodeAggregateId       | "nonly-lively"           |
       | nodeTypeName          | "Neos.Neos:Document"     |
       | parentNodeAggregateId | "sir-david-nodenborough" |
 
     When the command TagSubtree is executed with payload:
       | Key                          | Value                 |
+      | workspaceName                | "live"                |
       | nodeAggregateId              | "nonly-lively"        |
       | coveredDimensionSpacePoint   | {"example": "source"} |
       | nodeVariantSelectionStrategy | "allSpecializations"  |
@@ -67,11 +88,11 @@ Feature: Tests for soft removal garbage collection
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
-  Scenario: Soft removal of a node which is published to live
+  Scenario: Garbage collection will transform a soft removal of a node which is published to live from the only other workspace
     And I am in workspace "user-workspace"
     When the command TagSubtree is executed with payload:
       | Key                          | Value                 |
-      | nodeAggregateId              | "nody-mc-nodeface"    |
+      | nodeAggregateId              | "nodingers-cat"       |
       | coveredDimensionSpacePoint   | {"example": "source"} |
       | nodeVariantSelectionStrategy | "allSpecializations"  |
       | tag                          | "removed"             |
@@ -88,6 +109,6 @@ Feature: Tests for soft removal garbage collection
       | Key                                  | Expected                                        |
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
-      | nodeAggregateId                      | "nody-mc-nodeface"                              |
+      | nodeAggregateId                      | "nodingers-cat"                                 |
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |

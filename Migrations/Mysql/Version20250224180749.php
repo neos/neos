@@ -21,7 +21,7 @@ final class Version20250224180749 extends AbstractMigration
             "Migration can only be executed safely on '\Doctrine\DBAL\Platforms\MariaDb1027Platform'."
         );
 
-        $tableWorkspaceMetadata = $schema->createTable('neos_neos_soft_removal_objection');
+        $tableWorkspaceMetadata = $schema->createTable('neos_neos_impending_hard_removal_conflict');
         $tableWorkspaceMetadata->addColumn('content_repository_id', 'string', ['length' => 16]);
         $tableWorkspaceMetadata->addColumn('workspace_name', 'string', ['length' => 255]);
         $tableWorkspaceMetadata->addColumn('node_aggregate_id', 'string', ['length' => 64]);
@@ -36,6 +36,6 @@ final class Version20250224180749 extends AbstractMigration
             "Migration can only be executed safely on '\Doctrine\DBAL\Platforms\MariaDb1027Platform'."
         );
 
-        $schema->dropTable('neos_neos_soft_removal_objection');
+        $schema->dropTable('neos_neos_impending_hard_removal_conflict');
     }
 }

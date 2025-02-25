@@ -39,7 +39,7 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
     public function __construct(
         private ContentRepositoryId $contentRepositoryId,
         private ContentGraphReadModelInterface $contentGraphReadModel,
-        private SoftRemovalObjectionRepository $objectionRepository
+        private ImpendingHardRemovalConflictRepository $objectionRepository
     ) {
     }
 
@@ -93,7 +93,7 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
         };
 
         if ($flushWorkspace) {
-            $this->objectionRepository->flushWorkspace($this->contentRepositoryId, $flushWorkspace); // todo getWorkspaceName does not always work?!
+            $this->objectionRepository->pruneConflictsForWorkspace($this->contentRepositoryId, $flushWorkspace); // todo getWorkspaceName does not always work?!
             return;
         }
 
@@ -139,7 +139,7 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
             return;
         }
 
-        $this->objectionRepository->addObjection(
+        $this->objectionRepository->addConflict(
             $this->contentRepositoryId,
             $eventInstance->getWorkspaceName(),
             $explicitlySoftRemovedAncestors
