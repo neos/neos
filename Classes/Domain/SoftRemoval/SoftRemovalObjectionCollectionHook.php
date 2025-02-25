@@ -17,6 +17,7 @@ use Neos\ContentRepository\Core\Feature\NodeRenaming\Event\NodeAggregateNameWasC
 use Neos\ContentRepository\Core\Feature\NodeTypeChange\Event\NodeAggregateTypeWasChanged;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeGeneralizationVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodePeerVariantWasCreated;
+use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeSpecializationVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasTagged;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasUntagged;
@@ -100,29 +101,6 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
             return;
         }
 
-        // todo
-        // - UpdateRootNodeAggregateDimensions
-        // - CreateRootNodeAggregateWithNode
-        // or RootNodeAggregateDimensionsWereUpdated::class,
-        // or RootNodeAggregateWithNodeWasCreated::class,
-
-
-        // $anchorNodeAggregateId = match($eventInstance::class) {
-        //     NodeAggregateWithNodeWasCreated::class,
-        //     NodePropertiesWereSet::class,
-        //     NodeAggregateWasMoved::class,
-        //     NodeReferencesWereSet::class,
-        //     NodeAggregateWasRemoved::class,
-        //     NodeAggregateNameWasChanged::class,
-        //     NodeAggregateTypeWasChanged::class,
-        //     NodeGeneralizationVariantWasCreated::class,
-        //     NodePeerVariantWasCreated::class,
-        //     NodeSpecializationVariantWasCreated::class,
-        //     SubtreeWasTagged::class,
-        //     SubtreeWasUntagged::class => $eventInstance->nodeAggregateId
-        // };
-
-
         $contentGraph = $this->contentGraphReadModel->getContentGraph($eventInstance->getWorkspaceName());
 
         $nodeAggregate = $contentGraph->findNodeAggregateById($eventInstance->getNodeAggregateId());
@@ -130,6 +108,10 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
         if ($nodeAggregate === null) {
             return;
         }
+
+        // todo hande?
+        // - RootNodeAggregateDimensionsWereUpdated::class,
+        // - RootNodeAggregateWithNodeWasCreated::class,
 
         $dimensionSpacePoints = match ($eventInstance::class) {
             NodeAggregateWasMoved::class => $eventInstance->succeedingSiblingsForCoverage->toDimensionSpacePointSet(),
@@ -139,8 +121,9 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
             SubtreeWasTagged::class,
             SubtreeWasUntagged::class => $eventInstance->affectedDimensionSpacePoints,
             NodeAggregateWasRemoved::class => $eventInstance->affectedCoveredDimensionSpacePoints,
-            NodePeerVariantWasCreated::class => $eventInstance->peerOrigin->toDimensionSpacePoint(),
-            NodeGeneralizationVariantWasCreated::class => $eventInstance->generalizationOrigin->toDimensionSpacePoint(),
+            NodePeerVariantWasCreated::class => DimensionSpacePointSet::fromArray([$eventInstance->peerOrigin->toDimensionSpacePoint(), $eventInstance->sourceOrigin->toDimensionSpacePoint()]),
+            NodeGeneralizationVariantWasCreated::class => DimensionSpacePointSet::fromArray([$eventInstance->generalizationOrigin->toDimensionSpacePoint(), $eventInstance->sourceOrigin->toDimensionSpacePoint()]),
+            NodeSpecializationVariantWasCreated::class => DimensionSpacePointSet::fromArray([$eventInstance->specializationOrigin->toDimensionSpacePoint(), $eventInstance->sourceOrigin->toDimensionSpacePoint()]),
             NodeAggregateNameWasChanged::class,
             NodeAggregateTypeWasChanged::class => $nodeAggregate->coveredDimensionSpacePoints,
             default => null
