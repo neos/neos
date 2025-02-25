@@ -138,7 +138,7 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | Key           | Value            |
       | workspaceName | "user-workspace" |
     Then I expect the following hard removal conflicts to be impending:
-      | nodeAggregateId | dimensionSpacePoints                            |
+      | nodeAggregateId | dimensionSpacePoints     |
       | nodingers-cat   | [{"example": "special"}] |
 
     When soft removal garbage collection is run for content repository default
@@ -170,7 +170,7 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | Key           | Value            |
       | workspaceName | "user-workspace" |
     Then I expect the following hard removal conflicts to be impending:
-      | nodeAggregateId | dimensionSpacePoints                            |
+      | nodeAggregateId | dimensionSpacePoints     |
       | nodingers-cat   | [{"example": "special"}] |
 
     When soft removal garbage collection is run for content repository default
@@ -182,3 +182,80 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | nodeAggregateId              | "nodingers-cat"          |
       | affectedDimensionSpacePoints | [{"example": "special"}] |
       | tag                          | "removed"                |
+
+  Scenario: Garbage collection will transform a soft removal if there are newly created variants in an unrelated node aggregate in another workspace
+    When the command TagSubtree is executed with payload:
+      | Key                          | Value                 |
+      | workspaceName                | "live"                |
+      | nodeAggregateId              | "nodingers-kitten"    |
+      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"  |
+      | tag                          | "removed"             |
+
+    And I am in workspace "user-workspace"
+    And the command CreateNodeVariant is executed with payload:
+      | Key             | Value                  |
+      | nodeAggregateId | "nodingers-cat"        |
+      | sourceOrigin    | {"example": "source"}  |
+      | targetOrigin    | {"example": "special"} |
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints |
+
+    When soft removal garbage collection is run for content repository default
+    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 6 is of type "NodeAggregateWasRemoved" with payload:
+      | Key                                  | Expected                                        |
+      | workspaceName                        | "live"                                          |
+      | contentStreamId                      | "cs-identifier"                                 |
+      | nodeAggregateId                      | "nodingers-kitten"                              |
+      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
+      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+
+  Scenario: Garbage collection will transform a soft removal if there are newly created variants in an unrelated dimension space point
+    When the command CreateNodeVariant is executed with payload:
+      | Key             | Value                    |
+      | workspaceName   | "live"                   |
+      | nodeAggregateId | "sir-david-nodenborough" |
+      | sourceOrigin    | {"example": "source"}    |
+      | targetOrigin    | {"example": "general"}   |
+    And the command CreateNodeVariant is executed with payload:
+      | Key             | Value                  |
+      | workspaceName   | "live"                 |
+      | nodeAggregateId | "nodingers-cat"        |
+      | sourceOrigin    | {"example": "source"}  |
+      | targetOrigin    | {"example": "general"} |
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    And the command TagSubtree is executed with payload:
+      | Key                          | Value                 |
+      | workspaceName                | "live"                |
+      | nodeAggregateId              | "nodingers-kitten"    |
+      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"  |
+      | tag                          | "removed"             |
+
+    And I am in workspace "user-workspace"
+    And the command CreateNodeVariant is executed with payload:
+      | Key             | Value                  |
+      | nodeAggregateId | "nodingers-cat"        |
+      | sourceOrigin    | {"example": "general"} |
+      | targetOrigin    | {"example": "peer"}    |
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints |
+
+    When soft removal garbage collection is run for content repository default
+    Then I expect exactly 9 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 8 is of type "NodeAggregateWasRemoved" with payload:
+      | Key                                  | Expected                                        |
+      | workspaceName                        | "live"                                          |
+      | contentStreamId                      | "cs-identifier"                                 |
+      | nodeAggregateId                      | "nodingers-kitten"                              |
+      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
+      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
