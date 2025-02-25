@@ -232,13 +232,13 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | workspaceName   | "live"                   |
       | nodeAggregateId | "sir-david-nodenborough" |
       | sourceOrigin    | {"example": "source"}    |
-      | targetOrigin    | {"example": "peer"}   |
+      | targetOrigin    | {"example": "peer"}      |
     And the command CreateNodeVariant is executed with payload:
-      | Key             | Value                  |
-      | workspaceName   | "live"                 |
-      | nodeAggregateId | "nodingers-cat"        |
-      | sourceOrigin    | {"example": "source"}  |
-      | targetOrigin    | {"example": "peer"} |
+      | Key             | Value                 |
+      | workspaceName   | "live"                |
+      | nodeAggregateId | "nodingers-cat"       |
+      | sourceOrigin    | {"example": "source"} |
+      | targetOrigin    | {"example": "peer"}   |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
@@ -252,11 +252,11 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
 
     And I am in workspace "user-workspace"
     And the command TagSubtree is executed with payload:
-      | Key                          | Value                    |
-      | nodeAggregateId              | "nodingers-cat" |
-      | coveredDimensionSpacePoint   | {"example": "peer"}   |
-      | nodeVariantSelectionStrategy | "allSpecializations"     |
-      | tag                          | "whatever"               |
+      | Key                          | Value                |
+      | nodeAggregateId              | "nodingers-cat"      |
+      | coveredDimensionSpacePoint   | {"example": "peer"}  |
+      | nodeVariantSelectionStrategy | "allSpecializations" |
+      | tag                          | "whatever"           |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
@@ -320,20 +320,20 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | workspaceName   | "live"                   |
       | nodeAggregateId | "sir-david-nodenborough" |
       | sourceOrigin    | {"example": "source"}    |
-      | targetOrigin    | {"example": "peer"}   |
+      | targetOrigin    | {"example": "peer"}      |
     And the command CreateNodeVariant is executed with payload:
-      | Key             | Value                  |
-      | workspaceName   | "live"                 |
-      | nodeAggregateId | "nodingers-cat"        |
-      | sourceOrigin    | {"example": "source"}  |
-      | targetOrigin    | {"example": "peer"} |
+      | Key             | Value                 |
+      | workspaceName   | "live"                |
+      | nodeAggregateId | "nodingers-cat"       |
+      | sourceOrigin    | {"example": "source"} |
+      | targetOrigin    | {"example": "peer"}   |
     And the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example": "peer"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "whatever"             |
+      | Key                          | Value                |
+      | workspaceName                | "live"               |
+      | nodeAggregateId              | "nodingers-cat"      |
+      | coveredDimensionSpacePoint   | {"example": "peer"}  |
+      | nodeVariantSelectionStrategy | "allSpecializations" |
+      | tag                          | "whatever"           |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
@@ -347,11 +347,11 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
 
     And I am in workspace "user-workspace"
     And the command UntagSubtree is executed with payload:
-      | Key                          | Value                    |
-      | nodeAggregateId              | "nodingers-cat" |
-      | coveredDimensionSpacePoint   | {"example": "peer"}   |
-      | nodeVariantSelectionStrategy | "allSpecializations"     |
-      | tag                          | "whatever"               |
+      | Key                          | Value                |
+      | nodeAggregateId              | "nodingers-cat"      |
+      | coveredDimensionSpacePoint   | {"example": "peer"}  |
+      | nodeVariantSelectionStrategy | "allSpecializations" |
+      | tag                          | "whatever"           |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |

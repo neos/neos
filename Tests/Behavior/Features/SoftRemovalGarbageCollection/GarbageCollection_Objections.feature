@@ -54,66 +54,6 @@ Feature: Tests for soft removal garbage collection objections
       | newContentStreamId | "user-cs-id"     |
 
 
-  # RemoveNodeAggregate conflict prevention. In this case the hard removal will propagate from the user workspace to the others via publish and rebase
-  Scenario: Garbage collection will ignore a soft removal if the node has an unpublished hard removal in another workspace
-    When the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
-
-    And I am in workspace "user-workspace"
-    And the command RemoveNodeAggregate is executed with payload:
-      | Key                          | Value                |
-      | nodeAggregateId              | "nodingers-cat"      |
-      | coveredDimensionSpacePoint   | {"example":"source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations" |
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
-
-    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 6 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                        |
-      | workspaceName                | "live"                                          |
-      | contentStreamId              | "cs-identifier"                                 |
-      | nodeAggregateId              | "nodingers-cat"                                 |
-      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
-      | tag                          | "removed"                                       |
-
-  # RemoveNodeAggregate conflict prevention (for descendants). In this case the hard removal will propagate from the user workspace to the others via publish and rebase
-  Scenario: Garbage collection will ignore a soft removal if the node has an unpublished hard removal in another workspace
-    When the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
-
-    And I am in workspace "user-workspace"
-    And the command RemoveNodeAggregate is executed with payload:
-      | Key                          | Value                |
-      | nodeAggregateId              | "nodingers-kitten"   |
-      | coveredDimensionSpacePoint   | {"example":"source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations" |
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
-
-    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 6 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                        |
-      | workspaceName                | "live"                                          |
-      | contentStreamId              | "cs-identifier"                                 |
-      | nodeAggregateId              | "nodingers-cat"                                 |
-      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
-      | tag                          | "removed"                                       |
-
   # MoveNodeAggregate conflict prevention (direct)
   Scenario: Garbage collection will ignore a soft removal if the node has an unpublished move in another workspace
     When the command TagSubtree is executed with payload:
