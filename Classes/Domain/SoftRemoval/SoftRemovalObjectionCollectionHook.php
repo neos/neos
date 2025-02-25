@@ -154,12 +154,12 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
         $explicitlySoftRemovedAncestors = NodeAggregateIdsWithDimensionSpacePoints::create();
         while ($stack !== []) {
             $nodeAggregate = array_shift($stack);
-            if ($this->nodeAggregateIsSoftRemovedInDimension($nodeAggregate, $dimensionSpacePoints)) {
-                $explicitlySoftRemoved = $nodeAggregate->getDimensionSpacePointsTaggedWith(SubtreeTag::removed());
-                if (!$explicitlySoftRemoved->isEmpty()) { // todo difference with $dimensionSpacePoints???
+            if ($this->nodeAggregateIsSoftRemovedInDimensions($nodeAggregate, $dimensionSpacePoints)) {
+                $explicitlySoftRemovedDimensions = $nodeAggregate->getDimensionSpacePointsTaggedWith(SubtreeTag::removed())->getIntersection($dimensionSpacePoints);
+                if (!$explicitlySoftRemovedDimensions->isEmpty()) {
                     $explicitlySoftRemovedAncestors = $explicitlySoftRemovedAncestors->with(NodeAggregateIdWithDimensionSpacePoints::create(
                         $nodeAggregate->nodeAggregateId,
-                        $dimensionSpacePoints
+                        $explicitlySoftRemovedDimensions
                     ));
                 }
                 $stack = [...$stack, ...iterator_to_array($contentGraph->findParentNodeAggregates($nodeAggregate->nodeAggregateId))];
@@ -169,7 +169,7 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
         return $explicitlySoftRemovedAncestors;
     }
 
-    private function nodeAggregateIsSoftRemovedInDimension(NodeAggregate $nodeAggregate, DimensionSpacePointSet $dimensionSpacePoints): bool
+    private function nodeAggregateIsSoftRemovedInDimensions(NodeAggregate $nodeAggregate, DimensionSpacePointSet $dimensionSpacePoints): bool
     {
         foreach ($dimensionSpacePoints as $dimensionSpacePoint) {
             if ($nodeAggregate->coversDimensionSpacePoint($dimensionSpacePoint)) {
