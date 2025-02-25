@@ -25,15 +25,17 @@ trait SoftRemovalGarbageCollectionTrait
         $actualConflicts = $this->getObject(ImpendingHardRemovalConflictRepository::class)
             ->findAllConflicts($this->currentContentRepository->id);
 
-        $expectedConflicts = NodeAggregateIdsWithDimensionSpacePoints::fromArray(array_map(
-            fn (array $row): NodeAggregateIdWithDimensionSpacePoints => NodeAggregateIdWithDimensionSpacePoints::create(
-                NodeAggregateId::fromString($row['nodeAggregateId']),
-                DimensionSpacePointSet::fromJsonString($row['dimensionSpacePoints'])
-            ),
-            $payloadTable->getHash()
-        ));
+        $actualConflictsTable = array_map(static fn (NodeAggregateIdWithDimensionSpacePoints $conflict) => [
+            'nodeAggregateId' => $conflict->nodeAggregateId->value,
+            'dimensionSpacePoints' => $conflict->dimensionSpacePointSet->toJson(),
+        ], iterator_to_array($actualConflicts));
 
-        Assert::assertEquals($expectedConflicts, $actualConflicts);
+        $expectedConflictsWithNormalisedJson = array_map(
+            fn (array $row) => [...$row, 'dimensionSpacePoints' => DimensionSpacePointSet::fromJsonString($row['dimensionSpacePoints'])->toJson()],
+            $payloadTable->getHash()
+        );
+
+        Assert::assertSame($expectedConflictsWithNormalisedJson, $actualConflictsTable);
     }
 
     /**
@@ -41,9 +43,7 @@ trait SoftRemovalGarbageCollectionTrait
      */
     public function softRemovalGarbageCollectionIsRunForContentRepository(string $contentRepositoryId): void
     {
-        $garbageCollector = new SoftRemovalGarbageCollector();
-
-        $garbageCollector->run(ContentRepositoryId::fromString($contentRepositoryId));
+        $this->getObject(SoftRemovalGarbageCollector::class)->run(ContentRepositoryId::fromString($contentRepositoryId));
     }
 
     /**
