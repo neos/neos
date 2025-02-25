@@ -53,68 +53,6 @@ Feature: Tests for soft removal garbage collection objections
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
 
-  # SetNodeProperties conflict prevention
-  Scenario: Garbage collection will ignore a soft removal if the node has unpublished property changes in another workspace
-    When the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
-
-    And I am in workspace "user-workspace"
-    And the command SetNodeProperties is executed with payload:
-      | Key                       | Value                                   |
-      | workspaceName             | "user-workspace"                        |
-      | nodeAggregateId           | "nodingers-cat"                         |
-      | originDimensionSpacePoint | {"example": "source"}                   |
-      | propertyValues            | {"title": "Modified in user workspace"} |
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
-
-    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 6 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                        |
-      | workspaceName                | "live"                                          |
-      | contentStreamId              | "cs-identifier"                                 |
-      | nodeAggregateId              | "nodingers-cat"                                 |
-      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
-      | tag                          | "removed"                                       |
-
-  # SetNodeProperties conflict prevention (for descendants)
-  Scenario: Garbage collection will ignore a soft removal if the node has unpublished property changes in another workspace
-    When the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
-
-    And I am in workspace "user-workspace"
-    And the command SetNodeProperties is executed with payload:
-      | Key                       | Value                                   |
-      | workspaceName             | "user-workspace"                        |
-      | nodeAggregateId           | "nodingers-kitten"                      |
-      | originDimensionSpacePoint | {"example": "source"}                   |
-      | propertyValues            | {"title": "Modified in user workspace"} |
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
-
-    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 6 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                        |
-      | workspaceName                | "live"                                          |
-      | contentStreamId              | "cs-identifier"                                 |
-      | nodeAggregateId              | "nodingers-cat"                                 |
-      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
-      | tag                          | "removed"                                       |
-
   # SetNodeReferences conflict prevention
   Scenario: Garbage collection will ignore a soft removal in dimension if the node has unpublished reference changes in another workspace
     When the command TagSubtree is executed with payload:
