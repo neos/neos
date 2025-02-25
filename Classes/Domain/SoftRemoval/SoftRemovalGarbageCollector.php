@@ -50,7 +50,7 @@ final readonly class SoftRemovalGarbageCollector
         $softRemovalsWithoutObjections = $this->subtractObjections($softRemovalsAcrossWorkspaces, $contentRepository);
         foreach ($softRemovalsWithoutObjections as $softRemovedNode) {
             if ($softRemovedNode->dimensionSpacePointSet->isEmpty()) {
-                // only objections
+                // only impending conflicts
                 continue;
             }
             $generalizationsToRemoveWithAllSpecializations = $softRemovedNode->dimensionSpacePointSet->points;

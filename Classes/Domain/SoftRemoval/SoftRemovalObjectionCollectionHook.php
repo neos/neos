@@ -39,7 +39,7 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
     public function __construct(
         private ContentRepositoryId $contentRepositoryId,
         private ContentGraphReadModelInterface $contentGraphReadModel,
-        private ImpendingHardRemovalConflictRepository $objectionRepository
+        private ImpendingHardRemovalConflictRepository $impendingConflictRepository
     ) {
     }
 
@@ -63,6 +63,7 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
 
         $dimensionSpacePoints = match ($eventInstance::class) {
             NodeAggregateWasMoved::class => $eventInstance->succeedingSiblingsForCoverage->toDimensionSpacePointSet(),
+            NodeAggregateWasRemoved::class => $eventInstance->affectedCoveredDimensionSpacePoints,
             default => null
         };
 
@@ -76,7 +77,7 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
             return;
         }
 
-        $this->objectionRepository->addObjection(
+        $this->impendingConflictRepository->addConflict(
             $this->contentRepositoryId,
             $eventInstance->getWorkspaceName(),
             $explicitlySoftRemovedAncestors
@@ -93,7 +94,7 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
         };
 
         if ($flushWorkspace) {
-            $this->objectionRepository->pruneConflictsForWorkspace($this->contentRepositoryId, $flushWorkspace); // todo getWorkspaceName does not always work?!
+            $this->impendingConflictRepository->pruneConflictsForWorkspace($this->contentRepositoryId, $flushWorkspace); // todo getWorkspaceName does not always work?!
             return;
         }
 
@@ -120,7 +121,6 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
             NodeReferencesWereSet::class => $eventInstance->affectedSourceOriginDimensionSpacePoints->toDimensionSpacePointSet(),
             SubtreeWasTagged::class,
             SubtreeWasUntagged::class => $eventInstance->affectedDimensionSpacePoints,
-            NodeAggregateWasRemoved::class => $eventInstance->affectedCoveredDimensionSpacePoints,
             NodePeerVariantWasCreated::class => DimensionSpacePointSet::fromArray([$eventInstance->peerOrigin->toDimensionSpacePoint(), $eventInstance->sourceOrigin->toDimensionSpacePoint()]),
             NodeGeneralizationVariantWasCreated::class => DimensionSpacePointSet::fromArray([$eventInstance->generalizationOrigin->toDimensionSpacePoint(), $eventInstance->sourceOrigin->toDimensionSpacePoint()]),
             NodeSpecializationVariantWasCreated::class => DimensionSpacePointSet::fromArray([$eventInstance->specializationOrigin->toDimensionSpacePoint(), $eventInstance->sourceOrigin->toDimensionSpacePoint()]),
@@ -139,7 +139,7 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
             return;
         }
 
-        $this->objectionRepository->addConflict(
+        $this->impendingConflictRepository->addConflict(
             $this->contentRepositoryId,
             $eventInstance->getWorkspaceName(),
             $explicitlySoftRemovedAncestors
