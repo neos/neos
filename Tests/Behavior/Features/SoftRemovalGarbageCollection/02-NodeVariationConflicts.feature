@@ -73,7 +73,7 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | workspaceName | "user-workspace" |
     Then I expect the following hard removal conflicts to be impending:
       | nodeAggregateId | dimensionSpacePoints                            |
-      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
+      | nodingers-cat   | [{"example": "special"}, {"example": "source"}] |
 
     When soft removal garbage collection is run for content repository default
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
@@ -139,7 +139,7 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | workspaceName | "user-workspace" |
     Then I expect the following hard removal conflicts to be impending:
       | nodeAggregateId | dimensionSpacePoints                            |
-      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
+      | nodingers-cat   | [{"example": "special"}] |
 
     When soft removal garbage collection is run for content repository default
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
@@ -171,7 +171,7 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | workspaceName | "user-workspace" |
     Then I expect the following hard removal conflicts to be impending:
       | nodeAggregateId | dimensionSpacePoints                            |
-      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
+      | nodingers-cat   | [{"example": "special"}] |
 
     When soft removal garbage collection is run for content repository default
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"

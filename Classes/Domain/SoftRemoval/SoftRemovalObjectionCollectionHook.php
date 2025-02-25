@@ -154,33 +154,17 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
         $explicitlySoftRemovedAncestors = NodeAggregateIdsWithDimensionSpacePoints::create();
         while ($stack !== []) {
             $nodeAggregate = array_shift($stack);
-            if ($this->nodeAggregateIsSoftRemovedInDimensions($nodeAggregate, $dimensionSpacePoints)) {
-                $explicitlySoftRemovedDimensions = $nodeAggregate->getDimensionSpacePointsTaggedWith(SubtreeTag::removed())->getIntersection($dimensionSpacePoints);
-                if (!$explicitlySoftRemovedDimensions->isEmpty()) {
-                    $explicitlySoftRemovedAncestors = $explicitlySoftRemovedAncestors->with(NodeAggregateIdWithDimensionSpacePoints::create(
-                        $nodeAggregate->nodeAggregateId,
-                        $explicitlySoftRemovedDimensions
-                    ));
-                }
-                $stack = [...$stack, ...iterator_to_array($contentGraph->findParentNodeAggregates($nodeAggregate->nodeAggregateId))];
+            $explicitlySoftRemovedDimensions = $nodeAggregate->getDimensionSpacePointsTaggedWith(SubtreeTag::removed())->getIntersection($dimensionSpacePoints);
+            if (!$explicitlySoftRemovedDimensions->isEmpty()) {
+                $explicitlySoftRemovedAncestors = $explicitlySoftRemovedAncestors->with(NodeAggregateIdWithDimensionSpacePoints::create(
+                    $nodeAggregate->nodeAggregateId,
+                    $explicitlySoftRemovedDimensions
+                ));
             }
+            $stack = [...$stack, ...iterator_to_array($contentGraph->findParentNodeAggregates($nodeAggregate->nodeAggregateId))];
         }
 
         return $explicitlySoftRemovedAncestors;
-    }
-
-    private function nodeAggregateIsSoftRemovedInDimensions(NodeAggregate $nodeAggregate, DimensionSpacePointSet $dimensionSpacePoints): bool
-    {
-        foreach ($dimensionSpacePoints as $dimensionSpacePoint) {
-            if ($nodeAggregate->coversDimensionSpacePoint($dimensionSpacePoint)) {
-                $node = $nodeAggregate->getNodeByCoveredDimensionSpacePoint($dimensionSpacePoint);
-                $nodeOrAncestorIsSoftRemoved = $node->tags->contain(SubtreeTag::removed());
-                if ($nodeOrAncestorIsSoftRemoved) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     public function onAfterBatchCompleted(): void
