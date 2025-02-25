@@ -1,4 +1,4 @@
-Feature: Tests for soft removal garbage collection with impending conflicts caused by node modification
+Feature: Tests for soft removal garbage collection with impending conflicts caused by node referencing
 
   Background:
     Given using the following content dimensions:
@@ -60,7 +60,6 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | coveredDimensionSpacePoint   | {"example": "source"} |
       | nodeVariantSelectionStrategy | "allSpecializations"  |
       | tag                          | "removed"             |
-
     And I am in workspace "user-workspace"
     And the command SetNodeReferences is executed with payload:
       | Key                       | Value                                                                                    |
@@ -70,13 +69,11 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-
     Then I expect the following hard removal conflicts to be impending:
       | nodeAggregateId | dimensionSpacePoints                            |
       | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
 
-    And soft removal garbage collection is run for content repository default
-
+    When soft removal garbage collection is run for content repository default
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
     And event at index 5 is of type "SubtreeWasTagged" with payload:
       | Key                          | Expected                                        |
