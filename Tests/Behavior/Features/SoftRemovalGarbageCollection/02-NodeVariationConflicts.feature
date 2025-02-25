@@ -71,8 +71,11 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints                            |
+      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
 
+    When soft removal garbage collection is run for content repository default
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
     And event at index 5 is of type "SubtreeWasTagged" with payload:
       | Key                          | Expected                                        |
@@ -101,8 +104,11 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints                            |
+      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
 
+    When soft removal garbage collection is run for content repository default
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
     And event at index 5 is of type "SubtreeWasTagged" with payload:
       | Key                          | Expected                                        |
@@ -115,12 +121,12 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
   # target, for node itself
   Scenario: Garbage collection will ignore a soft removal if the node has unpublished newly created variants by target in another workspace
     When the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-cat"       |
+      | Key                          | Value                  |
+      | workspaceName                | "live"                 |
+      | nodeAggregateId              | "nodingers-cat"        |
       | coveredDimensionSpacePoint   | {"example": "special"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
+      | nodeVariantSelectionStrategy | "allSpecializations"   |
+      | tag                          | "removed"              |
     And I am in workspace "user-workspace"
     And the command CreateNodeVariant is executed with payload:
       | Key             | Value                  |
@@ -131,43 +137,48 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints                            |
+      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
 
+    When soft removal garbage collection is run for content repository default
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
     And event at index 5 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                        |
-      | workspaceName                | "live"                                          |
-      | contentStreamId              | "cs-identifier"                                 |
-      | nodeAggregateId              | "nodingers-cat"                                 |
-      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
-      | tag                          | "removed"                                       |
+      | Key                          | Expected                 |
+      | workspaceName                | "live"                   |
+      | contentStreamId              | "cs-identifier"          |
+      | nodeAggregateId              | "nodingers-cat"          |
+      | affectedDimensionSpacePoints | [{"example": "special"}] |
+      | tag                          | "removed"                |
 
   # target, for descendant
   Scenario: Garbage collection will ignore a soft removal if one of the node's descendants has unpublished newly created variants by target in another workspace
     When the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-cat"       |
+      | Key                          | Value                  |
+      | workspaceName                | "live"                 |
+      | nodeAggregateId              | "nodingers-cat"        |
       | coveredDimensionSpacePoint   | {"example": "special"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
+      | nodeVariantSelectionStrategy | "allSpecializations"   |
+      | tag                          | "removed"              |
     And I am in workspace "user-workspace"
     And the command CreateNodeVariant is executed with payload:
       | Key             | Value                  |
       | nodeAggregateId | "nodingers-kitten"     |
       | sourceOrigin    | {"example": "source"}  |
       | targetOrigin    | {"example": "special"} |
-
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints                            |
+      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
 
+    When soft removal garbage collection is run for content repository default
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
     And event at index 5 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                        |
-      | workspaceName                | "live"                                          |
-      | contentStreamId              | "cs-identifier"                                 |
-      | nodeAggregateId              | "nodingers-cat"                                 |
-      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
-      | tag                          | "removed"                                       |
+      | Key                          | Expected                 |
+      | workspaceName                | "live"                   |
+      | contentStreamId              | "cs-identifier"          |
+      | nodeAggregateId              | "nodingers-cat"          |
+      | affectedDimensionSpacePoints | [{"example": "special"}] |
+      | tag                          | "removed"                |

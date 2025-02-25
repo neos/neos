@@ -118,6 +118,13 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | coveredDimensionSpacePoint   | {"example": "source"} |
       | nodeVariantSelectionStrategy | "allSpecializations"  |
       | tag                          | "removed"             |
+    And the command TagSubtree is executed with payload:
+      | Key                          | Value                    |
+      | workspaceName                | "live"                   |
+      | nodeAggregateId              | "sir-david-nodenborough" |
+      | coveredDimensionSpacePoint   | {"example": "source"}    |
+      | nodeVariantSelectionStrategy | "allSpecializations"     |
+      | tag                          | "removed"                |
     And I am in workspace "user-workspace"
     And the following CreateNodeAggregateWithNode commands are executed:
       | nodeAggregateId  | parentNodeAggregateId  | nodeTypeName       |
@@ -125,10 +132,13 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId        | dimensionSpacePoints                            |
+      | sir-david-nodenborough | [{"example": "source"}, {"example": "special"}] |
 
-    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 6 is of type "NodeAggregateWasRemoved" with payload:
+    When soft removal garbage collection is run for content repository default
+    Then I expect exactly 8 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 7 is of type "NodeAggregateWasRemoved" with payload:
       | Key                                  | Expected                                        |
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
@@ -136,7 +146,7 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
-  Scenario: Garbage collection will transform a soft removal if there only is a creation conflict in an unrelated dimension space point
+  Scenario: Garbage collection will transform a soft removal if there only is a change in an unrelated dimension space point
     When the command CreateNodeVariant is executed with payload:
       | Key             | Value                    |
       | workspaceName   | "live"                   |
@@ -166,8 +176,10 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints |
 
+    When soft removal garbage collection is run for content repository default
     Then I expect exactly 9 events to be published on stream "ContentStream:cs-identifier"
     And event at index 8 is of type "NodeAggregateWasRemoved" with payload:
       | Key                                  | Expected                                        |

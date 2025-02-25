@@ -69,6 +69,7 @@ final readonly class SoftRemovalGarbageCollector
             }
             foreach ($generalizationsToRemoveWithAllSpecializations as $generalization) {
                 if (
+                    // @todo invert logic: compare specialization set with objections
                     $contentRepository->getVariationGraph()->getSpecializationSet($generalization)
                         ->getDifference($softRemovedNode->dimensionSpacePointSet)
                         ->isEmpty()
