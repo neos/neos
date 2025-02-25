@@ -112,3 +112,36 @@ Feature: Tests for soft removal garbage collection without impending conflicts
       | nodeAggregateId                      | "nodingers-cat"                                 |
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+
+  Scenario: Garbage collection will transform nested soft removals of a node that only exists in a root workspace
+    When the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId        | parentNodeAggregateId  | nodeTypeName       |
+      | nodingers-kitten | nodingers-cat | Neos.Neos:Document     |
+      | nodingers-kittens-plaything          | nodingers-kitten | Neos.Neos:Document |
+    And the command TagSubtree is executed with payload:
+      | Key                          | Value                 |
+      | workspaceName                | "live"                |
+      | nodeAggregateId              | "nodingers-kittens-plaything"       |
+      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"  |
+      | tag                          | "removed"             |
+    And the command TagSubtree is executed with payload:
+      | Key                          | Value                 |
+      | workspaceName                | "live"                |
+      | nodeAggregateId              | "nodingers-kitten"       |
+      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"  |
+      | tag                          | "removed"             |
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints |
+
+    When soft removal garbage collection is run for content repository default
+    Then I expect exactly 9 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 8 is of type "NodeAggregateWasRemoved" with payload:
+      | Key                                  | Expected                                        |
+      | workspaceName                        | "live"                                          |
+      | contentStreamId                      | "cs-identifier"                                 |
+      | nodeAggregateId                      | "nodingers-kitten"                                  |
+      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
+      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+    # the event for the nested removal is never explicitly emitted; the corresponding command fails and gets caught for now

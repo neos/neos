@@ -14,6 +14,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregate;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdsWithDimensionSpacePoints;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdWithDimensionSpacePoints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
+use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateCurrentlyDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeVariantSelectionStrategy;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
@@ -74,12 +75,16 @@ final readonly class SoftRemovalGarbageCollector
                         ->getDifference($softRemovedNode->dimensionSpacePointSet)
                         ->isEmpty()
                 ) {
-                    $contentRepository->handle(RemoveNodeAggregate::create(
-                        WorkspaceName::forLive(),
-                        $softRemovedNode->nodeAggregateId,
-                        $generalization,
-                        NodeVariantSelectionStrategy::STRATEGY_ALL_SPECIALIZATIONS
-                    ));
+                    try {
+                        $contentRepository->handle(RemoveNodeAggregate::create(
+                            WorkspaceName::forLive(),
+                            $softRemovedNode->nodeAggregateId,
+                            $generalization,
+                            NodeVariantSelectionStrategy::STRATEGY_ALL_SPECIALIZATIONS
+                        ));
+                    } catch (NodeAggregateCurrentlyDoesNotExist) {
+                        // already removed by another command further up the graph
+                    }
                 }
             }
         }
