@@ -74,6 +74,9 @@ final readonly class SoftRemovalObjectionRepository
         SQL;
 
         foreach ($softRemovals as $softRemoval) {
+            if ($softRemoval->dimensionSpacePointSet->isEmpty()) {
+                continue;
+            }
             $row = $this->dbal->fetchAssociative($query, [
                 'contentRepositoryId' => $contentRepositoryId->value,
                 'workspaceName' => $workspaceName->value,

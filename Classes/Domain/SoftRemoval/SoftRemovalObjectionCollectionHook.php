@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Domain\SoftRemoval;
 
+use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
 use Neos\ContentRepository\Core\EventStore\EventInterface;
 use Neos\ContentRepository\Core\Feature\Common\EmbedsNodeAggregateId;
 use Neos\ContentRepository\Core\Feature\Common\EmbedsWorkspaceName;
@@ -12,6 +13,7 @@ use Neos\ContentRepository\Core\Feature\NodeModification\Event\NodePropertiesWer
 use Neos\ContentRepository\Core\Feature\NodeMove\Event\NodeAggregateWasMoved;
 use Neos\ContentRepository\Core\Feature\NodeReferencing\Event\NodeReferencesWereSet;
 use Neos\ContentRepository\Core\Feature\NodeRemoval\Event\NodeAggregateWasRemoved;
+use Neos\ContentRepository\Core\Feature\NodeRenaming\Event\NodeAggregateNameWasChanged;
 use Neos\ContentRepository\Core\Feature\NodeTypeChange\Event\NodeAggregateTypeWasChanged;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeGeneralizationVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodePeerVariantWasCreated;
@@ -22,13 +24,16 @@ use Neos\ContentRepository\Core\Feature\WorkspacePublication\Event\WorkspaceWasD
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Event\WorkspaceWasPublished;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Event\WorkspaceWasRebased;
 use Neos\ContentRepository\Core\Projection\CatchUpHook\CatchUpHookInterface;
+use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindAncestorNodesFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
+use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregate;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdsWithDimensionSpacePoints;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdWithDimensionSpacePoints;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\Subscription\SubscriptionStatus;
 use Neos\EventStore\Model\EventEnvelope;
 
@@ -47,6 +52,40 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
 
     public function onBeforeEvent(EventInterface $eventInstance, EventEnvelope $eventEnvelope): void
     {
+        if (!$eventInstance instanceof EmbedsNodeAggregateId || !$eventInstance instanceof EmbedsWorkspaceName || $eventInstance->getWorkspaceName()->isLive()) {
+            return;
+        }
+
+        $contentGraph = $this->contentGraphReadModel->getContentGraph($eventInstance->getWorkspaceName());
+
+        $nodeAggregate = $contentGraph->findNodeAggregateById($eventInstance->getNodeAggregateId());
+
+        if ($nodeAggregate === null) {
+            return;
+        }
+
+        $dimensionSpacePoints = match ($eventInstance::class) {
+            NodeAggregateWasMoved::class => $eventInstance->succeedingSiblingsForCoverage->toDimensionSpacePointSet(),
+            default => null
+        };
+
+        if ($dimensionSpacePoints === null) {
+            return;
+        }
+
+        $nodeOrAncestorIsSoftRemoved = $this->nodeAggregateIsSoftRemovedInDimension($nodeAggregate, $dimensionSpacePoints);
+
+        if (!$nodeOrAncestorIsSoftRemoved) {
+            return;
+        }
+
+        $explicitlySoftRemovedAncestors = $this->findExplicitlySoftRemovedParents($contentGraph, $eventInstance->getNodeAggregateId(), $dimensionSpacePoints);
+
+        $this->objectionRepository->addObjection(
+            $this->contentRepositoryId,
+            $eventInstance->getWorkspaceName(),
+            $explicitlySoftRemovedAncestors
+        );
     }
 
     public function onAfterEvent(EventInterface $eventInstance, EventEnvelope $eventEnvelope): void
@@ -67,7 +106,36 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
             return;
         }
 
+        // todo
+        // - UpdateRootNodeAggregateDimensions
+        // - CreateRootNodeAggregateWithNode
+        // or RootNodeAggregateDimensionsWereUpdated::class,
+        // or RootNodeAggregateWithNodeWasCreated::class,
+
+
+        // $anchorNodeAggregateId = match($eventInstance::class) {
+        //     NodeAggregateWithNodeWasCreated::class,
+        //     NodePropertiesWereSet::class,
+        //     NodeAggregateWasMoved::class,
+        //     NodeReferencesWereSet::class,
+        //     NodeAggregateWasRemoved::class,
+        //     NodeAggregateNameWasChanged::class,
+        //     NodeAggregateTypeWasChanged::class,
+        //     NodeGeneralizationVariantWasCreated::class,
+        //     NodePeerVariantWasCreated::class,
+        //     NodeSpecializationVariantWasCreated::class,
+        //     SubtreeWasTagged::class,
+        //     SubtreeWasUntagged::class => $eventInstance->nodeAggregateId
+        // };
+
+
         $contentGraph = $this->contentGraphReadModel->getContentGraph($eventInstance->getWorkspaceName());
+
+        $nodeAggregate = $contentGraph->findNodeAggregateById($eventInstance->getNodeAggregateId());
+
+        if ($nodeAggregate === null) {
+            return;
+        }
 
         $dimensionSpacePoints = match ($eventInstance::class) {
             NodeAggregateWasMoved::class => $eventInstance->succeedingSiblingsForCoverage->toDimensionSpacePointSet(),
@@ -77,38 +145,67 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
             SubtreeWasTagged::class,
             SubtreeWasUntagged::class => $eventInstance->affectedDimensionSpacePoints,
             NodeAggregateWasRemoved::class => $eventInstance->affectedCoveredDimensionSpacePoints,
-            NodeAggregateTypeWasChanged::class => null,
             NodePeerVariantWasCreated::class => $eventInstance->peerOrigin->toDimensionSpacePoint(),
             NodeGeneralizationVariantWasCreated::class => $eventInstance->generalizationOrigin->toDimensionSpacePoint(),
+            NodeAggregateNameWasChanged::class,
+            NodeAggregateTypeWasChanged::class => $nodeAggregate->coveredDimensionSpacePoints,
             default => null
         };
 
         if ($dimensionSpacePoints === null) {
-            // todo change node type
             return;
         }
 
-        $nodeOrAncestorIsSoftRemoved = false;
-        foreach ($dimensionSpacePoints as $dimensionSpacePoint) {
-            $subgraph = $contentGraph->getSubgraph($dimensionSpacePoint, VisibilityConstraints::withoutRestrictions());
-            $node = $subgraph->findNodeById($eventInstance->getNodeAggregateId());
-            $nodeOrAncestorIsSoftRemoved = $node?->tags->contain(SubtreeTag::removed()) === true;
-            if ($nodeOrAncestorIsSoftRemoved) {
-                break;
-            }
-        }
+        $nodeOrAncestorIsSoftRemoved = $this->nodeAggregateIsSoftRemovedInDimension($nodeAggregate, $dimensionSpacePoints);
 
         if (!$nodeOrAncestorIsSoftRemoved) {
             return;
         }
 
-        // todo use findAncestorNodes for each dimension
-        $ancestorNodes = $subgraph->findAncestorNodes($eventInstance->getNodeAggregateId(), FindAncestorNodesFilter::create())->filter(fn (Node $node) => $node->tags->withoutInherited()->contain(SubtreeTag::removed()));
+        $explicitlySoftRemovedAncestors = $this->findExplicitlySoftRemovedParents($contentGraph, $eventInstance->getNodeAggregateId(), $dimensionSpacePoints);
+
         $this->objectionRepository->addObjection(
             $this->contentRepositoryId,
             $eventInstance->getWorkspaceName(),
-            NodeAggregateIdsWithDimensionSpacePoints::fromArray($ancestorNodes->map(fn (Node $node) => NodeAggregateIdWithDimensionSpacePoints::create($node->aggregateId, $dimensionSpacePoints)))
+            $explicitlySoftRemovedAncestors
         );
+    }
+
+    private function findExplicitlySoftRemovedParents(ContentGraphInterface $contentGraph, NodeAggregateId $nodeAggregateId, DimensionSpacePointSet $dimensionSpacePoints): NodeAggregateIdsWithDimensionSpacePoints
+    {
+        /** @var array<NodeAggregate> $stack */
+        $stack = iterator_to_array($contentGraph->findParentNodeAggregates($nodeAggregateId));
+
+        $explicitlySoftRemovedAncestors = NodeAggregateIdsWithDimensionSpacePoints::create();
+        while ($stack !== []) {
+            $parentNodeAggregate = array_shift($stack);
+            if ($this->nodeAggregateIsSoftRemovedInDimension($parentNodeAggregate, $dimensionSpacePoints)) {
+                $explicitlySoftRemoved = $parentNodeAggregate->getDimensionSpacePointsTaggedWith(SubtreeTag::removed());
+                if (!$explicitlySoftRemoved->isEmpty()) { // todo difference with $dimensionSpacePoints???
+                    $explicitlySoftRemovedAncestors = $explicitlySoftRemovedAncestors->with(NodeAggregateIdWithDimensionSpacePoints::create(
+                        $parentNodeAggregate->nodeAggregateId,
+                        $dimensionSpacePoints
+                    ));
+                }
+                $stack = [...$stack, ...iterator_to_array($contentGraph->findParentNodeAggregates($parentNodeAggregate->nodeAggregateId))];
+            }
+        }
+
+        return $explicitlySoftRemovedAncestors;
+    }
+
+    private function nodeAggregateIsSoftRemovedInDimension(NodeAggregate $nodeAggregate, DimensionSpacePointSet $dimensionSpacePoints): bool
+    {
+        foreach ($dimensionSpacePoints as $dimensionSpacePoint) {
+            if ($nodeAggregate->coversDimensionSpacePoint($dimensionSpacePoint)) {
+                $node = $nodeAggregate->getNodeByCoveredDimensionSpacePoint($dimensionSpacePoint);
+                $nodeOrAncestorIsSoftRemoved = $node->tags->contain(SubtreeTag::removed());
+                if ($nodeOrAncestorIsSoftRemoved) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public function onAfterBatchCompleted(): void
