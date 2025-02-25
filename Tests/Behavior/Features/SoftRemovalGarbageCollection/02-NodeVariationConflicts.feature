@@ -1,4 +1,4 @@
-Feature: Tests for soft removal garbage collection with impending conflicts caused by node creation
+Feature: Tests for soft removal garbage collection with impending conflicts caused by node variation
 
   Background:
     Given using the following content dimensions:
@@ -52,7 +52,8 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
 
-  Scenario: Garbage collection will ignore a soft removal if the node has unpublished newly created children in another workspace and matching dimension space points
+  # source, for node itself
+  Scenario: Garbage collection will ignore a soft removal if the node has unpublished newly created variants by source in another workspace
     When the command TagSubtree is executed with payload:
       | Key                          | Value                 |
       | workspaceName                | "live"                |
@@ -61,17 +62,17 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | nodeVariantSelectionStrategy | "allSpecializations"  |
       | tag                          | "removed"             |
     And I am in workspace "user-workspace"
-    And the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId        | parentNodeAggregateId | nodeTypeName       |
-      | nodingers-other-kitten | nodingers-cat         | Neos.Neos:Document |
+    And the command CreateNodeVariant is executed with payload:
+      | Key             | Value                  |
+      | nodeAggregateId | "nodingers-cat"        |
+      | sourceOrigin    | {"example": "source"}  |
+      | targetOrigin    | {"example": "special"} |
+
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-    Then I expect the following hard removal conflicts to be impending:
-      | nodeAggregateId | dimensionSpacePoints                            |
-      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
+    And soft removal garbage collection is run for content repository default
 
-    When soft removal garbage collection is run for content repository default
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
     And event at index 5 is of type "SubtreeWasTagged" with payload:
       | Key                          | Expected                                        |
@@ -81,7 +82,8 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
       | tag                          | "removed"                                       |
 
-  Scenario: Garbage collection will ignore a soft removal if the node has unpublished newly created descendants in another workspace and matching dimension space points
+  # source, for descendants
+  Scenario: Garbage collection will ignore a soft removal if one of the node's descendants has unpublished newly created variants by source in another workspace
     When the command TagSubtree is executed with payload:
       | Key                          | Value                 |
       | workspaceName                | "live"                |
@@ -90,17 +92,17 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | nodeVariantSelectionStrategy | "allSpecializations"  |
       | tag                          | "removed"             |
     And I am in workspace "user-workspace"
-    And the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId             | parentNodeAggregateId | nodeTypeName       |
-      | nodingers-kittens-plaything | nodingers-kitten      | Neos.Neos:Document |
+    And the command CreateNodeVariant is executed with payload:
+      | Key             | Value                  |
+      | nodeAggregateId | "nodingers-kitten"     |
+      | sourceOrigin    | {"example": "source"}  |
+      | targetOrigin    | {"example": "special"} |
+
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-    Then I expect the following hard removal conflicts to be impending:
-      | nodeAggregateId | dimensionSpacePoints                            |
-      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
+    And soft removal garbage collection is run for content repository default
 
-    When soft removal garbage collection is run for content repository default
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
     And event at index 5 is of type "SubtreeWasTagged" with payload:
       | Key                          | Expected                                        |
@@ -110,69 +112,62 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
       | tag                          | "removed"                                       |
 
-  Scenario: Garbage collection will transform a soft removal if there only is a creation conflict on an unrelated node aggregate
+  # target, for node itself
+  Scenario: Garbage collection will ignore a soft removal if the node has unpublished newly created variants by target in another workspace
     When the command TagSubtree is executed with payload:
       | Key                          | Value                 |
       | workspaceName                | "live"                |
       | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | coveredDimensionSpacePoint   | {"example": "special"} |
       | nodeVariantSelectionStrategy | "allSpecializations"  |
       | tag                          | "removed"             |
     And I am in workspace "user-workspace"
-    And the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId  | parentNodeAggregateId  | nodeTypeName       |
-      | nody-mc-nodeface | sir-david-nodenborough | Neos.Neos:Document |
+    And the command CreateNodeVariant is executed with payload:
+      | Key             | Value                  |
+      | nodeAggregateId | "nodingers-cat"        |
+      | sourceOrigin    | {"example": "source"}  |
+      | targetOrigin    | {"example": "special"} |
+
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
     And soft removal garbage collection is run for content repository default
 
-    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 6 is of type "NodeAggregateWasRemoved" with payload:
-      | Key                                  | Expected                                        |
-      | workspaceName                        | "live"                                          |
-      | contentStreamId                      | "cs-identifier"                                 |
-      | nodeAggregateId                      | "nodingers-cat"                                 |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
-      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+    Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 5 is of type "SubtreeWasTagged" with payload:
+      | Key                          | Expected                                        |
+      | workspaceName                | "live"                                          |
+      | contentStreamId              | "cs-identifier"                                 |
+      | nodeAggregateId              | "nodingers-cat"                                 |
+      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
+      | tag                          | "removed"                                       |
 
-  Scenario: Garbage collection will transform a soft removal if there only is a creation conflict in an unrelated dimension space point
-    When the command CreateNodeVariant is executed with payload:
-      | Key             | Value                    |
-      | workspaceName   | "live"                   |
-      | nodeAggregateId | "sir-david-nodenborough" |
-      | sourceOrigin    | {"example": "source"}    |
-      | targetOrigin    | {"example": "peer"}      |
-    When the command CreateNodeVariant is executed with payload:
-      | Key             | Value                 |
-      | workspaceName   | "live"                |
-      | nodeAggregateId | "nodingers-cat"       |
-      | sourceOrigin    | {"example": "source"} |
-      | targetOrigin    | {"example": "peer"}   |
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
-    And the command TagSubtree is executed with payload:
+  # target, for descendant
+  Scenario: Garbage collection will ignore a soft removal if one of the node's descendants has unpublished newly created variants by target in another workspace
+    When the command TagSubtree is executed with payload:
       | Key                          | Value                 |
       | workspaceName                | "live"                |
       | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | coveredDimensionSpacePoint   | {"example": "special"} |
       | nodeVariantSelectionStrategy | "allSpecializations"  |
       | tag                          | "removed"             |
     And I am in workspace "user-workspace"
-    And the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId  | parentNodeAggregateId | nodeTypeName       | originDimensionSpacePoint |
-      | nody-mc-nodeface | nodingers-cat         | Neos.Neos:Document | {"example": "peer"}       |
+    And the command CreateNodeVariant is executed with payload:
+      | Key             | Value                  |
+      | nodeAggregateId | "nodingers-kitten"     |
+      | sourceOrigin    | {"example": "source"}  |
+      | targetOrigin    | {"example": "special"} |
+
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
     And soft removal garbage collection is run for content repository default
 
-    Then I expect exactly 9 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 8 is of type "NodeAggregateWasRemoved" with payload:
-      | Key                                  | Expected                                        |
-      | workspaceName                        | "live"                                          |
-      | contentStreamId                      | "cs-identifier"                                 |
-      | nodeAggregateId                      | "nodingers-cat"                                 |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
-      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+    Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 5 is of type "SubtreeWasTagged" with payload:
+      | Key                          | Expected                                        |
+      | workspaceName                | "live"                                          |
+      | contentStreamId              | "cs-identifier"                                 |
+      | nodeAggregateId              | "nodingers-cat"                                 |
+      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
+      | tag                          | "removed"                                       |

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Neos\Neos\Domain\SoftRemoval;
 
 use Neos\ContentRepository\Core\ContentRepository;
-use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
 use Neos\ContentRepository\Core\DimensionSpace\VariantType;
 use Neos\ContentRepository\Core\Feature\NodeRemoval\Command\RemoveNodeAggregate;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
@@ -135,7 +134,7 @@ final readonly class SoftRemovalGarbageCollector
             if ($objection === null) {
                 continue;
             }
-            $objectionGeneralizationSet = DimensionSpacePointSet::fromArray([]);
+            $objectionGeneralizationSet = $objection->dimensionSpacePointSet;
             foreach ($objection->dimensionSpacePointSet as $dimensionSpacePoint) {
                 $objectionGeneralizationSet = $objectionGeneralizationSet->getUnion(
                     $contentRepository->getVariationGraph()->getIndexedGeneralizations($dimensionSpacePoint)
