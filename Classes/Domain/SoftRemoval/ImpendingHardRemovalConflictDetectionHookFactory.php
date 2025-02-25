@@ -12,19 +12,19 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInt
 /**
  * @implements CatchUpHookFactoryInterface<ContentGraphReadModelInterface>
  */
-final readonly class SoftRemovalObjectionCollectionHookFactory implements CatchUpHookFactoryInterface
+final readonly class ImpendingHardRemovalConflictDetectionHookFactory implements CatchUpHookFactoryInterface
 {
     public function __construct(
-        private ImpendingHardRemovalConflictRepository $softRemovalObjectionRepository
+        private ImpendingHardRemovalConflictRepository $impendingHardRemovalConflictRepository
     ) {
     }
 
     public function build(CatchUpHookFactoryDependencies $dependencies): CatchUpHookInterface
     {
-        return new SoftRemovalObjectionCollectionHook(
+        return new ImpendingHardRemovalConflictDetectionHook(
             $dependencies->contentRepositoryId,
             $dependencies->projectionState,
-            $this->softRemovalObjectionRepository
+            $this->impendingHardRemovalConflictRepository
         );
     }
 }

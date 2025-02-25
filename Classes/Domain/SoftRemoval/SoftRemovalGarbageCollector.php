@@ -26,8 +26,8 @@ use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
  * 1) find all soft removals in the root workspace(s)
  * For each soft removal
  * 2) check if any workspace objects to the transformation (i.e. would run into conflicts on rebase)
- * 3) if there are no objections, execute the hard deletion on the root workspace(s)
- * 4) the hard deletion will then propagate to the other workspace automatically via rebase
+ * 3) if there are no impending conflicts, execute the hard removal on the root workspace(s)
+ * 4) the hard removal will then propagate to the other workspace automatically via rebase
  *
  * @internal safe to run at any time, but manual runs should be unnecessary
  */
@@ -47,8 +47,8 @@ final readonly class SoftRemovalGarbageCollector
 
         $softRemovalsAcrossWorkspaces = $this->subtractNodesWhichAreNotSoftRemovedInOtherWorkspaces($liveSoftRemovals, $contentRepository);
 
-        $softRemovalsWithoutObjections = $this->subtractObjections($softRemovalsAcrossWorkspaces, $contentRepository);
-        foreach ($softRemovalsWithoutObjections as $softRemovedNode) {
+        $softRemovalsWithoutImpendingConflicts = $this->subtractImpendingConflicts($softRemovalsAcrossWorkspaces, $contentRepository);
+        foreach ($softRemovalsWithoutImpendingConflicts as $softRemovedNode) {
             if ($softRemovedNode->dimensionSpacePointSet->isEmpty()) {
                 // only impending conflicts
                 continue;
@@ -69,7 +69,7 @@ final readonly class SoftRemovalGarbageCollector
             }
             foreach ($generalizationsToRemoveWithAllSpecializations as $generalization) {
                 if (
-                    // @todo invert logic: compare specialization set with objections
+                    // @todo invert logic: compare specialization set with impending conflicts
                     $contentRepository->getVariationGraph()->getSpecializationSet($generalization)
                         ->getDifference($softRemovedNode->dimensionSpacePointSet)
                         ->isEmpty()
@@ -86,7 +86,7 @@ final readonly class SoftRemovalGarbageCollector
     }
 
     /**
-     * If a workspace is outdated and does not have the soft deletion yet, but knows the node we cannot safely remove the node as
+     * If a workspace is outdated and does not have the soft removal yet, but knows the node we cannot safely remove the node as
      * the user can still make changes to that node or children any time in the future - or might have done so already.
      * Heavily outdated workspaces might not even know the node yet and thus impose NO conflict.
      */
@@ -121,33 +121,33 @@ final readonly class SoftRemovalGarbageCollector
     }
 
     /**
-     * Workspace that are already synchronised with live know the soft deletions. This means that all pending changes have been rebased
-     * on live and at the time of the rebase each of the events was aware of soft deletion. The objections are remembered via hook and will be checked here.
+     * Workspace that are already synchronised with live know the soft removals. This means that all pending changes have been rebased
+     * on live and at the time of the rebase each of the events was aware of soft removal. The conflicts are remembered via hook and will be checked here.
      */
-    private function subtractObjections(NodeAggregateIdsWithDimensionSpacePoints $softRemovals, ContentRepository $contentRepository): NodeAggregateIdsWithDimensionSpacePoints
+    private function subtractImpendingConflicts(NodeAggregateIdsWithDimensionSpacePoints $softRemovals, ContentRepository $contentRepository): NodeAggregateIdsWithDimensionSpacePoints
     {
-        $softRemovalsWithoutObjections = $softRemovals;
+        $softRemovalsWithoutImpendingConflicts = $softRemovals;
 
-        $objections = $this->impendingConflictRepository->findAllConflicts($contentRepository->id);
+        $impendingConflicts = $this->impendingConflictRepository->findAllConflicts($contentRepository->id);
 
-        foreach ($softRemovalsWithoutObjections as $softRemovedNode) {
-            $objection = $objections->get($softRemovedNode->nodeAggregateId);
-            if ($objection === null) {
+        foreach ($softRemovalsWithoutImpendingConflicts as $softRemovedNode) {
+            $impendingConflict = $impendingConflicts->get($softRemovedNode->nodeAggregateId);
+            if ($impendingConflict === null) {
                 continue;
             }
-            $objectionGeneralizationSet = $objection->dimensionSpacePointSet;
-            foreach ($objection->dimensionSpacePointSet as $dimensionSpacePoint) {
-                $objectionGeneralizationSet = $objectionGeneralizationSet->getUnion(
+            $impendingConflictGeneralizationSet = $impendingConflict->dimensionSpacePointSet;
+            foreach ($impendingConflict->dimensionSpacePointSet as $dimensionSpacePoint) {
+                $impendingConflictGeneralizationSet = $impendingConflictGeneralizationSet->getUnion(
                     $contentRepository->getVariationGraph()->getIndexedGeneralizations($dimensionSpacePoint)
                 );
             }
-            $softRemovalsWithoutObjections = $softRemovalsWithoutObjections->with(NodeAggregateIdWithDimensionSpacePoints::create(
+            $softRemovalsWithoutImpendingConflicts = $softRemovalsWithoutImpendingConflicts->with(NodeAggregateIdWithDimensionSpacePoints::create(
                 $softRemovedNode->nodeAggregateId,
-                $softRemovedNode->dimensionSpacePointSet->getDifference($objectionGeneralizationSet)
+                $softRemovedNode->dimensionSpacePointSet->getDifference($impendingConflictGeneralizationSet)
             ));
         }
 
-        return $softRemovalsWithoutObjections;
+        return $softRemovalsWithoutImpendingConflicts;
     }
 
     private function findNodeAggregatesInWorkspaceByExplicitRemovedTag(ContentGraphInterface $contentGraph): NodeAggregateIdsWithDimensionSpacePoints

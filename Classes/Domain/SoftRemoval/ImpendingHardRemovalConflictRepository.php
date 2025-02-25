@@ -38,25 +38,25 @@ final readonly class ImpendingHardRemovalConflictRepository
             'contentRepositoryId' => $contentRepositoryId->value,
         ]);
 
-        /** @var array<string, NodeAggregateIdWithDimensionSpacePoints> $objections */
-        $objections = [];
+        /** @var array<string, NodeAggregateIdWithDimensionSpacePoints> $conflicts */
+        $conflicts = [];
         foreach ($rows as $row) {
             $nodeAggregateId = NodeAggregateId::fromString($row['node_aggregate_id']);
 
-            if (!array_key_exists($nodeAggregateId->value, $objections)) {
-                $objections[$nodeAggregateId->value] = NodeAggregateIdWithDimensionSpacePoints::create(
+            if (!array_key_exists($nodeAggregateId->value, $conflicts)) {
+                $conflicts[$nodeAggregateId->value] = NodeAggregateIdWithDimensionSpacePoints::create(
                     $nodeAggregateId,
                     DimensionSpacePointSet::fromJsonString($row['dimension_space_points'])
                 );
             } else {
-                $objections[$nodeAggregateId->value] = NodeAggregateIdWithDimensionSpacePoints::create(
+                $conflicts[$nodeAggregateId->value] = NodeAggregateIdWithDimensionSpacePoints::create(
                     $nodeAggregateId,
-                    $objections[$nodeAggregateId->value]->dimensionSpacePointSet->getUnion(DimensionSpacePointSet::fromJsonString($row['dimension_space_points']))
+                    $conflicts[$nodeAggregateId->value]->dimensionSpacePointSet->getUnion(DimensionSpacePointSet::fromJsonString($row['dimension_space_points']))
                 );
             }
         }
 
-        return NodeAggregateIdsWithDimensionSpacePoints::fromArray($objections);
+        return NodeAggregateIdsWithDimensionSpacePoints::fromArray($conflicts);
     }
 
     public function addConflict(

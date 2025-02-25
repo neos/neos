@@ -34,7 +34,7 @@ use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryI
 use Neos\ContentRepository\Core\Subscription\SubscriptionStatus;
 use Neos\EventStore\Model\EventEnvelope;
 
-final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
+final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInterface
 {
     public function __construct(
         private ContentRepositoryId $contentRepositoryId,
@@ -146,8 +146,11 @@ final class SoftRemovalObjectionCollectionHook implements CatchUpHookInterface
         );
     }
 
-    private function findClosestExplicitlySoftRemovedNodes(ContentGraphInterface $contentGraph, NodeAggregate $entryNodeAggregate, DimensionSpacePointSet $dimensionSpacePoints): NodeAggregateIdsWithDimensionSpacePoints
-    {
+    private function findClosestExplicitlySoftRemovedNodes(
+        ContentGraphInterface $contentGraph,
+        NodeAggregate $entryNodeAggregate,
+        DimensionSpacePointSet $dimensionSpacePoints
+    ): NodeAggregateIdsWithDimensionSpacePoints {
         /** @var array<NodeAggregate> $stack */
         $stack = [$entryNodeAggregate];
 

@@ -11,7 +11,7 @@ final class Version20250224180749 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Adds the tables for neos soft removal objection repository';
+        return 'Adds the tables for Neos\' impending hard removal conflict repository';
     }
 
     public function up(Schema $schema): void

@@ -12,8 +12,8 @@ Neos:
               factoryObjectName: Neos\Neos\Fusion\Cache\GraphProjectorCatchUpHookForCacheFlushingFactory
             'Neos.Neos:AssetUsage':
               factoryObjectName: Neos\Neos\AssetUsage\CatchUpHook\AssetUsageCatchUpHookFactory
-            'Neos.Neos:SoftRemovalObjection':
-              factoryObjectName: Neos\Neos\Domain\SoftRemoval\SoftRemovalObjectionCollectionHookFactory
+            'Neos.Neos:ImpendingHardRemovalConflictDetection':
+              factoryObjectName: Neos\Neos\Domain\SoftRemoval\ImpendingHardRemovalConflictDetectionHookFactory
 
         projections:
           'Neos.Neos:DocumentUriPathProjection':

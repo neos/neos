@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 use Behat\Gherkin\Node\TableNode;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
-use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdsWithDimensionSpacePoints;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdWithDimensionSpacePoints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
-use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\Neos\Domain\SoftRemoval\SoftRemovalGarbageCollector;
 use Neos\Neos\Domain\SoftRemoval\ImpendingHardRemovalConflictRepository;
 use PHPUnit\Framework\Assert;
@@ -49,7 +47,7 @@ trait SoftRemovalGarbageCollectionTrait
     /**
      * @BeforeScenario
      */
-    final public function pruneSoftRemovalObjections(): void
+    final public function pruneImpendingHardRemovalConflicts(): void
     {
         foreach (static::$alreadySetUpContentRepositories as $contentRepositoryId) {
             $this->getObject(ImpendingHardRemovalConflictRepository::class)->pruneConflictsForContentRepository($contentRepositoryId);
