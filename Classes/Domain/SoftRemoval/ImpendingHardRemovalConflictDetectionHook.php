@@ -87,7 +87,8 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
 
     public function onAfterEvent(EventInterface $eventInstance, EventEnvelope $eventEnvelope): void
     {
-        $flushWorkspace = match($eventInstance::class) {
+        // todo WorkspaceWasPublished does not implement EmbedsWorkspaceName: https://github.com/neos/neos-development-collection/pull/5431
+        $flushWorkspace = match ($eventInstance::class) {
             WorkspaceWasDiscarded::class => $eventInstance->workspaceName,
             WorkspaceWasPublished::class => $eventInstance->sourceWorkspaceName,
             WorkspaceWasRebased::class => $eventInstance->workspaceName,
@@ -95,7 +96,7 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
         };
 
         if ($flushWorkspace) {
-            $this->impendingConflictRepository->pruneConflictsForWorkspace($this->contentRepositoryId, $flushWorkspace); // todo getWorkspaceName does not always work?!
+            $this->impendingConflictRepository->pruneConflictsForWorkspace($this->contentRepositoryId, $flushWorkspace);
             return;
         }
 
@@ -139,15 +140,31 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
 
         $explicitlySoftRemovedAncestors = $this->findClosestExplicitlySoftRemovedNodes($contentGraph, $nodeAggregate, $dimensionSpacePoints);
 
-        if ($explicitlySoftRemovedAncestors->isEmpty()) {
-            return;
+        if (!$explicitlySoftRemovedAncestors->isEmpty()) {
+            $this->impendingConflictRepository->addConflict(
+                $this->contentRepositoryId,
+                $eventInstance->getWorkspaceName(),
+                $explicitlySoftRemovedAncestors
+            );
         }
 
-        $this->impendingConflictRepository->addConflict(
-            $this->contentRepositoryId,
-            $eventInstance->getWorkspaceName(),
-            $explicitlySoftRemovedAncestors
-        );
+        if ($eventInstance instanceof NodeReferencesWereSet) {
+            foreach ($eventInstance->references as $serializedReference) {
+                foreach ($serializedReference->references as $reference) {
+                    $referenceAggregate = $contentGraph->findNodeAggregateById($reference->targetNodeAggregateId);
+                    if ($referenceAggregate instanceof NodeAggregate) {
+                        $explicitlySoftRemovedReferenceAncestors = $this->findClosestExplicitlySoftRemovedNodes($contentGraph, $referenceAggregate, $dimensionSpacePoints);
+                        if (!$explicitlySoftRemovedReferenceAncestors->isEmpty()) {
+                            $this->impendingConflictRepository->addConflict(
+                                $this->contentRepositoryId,
+                                $eventInstance->getWorkspaceName(),
+                                $explicitlySoftRemovedReferenceAncestors
+                            );
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private function findClosestExplicitlySoftRemovedNodes(

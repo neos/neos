@@ -57,10 +57,7 @@ final readonly class SoftRemovalGarbageCollector
             $generalizationsToRemoveWithAllSpecializations = $softRemovedNode->dimensionSpacePointSet->points;
             foreach ($softRemovedNode->dimensionSpacePointSet as $dimensionSpacePointA) {
                 foreach ($softRemovedNode->dimensionSpacePointSet as $dimensionSpacePointB) {
-                    switch ($contentRepository->getVariationGraph()->getVariantType(
-                        $dimensionSpacePointA,
-                        $dimensionSpacePointB
-                    )) {
+                    switch ($contentRepository->getVariationGraph()->getVariantType($dimensionSpacePointA, $dimensionSpacePointB)) {
                         case VariantType::TYPE_SPECIALIZATION:
                             unset($generalizationsToRemoveWithAllSpecializations[$dimensionSpacePointA->hash]);
                             break;
@@ -101,7 +98,7 @@ final readonly class SoftRemovalGarbageCollector
 
         foreach ($contentRepository->findWorkspaces() as $workspace) {
             if ($workspace->isRootWorkspace()) {
-                // todo ignore base workspaces of Live!
+                // todo ignore non base workspaces of live?!
                 continue;
             }
             $contentGraph = $contentRepository->getContentGraph($workspace->workspaceName);
