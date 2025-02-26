@@ -73,6 +73,9 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | Key           | Value            |
       | workspaceName | "user-workspace" |
     And soft removal garbage collection is run for content repository default
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints                            |
+      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
 
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
     And event at index 5 is of type "SubtreeWasTagged" with payload:
@@ -104,6 +107,9 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | Key           | Value            |
       | workspaceName | "user-workspace" |
     And soft removal garbage collection is run for content repository default
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints                            |
+      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
 
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
     And event at index 5 is of type "SubtreeWasTagged" with payload:
@@ -143,8 +149,11 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints                            |
+      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
 
+    When soft removal garbage collection is run for content repository default
     Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
     And event at index 6 is of type "SubtreeWasTagged" with payload:
       | Key                          | Expected                                        |
@@ -183,8 +192,11 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints                            |
+      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
 
+    When soft removal garbage collection is run for content repository default
     Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
     And event at index 6 is of type "SubtreeWasTagged" with payload:
       | Key                          | Expected                                        |
@@ -225,6 +237,11 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | nodeAggregateId                      | "nodingers-cat"                                 |
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+
+    When the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    # no exceptions must be thrown
 
   Scenario: Garbage collection will transform a soft removal if there is an general subtree tagging change in an unrelated dimension space point in another workspace
     When the command CreateNodeVariant is executed with payload:
@@ -273,6 +290,11 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
+    When the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    # no exceptions must be thrown
+
   Scenario: Garbage collection will transform a soft removal if there is an unrelated general subtree untagging change in another workspace
     When the command TagSubtree is executed with payload:
       | Key                          | Value                    |
@@ -313,6 +335,11 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | nodeAggregateId                      | "nodingers-cat"                                 |
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+
+    When the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    # no exceptions must be thrown
 
   Scenario: Garbage collection will transform a soft removal if there is an general subtree untagging change in an unrelated dimension space point in another workspace
     When the command CreateNodeVariant is executed with payload:
@@ -367,3 +394,8 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | nodeAggregateId                      | "nodingers-cat"                                 |
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+
+    When the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    # no exceptions must be thrown

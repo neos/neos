@@ -102,8 +102,7 @@ Feature: Tests for soft removal garbage collection without impending conflicts
       | workspaceName      | "user-workspace"           |
       | newContentStreamId | "new-user-workspace-cs-id" |
 
-    And soft removal garbage collection is run for content repository default
-
+    When soft removal garbage collection is run for content repository default
     Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
     And event at index 5 is of type "NodeAggregateWasRemoved" with payload:
       | Key                                  | Expected                                        |
@@ -112,6 +111,11 @@ Feature: Tests for soft removal garbage collection without impending conflicts
       | nodeAggregateId                      | "nodingers-cat"                                 |
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+
+    When the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    # no exceptions must be thrown
 
   Scenario: Garbage collection will transform nested soft removals of a node that only exists in a root workspace
     When the following CreateNodeAggregateWithNode commands are executed:
@@ -145,3 +149,8 @@ Feature: Tests for soft removal garbage collection without impending conflicts
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
     # the event for the nested removal is never explicitly emitted; the corresponding command fails and gets caught for now
+
+    When the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    # no exceptions must be thrown

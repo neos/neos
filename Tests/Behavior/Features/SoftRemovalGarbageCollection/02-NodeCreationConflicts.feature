@@ -146,6 +146,11 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
+    When the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    # no exceptions must be thrown
+
   Scenario: Garbage collection will transform a soft removal if there only is a change in an unrelated dimension space point
     When the command CreateNodeVariant is executed with payload:
       | Key             | Value                    |
@@ -188,3 +193,8 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | nodeAggregateId                      | "nodingers-cat"                                 |
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+
+    When the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    # no exceptions must be thrown

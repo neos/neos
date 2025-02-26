@@ -321,3 +321,8 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | nodeAggregateId                      | "nodingers-cat"          |
       | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]  |
       | affectedCoveredDimensionSpacePoints  | [{"example": "special"}] |
+
+    When the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    # no exceptions must be thrown
