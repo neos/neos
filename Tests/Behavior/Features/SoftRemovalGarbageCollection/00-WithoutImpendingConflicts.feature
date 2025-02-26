@@ -154,3 +154,5 @@ Feature: Tests for soft removal garbage collection without impending conflicts
       | Key           | Value            |
       | workspaceName | "user-workspace" |
     # no exceptions must be thrown
+
+    # @todo removal on a not completely covered node aggregate
