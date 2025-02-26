@@ -1,4 +1,4 @@
-Feature: Tests for soft removal garbage collection objections
+Feature: Tests for soft removal garbage collection with impending conflicts caused by node aggregate name change
 
   Background:
     Given using the following content dimensions:
@@ -53,9 +53,7 @@ Feature: Tests for soft removal garbage collection objections
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
 
-
-  # ChangeNodeAggregateType conflict prevention
-  Scenario: Garbage collection will ignore a soft removal if the node has an unpublished type change
+  Scenario: Garbage collection will ignore a soft removal if the node has an unpublished name change
     When the command TagSubtree is executed with payload:
       | Key                          | Value                 |
       | workspaceName                | "live"                |
@@ -65,16 +63,18 @@ Feature: Tests for soft removal garbage collection objections
       | tag                          | "removed"             |
 
     And I am in workspace "user-workspace"
-    When the command ChangeNodeAggregateType is executed with payload and exceptions are caught:
-      | Key             | Value                     |
-      | nodeAggregateId | "nodingers-cat"           |
-      | newNodeTypeName | "Neos.Neos:OtherDocument" |
-      | strategy        | "happypath"               |
+    When the command ChangeNodeAggregateName is executed with payload and exceptions are caught:
+      | Key             | Value           |
+      | nodeAggregateId | "nodingers-cat" |
+      | newNodeName     | "new-name"      |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints                            |
+      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
 
+    When soft removal garbage collection is run for content repository default
     Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
     And event at index 6 is of type "SubtreeWasTagged" with payload:
       | Key                          | Expected                                        |
@@ -84,8 +84,7 @@ Feature: Tests for soft removal garbage collection objections
       | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
       | tag                          | "removed"                                       |
 
-  # ChangeNodeAggregateType conflict prevention (descendants)
-  Scenario: Garbage collection will ignore a soft removal if a descendant of the node has an unpublished type change
+  Scenario: Garbage collection will ignore a soft removal if a descendant of the node has an unpublished name change
     When the command TagSubtree is executed with payload:
       | Key                          | Value                 |
       | workspaceName                | "live"                |
@@ -95,16 +94,18 @@ Feature: Tests for soft removal garbage collection objections
       | tag                          | "removed"             |
 
     And I am in workspace "user-workspace"
-    When the command ChangeNodeAggregateType is executed with payload and exceptions are caught:
-      | Key             | Value                     |
-      | nodeAggregateId | "nodingers-cat"           |
-      | newNodeTypeName | "Neos.Neos:OtherDocument" |
-      | strategy        | "happypath"               |
+    When the command ChangeNodeAggregateName is executed with payload and exceptions are caught:
+      | Key             | Value              |
+      | nodeAggregateId | "nodingers-kitten" |
+      | newNodeName     | "new-name"         |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints                            |
+      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
 
+    When soft removal garbage collection is run for content repository default
     Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
     And event at index 6 is of type "SubtreeWasTagged" with payload:
       | Key                          | Expected                                        |
@@ -114,33 +115,37 @@ Feature: Tests for soft removal garbage collection objections
       | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
       | tag                          | "removed"                                       |
 
-  # UpdateRootNodeAggregateDimensions conflict prevention
-  Scenario: Garbage collection will ignore a soft removal if the (root) node has an unpublished dimension update
-    Given I change the content dimensions in content repository "default" to:
-      | Identifier | Values                                    | Generalizations                                             |
-      | example    | general, source, special, peer, otherPeer | special->source->general, peer->general, otherPeer->general |
+  Scenario: Garbage collection will transform a soft removal if a there only is an unrelated name change
     When the command TagSubtree is executed with payload:
-      | Key                          | Value                    |
-      | workspaceName                | "live"                   |
-      | nodeAggregateId              | "lady-eleonode-rootford" |
-      | coveredDimensionSpacePoint   | {"example": "source"}    |
-      | nodeVariantSelectionStrategy | "allSpecializations"     |
-      | tag                          | "removed"                |
+      | Key                          | Value                 |
+      | workspaceName                | "live"                |
+      | nodeAggregateId              | "nodingers-cat"       |
+      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"  |
+      | tag                          | "removed"             |
 
     And I am in workspace "user-workspace"
-    When the command UpdateRootNodeAggregateDimensions is executed with payload and exceptions are caught:
+    When the command ChangeNodeAggregateName is executed with payload and exceptions are caught:
       | Key             | Value                    |
-      | nodeAggregateId | "lady-eleonode-rootford" |
+      | nodeAggregateId | "sir-david-nodenborough" |
+      | newNodeName     | "new-name"               |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints |
 
-    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 6 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                        |
-      | workspaceName                | "live"                                          |
-      | contentStreamId              | "cs-identifier"                                 |
-      | nodeAggregateId              | "lady-eleonode-rootford"                        |
-      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
-      | tag                          | "removed"                                       |
+    When soft removal garbage collection is run for content repository default
+    Then I expect exactly 8 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 7 is of type "NodeAggregateWasRemoved" with payload:
+      | Key                                  | Expected                                        |
+      | workspaceName                        | "live"                                          |
+      | contentStreamId                      | "cs-identifier"                                 |
+      | nodeAggregateId                      | "nodingers-cat"                                 |
+      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
+      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+
+    When the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    # no exceptions must be thrown
