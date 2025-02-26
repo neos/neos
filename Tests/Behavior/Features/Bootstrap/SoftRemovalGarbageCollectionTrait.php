@@ -23,13 +23,20 @@ trait SoftRemovalGarbageCollectionTrait
         $actualConflicts = $this->getObject(ImpendingHardRemovalConflictRepository::class)
             ->findAllConflicts($this->currentContentRepository->id);
 
+        $sortDsp = function (DimensionSpacePointSet $dimensionSpacePointSet): DimensionSpacePointSet {
+            // todo sets are unsorted and thus will json serialize differently, moving ksort to its constructor will also simplify the ->equals implementation
+            $points = $dimensionSpacePointSet->points;
+            ksort($points);
+            return DimensionSpacePointSet::fromArray($points);
+        };
+
         $actualConflictsTable = array_map(static fn (NodeAggregateIdWithDimensionSpacePoints $conflict) => [
             'nodeAggregateId' => $conflict->nodeAggregateId->value,
-            'dimensionSpacePoints' => $conflict->dimensionSpacePointSet->toJson(),
+            'dimensionSpacePoints' => $sortDsp($conflict->dimensionSpacePointSet)->toJson(),
         ], iterator_to_array($actualConflicts));
 
         $expectedConflictsWithNormalisedJson = array_map(
-            fn (array $row) => [...$row, 'dimensionSpacePoints' => DimensionSpacePointSet::fromJsonString($row['dimensionSpacePoints'])->toJson()],
+            fn (array $row) => [...$row, 'dimensionSpacePoints' => $sortDsp(DimensionSpacePointSet::fromJsonString($row['dimensionSpacePoints']))->toJson()],
             $payloadTable->getHash()
         );
 
