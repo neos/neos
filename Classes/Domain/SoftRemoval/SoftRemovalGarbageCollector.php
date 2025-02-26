@@ -103,9 +103,10 @@ final readonly class SoftRemovalGarbageCollector
             }
             $contentGraph = $contentRepository->getContentGraph($workspace->workspaceName);
 
+            $nodeAggregatesInWorkspace = $contentGraph->findNodeAggregatesByIds($softRemovedNodesAcrossWorkspaces->toNodeAggregateIds());
+
             foreach ($softRemovedNodesAcrossWorkspaces as $softRemovedNode) {
-                // todo use in () query instead of many
-                $nodeAggregateInWorkspace = $contentGraph->findNodeAggregateById($softRemovedNode->nodeAggregateId);
+                $nodeAggregateInWorkspace = $nodeAggregatesInWorkspace->get($softRemovedNode->nodeAggregateId);
                 if ($nodeAggregateInWorkspace === null) {
                     continue;
                 }
@@ -154,23 +155,13 @@ final readonly class SoftRemovalGarbageCollector
 
     private function findNodeAggregatesInWorkspaceByExplicitRemovedTag(ContentGraphInterface $contentGraph): NodeAggregateIdsWithDimensionSpacePoints
     {
-        // todo super expensive, filter via sql! getNodeAggregatesTaggedBy
         $softRemovedNodes = [];
-
-        /** @var array<NodeAggregate> $stack */
-        $stack = iterator_to_array($contentGraph->findRootNodeAggregates(FindRootNodeAggregatesFilter::create()));
-        while ($stack !== []) {
-            $nodeAggregate = array_shift($stack);
-            $softRemovedDimensions = $nodeAggregate->getDimensionSpacePointsTaggedWith(SubtreeTag::removed());
-            if (!$softRemovedDimensions->isEmpty()) {
-                $softRemovedNodes[] = NodeAggregateIdWithDimensionSpacePoints::create(
-                    $nodeAggregate->nodeAggregateId,
-                    $softRemovedDimensions
-                );
-            }
-            $stack = [...$stack, ...iterator_to_array($contentGraph->findChildNodeAggregates($nodeAggregate->nodeAggregateId))];
+        foreach ($contentGraph->findNodeAggregatesTaggedWith(SubtreeTag::removed()) as $nodeAggregateTaggedRemoved) {
+            $softRemovedNodes[] = NodeAggregateIdWithDimensionSpacePoints::create(
+                $nodeAggregateTaggedRemoved->nodeAggregateId,
+                $nodeAggregateTaggedRemoved->getDimensionSpacePointsTaggedWith(SubtreeTag::removed())
+            );
         }
-
         return NodeAggregateIdsWithDimensionSpacePoints::fromArray($softRemovedNodes);
     }
 }
