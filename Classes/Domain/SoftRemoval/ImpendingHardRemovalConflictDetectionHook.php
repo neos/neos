@@ -19,6 +19,8 @@ use Neos\ContentRepository\Core\Feature\NodeTypeChange\Event\NodeAggregateTypeWa
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeGeneralizationVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodePeerVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeSpecializationVariantWasCreated;
+use Neos\ContentRepository\Core\Feature\RootNodeCreation\Event\RootNodeAggregateDimensionsWereUpdated;
+use Neos\ContentRepository\Core\Feature\RootNodeCreation\Event\RootNodeAggregateWithNodeWasCreated;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasTagged;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasUntagged;
@@ -112,10 +114,6 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
             return;
         }
 
-        // todo hande?
-        // - RootNodeAggregateDimensionsWereUpdated::class,
-        // - RootNodeAggregateWithNodeWasCreated::class,
-
         $dimensionSpacePoints = match ($eventInstance::class) {
             NodeAggregateWasMoved::class => $eventInstance->succeedingSiblingsForCoverage->toDimensionSpacePointSet(),
             NodePropertiesWereSet::class => $eventInstance->affectedDimensionSpacePoints,
@@ -131,7 +129,8 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
             NodeSpecializationVariantWasCreated::class => DimensionSpacePointSet::fromArray([$eventInstance->specializationOrigin->toDimensionSpacePoint(), $eventInstance->sourceOrigin->toDimensionSpacePoint()]),
             NodeAggregateNameWasChanged::class,
             NodeAggregateTypeWasChanged::class => $nodeAggregate->coveredDimensionSpacePoints,
-            default => null
+            RootNodeAggregateDimensionsWereUpdated::class => $eventInstance->coveredDimensionSpacePoints,
+            default => null, /** explicitly also @see RootNodeAggregateWithNodeWasCreated, which cannot conflict with hard removal */
         };
 
         if ($dimensionSpacePoints === null) {
