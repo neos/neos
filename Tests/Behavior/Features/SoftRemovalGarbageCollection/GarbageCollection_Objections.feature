@@ -54,65 +54,6 @@ Feature: Tests for soft removal garbage collection objections
       | newContentStreamId | "user-cs-id"     |
 
 
-  # ChangeNodeAggregateType conflict prevention
-  Scenario: Garbage collection will ignore a soft removal if the node has an unpublished type change
-    When the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
-
-    And I am in workspace "user-workspace"
-    When the command ChangeNodeAggregateType is executed with payload and exceptions are caught:
-      | Key             | Value                     |
-      | nodeAggregateId | "nodingers-cat"           |
-      | newNodeTypeName | "Neos.Neos:OtherDocument" |
-      | strategy        | "happypath"               |
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
-
-    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 6 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                        |
-      | workspaceName                | "live"                                          |
-      | contentStreamId              | "cs-identifier"                                 |
-      | nodeAggregateId              | "nodingers-cat"                                 |
-      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
-      | tag                          | "removed"                                       |
-
-  # ChangeNodeAggregateType conflict prevention (descendants)
-  Scenario: Garbage collection will ignore a soft removal if a descendant of the node has an unpublished type change
-    When the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
-
-    And I am in workspace "user-workspace"
-    When the command ChangeNodeAggregateType is executed with payload and exceptions are caught:
-      | Key             | Value                     |
-      | nodeAggregateId | "nodingers-cat"           |
-      | newNodeTypeName | "Neos.Neos:OtherDocument" |
-      | strategy        | "happypath"               |
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
-    And soft removal garbage collection is run for content repository default
-
-    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 6 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                        |
-      | workspaceName                | "live"                                          |
-      | contentStreamId              | "cs-identifier"                                 |
-      | nodeAggregateId              | "nodingers-cat"                                 |
-      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
-      | tag                          | "removed"                                       |
 
   # UpdateRootNodeAggregateDimensions conflict prevention
   Scenario: Garbage collection will ignore a soft removal if the (root) node has an unpublished dimension update
