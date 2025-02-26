@@ -104,8 +104,8 @@ final readonly class ContentRepositoryAuthorizationService
      */
     public function getVisibilityConstraints(ContentRepositoryId $contentRepositoryId, array $roles): VisibilityConstraints
     {
-        // soft deletions are never visible by default
-        $restrictedSubtreeTags = SubtreeTags::createEmpty()->with(SubtreeTag::deleted());
+        // soft removals are never visible by default
+        $restrictedSubtreeTags = SubtreeTags::createEmpty()->with(SubtreeTag::removed());
         /** @var ReadNodePrivilege $privilege */
         foreach ($this->policyService->getAllPrivilegesByType(ReadNodePrivilege::class) as $privilege) {
             if (!$this->privilegeManager->isGrantedForRoles($roles, ReadNodePrivilege::class, new SubtreeTagPrivilegeSubject($privilege->getSubtreeTags(), $contentRepositoryId))) {

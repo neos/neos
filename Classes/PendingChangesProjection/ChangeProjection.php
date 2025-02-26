@@ -230,7 +230,7 @@ class ChangeProjection implements ProjectionInterface
             return;
         }
         foreach ($event->affectedDimensionSpacePoints as $dimensionSpacePoint) {
-            if ($event->tag === SubtreeTag::deleted()) {
+            if ($event->tag === SubtreeTag::removed()) {
                 $this->markAsDeleted($event->contentStreamId, $event->nodeAggregateId, OriginDimensionSpacePoint::fromDimensionSpacePoint($dimensionSpacePoint));
                 continue;
             }
