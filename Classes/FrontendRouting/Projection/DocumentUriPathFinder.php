@@ -51,6 +51,7 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
                 AND siteNodeName = :siteNodeName
                 AND uriPath = :uriPath
                 AND disabled = 0
+                AND removed = 0
                 AND isPlaceholder = 0',
             [
                 'dimensionSpacePointHash' => $dimensionSpacePointHash,
@@ -80,6 +81,7 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
         if ($this->cacheEnabled && isset($this->getByIdAndDimensionSpacePointHashCache[$cacheKey])) {
             return $this->getByIdAndDimensionSpacePointHashCache[$cacheKey];
         }
+        // todo AND removed = 0 -> we should not allow building uris to removed nodes!
         $result = $this->fetchSingle(
             'nodeAggregateId = :nodeAggregateId
                 AND dimensionSpacePointHash = :dimensionSpacePointHash',
@@ -164,6 +166,7 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
             'dimensionSpacePointHash = :dimensionSpacePointHash
                 AND parentNodeAggregateId = :parentNodeAggregateId
                 AND precedingNodeAggregateId IS NULL
+                AND removed = 0
                 AND disabled = 0',
             [
                 'dimensionSpacePointHash' => $dimensionSpacePointHash,

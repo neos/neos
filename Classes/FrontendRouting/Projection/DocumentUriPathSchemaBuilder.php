@@ -42,6 +42,7 @@ class DocumentUriPathSchemaBuilder
             DbalSchemaFactory::columnForGenericString('uripath', $platform)->setLength(4000)->setDefault('')->setNotnull(true),
             DbalSchemaFactory::columnForDimensionSpacePointHash('dimensionspacepointhash', $platform)->setNotNull(true),
             (new Column('disabled', Type::getType(Types::INTEGER)))->setLength(4)->setUnsigned(true)->setDefault(0)->setNotnull(true),
+            (new Column('removed', Type::getType(Types::INTEGER)))->setLength(4)->setUnsigned(true)->setDefault(0)->setNotnull(true),
             DbalSchemaFactory::columnForGenericString('nodeaggregateidpath', $platform)->setLength(4000)->setDefault('')->setNotnull(true),
             DbalSchemaFactory::columnForGenericString('sitenodename', $platform)->setLength(255)->setDefault('')->setNotnull(true),
             DbalSchemaFactory::columnForDimensionSpacePointHash('origindimensionspacepointhash', $platform)->setNotNull(true),

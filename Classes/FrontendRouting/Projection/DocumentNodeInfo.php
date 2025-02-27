@@ -163,6 +163,11 @@ final class DocumentNodeInfo
         return (int)$this->source['disabled'];
     }
 
+    public function getRemovedLevel(): int
+    {
+        return (int)$this->source['removed'];
+    }
+
     public function getShortcutMode(): string
     {
         if (!$this->isShortcut()) {
