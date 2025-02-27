@@ -183,8 +183,6 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
                     $nodeAggregate->nodeAggregateId,
                     $explicitlySoftRemovedDimensions
                 ));
-                // todo multiple soft removed parents are untested, this passes the tests:
-                // return $explicitlySoftRemovedAncestors;
             }
             // todo we must stop if the current node aggregate is not by inheritance tagged via removed as otherwise we end up always traversing the whole tree up
             $stack = [...$stack, ...iterator_to_array($contentGraph->findParentNodeAggregates($nodeAggregate->nodeAggregateId))];
