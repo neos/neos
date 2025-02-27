@@ -45,13 +45,21 @@ Feature: Tests for soft removal garbage collection objections
       | nodeVariantSelectionStrategy | "allSpecializations"     |
       | tag                          | "removed"                |
 
-    And I am in workspace "user-workspace"
+    And I expect the node aggregate "lady-eleonode-rootford" to exist
+    And I expect this node aggregate to have dimension space points [{"example":"source"},{"example":"special"}] tagged "removed"
+
     When the command UpdateRootNodeAggregateDimensions is executed with payload and exceptions are caught:
       | Key             | Value                    |
       | nodeAggregateId | "lady-eleonode-rootford" |
+      | workspaceName   | "user-workspace"         |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value            |
       | workspaceName | "user-workspace" |
+
+    And I am in workspace "user-workspace"
+    And I expect the node aggregate "lady-eleonode-rootford" to exist
+    And I expect this node aggregate to have dimension space points [{"example":"source"},{"example":"special"}] tagged "removed"
+
     Then I expect the following hard removal conflicts to be impending:
       | nodeAggregateId        | dimensionSpacePoints                            |
       | lady-eleonode-rootford | [{"example": "source"}, {"example": "special"}] |
