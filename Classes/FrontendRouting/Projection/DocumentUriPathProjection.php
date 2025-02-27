@@ -429,11 +429,6 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 // Probably not a document node
                 continue;
             }
-            # node is already explicitly disabled
-            // if ($this->isNodeExplicitlyDisabled($node)) {
-            //     return;
-            // }
-
             $tagColumn = $event->tag->value;
             $this->updateNodeQuery('SET ' . $tagColumn . ' = ' . $tagColumn . ' + 1
                     WHERE dimensionSpacePointHash = :dimensionSpacePointHash
@@ -463,11 +458,6 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 // Probably not a document node
                 continue;
             }
-            # node is not explicitly disabled, so we must not re-enable it
-            // if (!$this->isNodeExplicitlyDisabled($node)) {
-            //     return;
-            // }
-
             $tagColumn = $event->tag->value;
             $this->updateNodeQuery('SET ' . $tagColumn . ' = ' . $tagColumn . ' - 1
                 WHERE dimensionSpacePointHash = :dimensionSpacePointHash

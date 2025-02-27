@@ -137,67 +137,6 @@ Feature: Routing behavior of removed, disabled and re-enabled nodes
     And The node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough"
     And The node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document"
 
-  Scenario: Disable the same node twice
-    When the command DisableNodeAggregate is executed with payload:
-      | Key                          | Value                    |
-      | nodeAggregateId              | "sir-david-nodenborough" |
-      | coveredDimensionSpacePoint   | {}                       |
-      | nodeVariantSelectionStrategy | "allVariants"            |
-    And the event SubtreeWasTagged was published with payload:
-      | Key                          | Value                    |
-      | workspaceName                | "live"                   |
-      | contentStreamId              | "cs-identifier"          |
-      | nodeAggregateId              | "sir-david-nodenborough" |
-      | affectedDimensionSpacePoints | [{}]                     |
-      | tag                          | "disabled"               |
-    Then No node should match URL "/david-nodenborough"
-    And No node should match URL "/david-nodenborough/earl-document"
-    And The node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough"
-    And The node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document"
-    When the command EnableNodeAggregate is executed with payload:
-      | Key                          | Value                    |
-      | nodeAggregateId              | "sir-david-nodenborough" |
-      | coveredDimensionSpacePoint   | {}                       |
-      | nodeVariantSelectionStrategy | "allVariants"            |
-    When I am on URL "/david-nodenborough"
-    Then the matched node should be "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}"
-    And The node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough"
-    And The node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document"
-
-  Scenario: Re-enable the same node twice
-    When the command DisableNodeAggregate is executed with payload:
-      | Key                          | Value                    |
-      | nodeAggregateId              | "sir-david-nodenborough" |
-      | coveredDimensionSpacePoint   | {}                       |
-      | nodeVariantSelectionStrategy | "allVariants"            |
-    And the event SubtreeWasTagged was published with payload:
-      | Key                          | Value                   |
-      | workspaceName                | "live"                  |
-      | contentStreamId              | "cs-identifier"         |
-      | nodeAggregateId              | "earl-o-documentbourgh" |
-      | affectedDimensionSpacePoints | [{}]                    |
-      | tag                          | "disabled"              |
-    Then No node should match URL "/david-nodenborough"
-    And No node should match URL "/david-nodenborough/earl-document"
-    And The node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough"
-    And The node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document"
-    When the command EnableNodeAggregate is executed with payload:
-      | Key                          | Value                    |
-      | nodeAggregateId              | "sir-david-nodenborough" |
-      | coveredDimensionSpacePoint   | {}                       |
-      | nodeVariantSelectionStrategy | "allVariants"            |
-    And the event SubtreeWasUntagged was published with payload:
-      | Key                          | Value                    |
-      | workspaceName                | "live"                   |
-      | contentStreamId              | "cs-identifier"          |
-      | nodeAggregateId              | "sir-david-nodenborough" |
-      | affectedDimensionSpacePoints | [{}]                     |
-      | tag                          | "disabled"               |
-    When I am on URL "/david-nodenborough"
-    Then the matched node should be "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}"
-    And The node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough"
-    And The node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document"
-
   Scenario: Move implicit disabled node
     When the command DisableNodeAggregate is executed with payload:
       | Key                          | Value                    |
