@@ -52,6 +52,46 @@ Feature: Tests that impending conflicts are cleaned up in workspaces
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
 
+  Scenario: Remove workspace flushes impending conflicts
+    When the command TagSubtree is executed with payload:
+      | Key                          | Value                 |
+      | workspaceName                | "live"                |
+      | nodeAggregateId              | "nodingers-cat"       |
+      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"  |
+      | tag                          | "removed"             |
+
+    And I am in workspace "user-workspace"
+    And the command SetNodeProperties is executed with payload:
+      | Key                       | Value                 |
+      | workspaceName             | "user-workspace"      |
+      | nodeAggregateId           | "nodingers-cat"       |
+      | originDimensionSpacePoint | {"example": "source"} |
+      | propertyValues            | {"title": "Change"}   |
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints                            |
+      | nodingers-cat   | [{"example": "source"}, {"example": "special"}] |
+
+    And the command DeleteWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints |
+
+    When soft removal garbage collection is run for content repository default
+    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 6 is of type "NodeAggregateWasRemoved" with payload:
+      | Key                                  | Expected                                        |
+      | workspaceName                        | "live"                                          |
+      | contentStreamId                      | "cs-identifier"                                 |
+      | nodeAggregateId                      | "nodingers-cat"                                 |
+      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
+      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
+
   Scenario: Discard flushes impending conflicts
     When the command TagSubtree is executed with payload:
       | Key                          | Value                  |

@@ -24,6 +24,7 @@ use Neos\ContentRepository\Core\Feature\RootNodeCreation\Event\RootNodeAggregate
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasTagged;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasUntagged;
+use Neos\ContentRepository\Core\Feature\WorkspaceModification\Event\WorkspaceWasRemoved;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Event\WorkspaceWasDiscarded;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Event\WorkspaceWasPublished;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Event\WorkspaceWasRebased;
@@ -94,6 +95,7 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
             WorkspaceWasDiscarded::class => $eventInstance->workspaceName,
             WorkspaceWasPublished::class => $eventInstance->sourceWorkspaceName,
             WorkspaceWasRebased::class => $eventInstance->workspaceName,
+            WorkspaceWasRemoved::class => $eventInstance->workspaceName,
             default => null
         };
 

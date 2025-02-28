@@ -17,6 +17,7 @@ use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateDoesCurrently
 use Neos\ContentRepository\Core\SharedModel\Node\NodeVariantSelectionStrategy;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
+use Neos\Neos\Domain\Service\WorkspacePublishingService;
 
 /**
  * Service that detects which soft removals in a content repository can be safely transformed to hard removals
@@ -39,6 +40,33 @@ final readonly class SoftRemovalGarbageCollector
     ) {
     }
 
+    /**
+     * Triggering of the soft removal garbage collection is done via the {@see WorkspacePublishingService}
+     *
+     * *Invalidation*
+     *
+     * For these commands the contents of the workspace change and afterward there are less pending changes - e.g. less impending conflicts.
+     * Which means that we can trigger the garbage collection in hope to have something cleaned up.
+     *
+     * - PublishWorkspace
+     * - PublishIndividualNodesFromWorkspace
+     * - DiscardIndividualNodesFromWorkspace
+     * - DiscardWorkspace
+     * - DeleteWorkspace
+     * - RebaseWorkspace
+     *
+     * The command `RebaseWorkspace` is a special case. Because (expect for force-rebase with dropped changes) no changes are expected to be dropped
+     * and thus there are no subtractions from the impending conflicts. Instead, the rebase takes care of synchronizing the new soft removals into the workspace.
+     * New soft removals can either cause new impending conflicts or free the claim of the workspace as the node will no longer be visible.
+     *
+     * *Sync vs async*
+     *
+     * In the future we could allow to disable the garbage collection being run synchronously but offer an async job.
+     *
+     * *Impediments*
+     *
+     * In a single user system the garbage collection will immediately turn the users workspace outdated after publishing a non-conflicting removal.
+     */
     public function run(ContentRepositoryId $contentRepositoryId): void
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
