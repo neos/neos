@@ -239,3 +239,57 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | Key           | Value            |
       | workspaceName | "user-workspace" |
     # no exceptions must be thrown
+
+  Scenario: Garbage collection will ignore a soft removal of the generalisation if the node was modified in another workspace
+    (also the specialisations will not be removed individually)
+    When the command CreateNodeVariant is executed with payload:
+      | Key             | Value                    |
+      | workspaceName   | "live"                   |
+      | nodeAggregateId | "sir-david-nodenborough" |
+      | sourceOrigin    | {"example": "source"}    |
+      | targetOrigin    | {"example": "general"}   |
+    And the command CreateNodeVariant is executed with payload:
+      | Key             | Value                  |
+      | workspaceName   | "live"                 |
+      | nodeAggregateId | "nodingers-cat"        |
+      | sourceOrigin    | {"example": "source"}  |
+      | targetOrigin    | {"example": "general"} |
+
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+
+    And the command SetNodeProperties is executed with payload:
+      | Key                       | Value                          |
+      | workspaceName             | "user-workspace"               |
+      | nodeAggregateId           | "nodingers-cat"                |
+      | originDimensionSpacePoint | {"example": "general"}         |
+      | propertyValues            | {"title": "Modify in general"} |
+
+    And the command TagSubtree is executed with payload:
+      | Key                          | Value                  |
+      | workspaceName                | "live"                 |
+      | nodeAggregateId              | "nodingers-cat"        |
+      | coveredDimensionSpacePoint   | {"example": "general"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"   |
+      | tag                          | "removed"              |
+
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints                       |
+      | nodingers-cat   | [{"example":"general"},{"example":"peer"}] |
+
+    When soft removal garbage collection is run for content repository default
+    # we could have the garbage collection cleanup source and special but instead well wait until that conflict
+    #  is resolved and remove all nodes at once
+    Then I expect exactly 8 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 7 is of type "SubtreeWasTagged" with payload:
+      | Key                          | Expected                                                                              |
+      | workspaceName                | "live"                                                                                |
+      | contentStreamId              | "cs-identifier"                                                                       |
+      | nodeAggregateId              | "nodingers-cat"                                                                       |
+      | affectedDimensionSpacePoints | [{"example":"general"},{"example":"source"},{"example":"peer"},{"example":"special"}] |
+      | tag                          | "removed"                                                                             |

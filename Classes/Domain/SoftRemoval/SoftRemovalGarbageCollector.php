@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Neos\Neos\Domain\SoftRemoval;
 
 use Neos\ContentRepository\Core\ContentRepository;
+use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
+use Neos\ContentRepository\Core\DimensionSpace\InterDimensionalVariationGraph;
 use Neos\ContentRepository\Core\DimensionSpace\VariantType;
 use Neos\ContentRepository\Core\Feature\NodeRemoval\Command\RemoveNodeAggregate;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
-use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdsWithDimensionSpacePoints;
-use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdWithDimensionSpacePoints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateCurrentlyDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateDoesCurrentlyNotCoverDimensionSpacePoint;
@@ -77,26 +77,17 @@ final readonly class SoftRemovalGarbageCollector
 
         $softRemovalsWithoutImpendingConflicts = $this->subtractImpendingConflicts($softRemovalsAcrossWorkspaces, $contentRepository);
         foreach ($softRemovalsWithoutImpendingConflicts as $softRemovedNode) {
-            if ($softRemovedNode->dimensionSpacePointSet->isEmpty()) {
-                // only impending conflicts
-                continue;
-            }
-            $generalizationsToRemoveWithAllSpecializations = $softRemovedNode->dimensionSpacePointSet->points;
-            foreach ($softRemovedNode->dimensionSpacePointSet as $dimensionSpacePointA) {
-                foreach ($softRemovedNode->dimensionSpacePointSet as $dimensionSpacePointB) {
-                    switch ($contentRepository->getVariationGraph()->getVariantType($dimensionSpacePointA, $dimensionSpacePointB)) {
-                        case VariantType::TYPE_SPECIALIZATION:
-                            unset($generalizationsToRemoveWithAllSpecializations[$dimensionSpacePointA->hash]);
-                            break;
-                        default:
-                    }
-                }
-            }
+            $generalizationsToRemoveWithAllSpecializations = self::getGeneralisations(
+                $contentRepository->getVariationGraph(),
+                $softRemovedNode->removedDimensionSpacePoints
+            );
+
             foreach ($generalizationsToRemoveWithAllSpecializations as $generalization) {
                 if (
-                    // @todo invert logic: compare specialization set with impending conflicts
+                    // check if any of the affected dimensions (STRATEGY_ALL_SPECIALIZATIONS) for the $generalization
+                    // impose a conflict
                     $contentRepository->getVariationGraph()->getSpecializationSet($generalization)
-                        ->getDifference($softRemovedNode->dimensionSpacePointSet)
+                        ->getIntersection($softRemovedNode->conflictingDimensionSpacePoints)
                         ->isEmpty()
                 ) {
                     try {
@@ -119,7 +110,7 @@ final readonly class SoftRemovalGarbageCollector
      * the user can still make changes to that node or children any time in the future - or might have done so already.
      * Heavily outdated workspaces might not even know the node yet and thus impose NO conflict.
      */
-    private function subtractNodesWhichAreNotSoftRemovedInOtherWorkspaces(NodeAggregateIdsWithDimensionSpacePoints $liveSoftRemovals, ContentRepository $contentRepository): NodeAggregateIdsWithDimensionSpacePoints
+    private function subtractNodesWhichAreNotSoftRemovedInOtherWorkspaces(SoftRemovedNodes $liveSoftRemovals, ContentRepository $contentRepository): SoftRemovedNodes
     {
         $softRemovedNodesAcrossWorkspaces = $liveSoftRemovals;
 
@@ -140,10 +131,11 @@ final readonly class SoftRemovalGarbageCollector
                 $softDeletedDimensionsInWorkspace = $nodeAggregateInWorkspace->getDimensionSpacePointsTaggedWith(SubtreeTag::removed());
                 $notSoftDeletedDimensionsInWorkspace = $nodeAggregateInWorkspace->coveredDimensionSpacePoints->getDifference($softDeletedDimensionsInWorkspace);
 
-                $softRemovedNodesAcrossWorkspaces = $softRemovedNodesAcrossWorkspaces->with(NodeAggregateIdWithDimensionSpacePoints::create(
-                    $softRemovedNode->nodeAggregateId,
-                    $softRemovedNode->dimensionSpacePointSet->getDifference($notSoftDeletedDimensionsInWorkspace)
-                ));
+                $softRemovedNodesAcrossWorkspaces = $softRemovedNodesAcrossWorkspaces->with(
+                    $softRemovedNode->withConflictingDimensionSpacePoints(
+                        $notSoftDeletedDimensionsInWorkspace
+                    )
+                );
             }
         }
 
@@ -154,7 +146,7 @@ final readonly class SoftRemovalGarbageCollector
      * Workspace that are already synchronised with live know the soft removals. This means that all pending changes have been rebased
      * on live and at the time of the rebase each of the events was aware of soft removal. The conflicts are remembered via hook and will be checked here.
      */
-    private function subtractImpendingConflicts(NodeAggregateIdsWithDimensionSpacePoints $softRemovals, ContentRepository $contentRepository): NodeAggregateIdsWithDimensionSpacePoints
+    private function subtractImpendingConflicts(SoftRemovedNodes $softRemovals, ContentRepository $contentRepository): SoftRemovedNodes
     {
         $softRemovalsWithoutImpendingConflicts = $softRemovals;
 
@@ -171,24 +163,44 @@ final readonly class SoftRemovalGarbageCollector
                     $contentRepository->getVariationGraph()->getIndexedGeneralizations($dimensionSpacePoint)
                 );
             }
-            $softRemovalsWithoutImpendingConflicts = $softRemovalsWithoutImpendingConflicts->with(NodeAggregateIdWithDimensionSpacePoints::create(
-                $softRemovedNode->nodeAggregateId,
-                $softRemovedNode->dimensionSpacePointSet->getDifference($impendingConflictGeneralizationSet)
-            ));
+            $softRemovalsWithoutImpendingConflicts = $softRemovalsWithoutImpendingConflicts->with(
+                $softRemovedNode->withConflictingDimensionSpacePoints(
+                    $softRemovedNode->conflictingDimensionSpacePoints->getUnion($impendingConflictGeneralizationSet)
+                )
+            );
         }
 
         return $softRemovalsWithoutImpendingConflicts;
     }
 
-    private function findNodeAggregatesInWorkspaceByExplicitRemovedTag(ContentGraphInterface $contentGraph): NodeAggregateIdsWithDimensionSpacePoints
+    private function findNodeAggregatesInWorkspaceByExplicitRemovedTag(ContentGraphInterface $contentGraph): SoftRemovedNodes
     {
         $softRemovedNodes = [];
         foreach ($contentGraph->findNodeAggregatesTaggedWith(SubtreeTag::removed()) as $nodeAggregateTaggedRemoved) {
-            $softRemovedNodes[] = NodeAggregateIdWithDimensionSpacePoints::create(
+            $softRemovedNodes[] = SoftRemovedNode::create(
                 $nodeAggregateTaggedRemoved->nodeAggregateId,
                 $nodeAggregateTaggedRemoved->getDimensionSpacePointsTaggedWith(SubtreeTag::removed())
             );
         }
-        return NodeAggregateIdsWithDimensionSpacePoints::fromArray($softRemovedNodes);
+        return SoftRemovedNodes::fromArray($softRemovedNodes);
+    }
+
+    /**
+     * Todo add utility to InterDimensionalVariationGraph
+     */
+    private static function getGeneralisations(InterDimensionalVariationGraph $variationGraph, DimensionSpacePointSet $dimensionSpacePointSet): DimensionSpacePointSet
+    {
+        $generalizations = $dimensionSpacePointSet->points;
+        foreach ($dimensionSpacePointSet as $dimensionSpacePointA) {
+            foreach ($dimensionSpacePointSet as $dimensionSpacePointB) {
+                switch ($variationGraph->getVariantType($dimensionSpacePointA, $dimensionSpacePointB)) {
+                    case VariantType::TYPE_SPECIALIZATION:
+                        unset($generalizations[$dimensionSpacePointA->hash]);
+                        break;
+                    default:
+                }
+            }
+        }
+        return DimensionSpacePointSet::fromArray($generalizations);
     }
 }
