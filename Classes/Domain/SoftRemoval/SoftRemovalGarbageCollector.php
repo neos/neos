@@ -179,6 +179,10 @@ final readonly class SoftRemovalGarbageCollector
     {
         $softRemovedNodes = [];
         foreach ($contentGraph->findNodeAggregatesTaggedWith(SubtreeTag::removed()) as $nodeAggregateTaggedRemoved) {
+            if ($nodeAggregateTaggedRemoved->classification->isRoot()) {
+                // we don't handle the soft removal of root nodes because root nodes cannot be removed via `STRATEGY_ALL_SPECIALIZATIONS`
+                continue;
+            }
             $softRemovedNodes[] = SoftRemovedNode::create(
                 $nodeAggregateTaggedRemoved->nodeAggregateId,
                 $nodeAggregateTaggedRemoved->getDimensionSpacePointsTaggedWith(SubtreeTag::removed())

@@ -116,6 +116,12 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
             return;
         }
 
+        if ($nodeAggregate->classification->isRoot()) {
+            // explicitly ignore root nodes and thus RootNodeAggregateWithNodeWasCreated, RootNodeAggregateDimensionsWereUpdated
+            // because we do not hard remove them
+            return;
+        }
+
         $dimensionSpacePoints = match ($eventInstance::class) {
             NodeAggregateWasMoved::class => $eventInstance->succeedingSiblingsForCoverage->toDimensionSpacePointSet(),
             NodePropertiesWereSet::class => $eventInstance->affectedDimensionSpacePoints,
@@ -131,8 +137,7 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
             NodeSpecializationVariantWasCreated::class => DimensionSpacePointSet::fromArray([$eventInstance->specializationOrigin->toDimensionSpacePoint(), $eventInstance->sourceOrigin->toDimensionSpacePoint()]),
             NodeAggregateNameWasChanged::class,
             NodeAggregateTypeWasChanged::class => $nodeAggregate->coveredDimensionSpacePoints,
-            RootNodeAggregateDimensionsWereUpdated::class => $eventInstance->coveredDimensionSpacePoints,
-            default => null, /** explicitly also @see RootNodeAggregateWithNodeWasCreated, which cannot conflict with hard removal */
+            default => null,
         };
 
         if ($dimensionSpacePoints === null) {
