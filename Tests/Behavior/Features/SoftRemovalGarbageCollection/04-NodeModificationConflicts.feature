@@ -240,8 +240,8 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | workspaceName | "user-workspace" |
     # no exceptions must be thrown
 
-  Scenario: Garbage collection will ignore a soft removal of the generalisation if the node was modified in another workspace
-    (also the specialisations will not be removed individually)
+  Scenario: Garbage collection will transform a soft removal incrementally for the specialisations first the node was modified in another workspaces generalisation
+
     When the command CreateNodeVariant is executed with payload:
       | Key             | Value                    |
       | workspaceName   | "live"                   |
@@ -283,13 +283,11 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | nodingers-cat   | [{"example":"general"},{"example":"peer"}] |
 
     When soft removal garbage collection is run for content repository default
-    # we could have the garbage collection cleanup source and special but instead well wait until that conflict
-    #  is resolved and remove all nodes at once
-    Then I expect exactly 8 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 7 is of type "SubtreeWasTagged" with payload:
-      | Key                          | Expected                                                                              |
-      | workspaceName                | "live"                                                                                |
-      | contentStreamId              | "cs-identifier"                                                                       |
-      | nodeAggregateId              | "nodingers-cat"                                                                       |
-      | affectedDimensionSpacePoints | [{"example":"general"},{"example":"source"},{"example":"peer"},{"example":"special"}] |
-      | tag                          | "removed"                                                                             |
+    Then I expect exactly 9 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 8 is of type "NodeAggregateWasRemoved" with payload:
+      | Key                                  | Expected                                        |
+      | workspaceName                        | "live"                                          |
+      | contentStreamId                      | "cs-identifier"                                 |
+      | nodeAggregateId                      | "nodingers-cat"                                 |
+      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
+      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |

@@ -119,6 +119,58 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
       | tag                          | "removed"                                       |
 
+  Scenario: Garbage collection will incrementally transform soft removals in the specialisation first
+    if the node has a descendant with an unpublished move only in source dimension
+    After cleaning the impending conflict via publish the node in the source dimension is removed
+
+    When the command TagSubtree is executed with payload:
+      | Key                          | Value                 |
+      | workspaceName                | "live"                |
+      | nodeAggregateId              | "nodingers-cat"       |
+      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"  |
+      | tag                          | "removed"             |
+
+    And the command MoveNodeAggregate is executed with payload:
+      | Key                          | Value                    |
+      | workspaceName                | "user-workspace"         |
+      | dimensionSpacePoint          | {"example": "source"}    |
+      | relationDistributionStrategy | "scatter"                |
+      | nodeAggregateId              | "nodingers-kitten"       |
+      | newParentNodeAggregateId     | "lady-eleonode-rootford" |
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints    |
+      | nodingers-cat   | [{"example": "source"}] |
+
+    When soft removal garbage collection is run for content repository default
+    Then I expect exactly 8 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 7 is of type "NodeAggregateWasRemoved" with payload:
+      | Key                                  | Expected                 |
+      | workspaceName                        | "live"                   |
+      | contentStreamId                      | "cs-identifier"          |
+      | nodeAggregateId                      | "nodingers-cat"          |
+      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]  |
+      | affectedCoveredDimensionSpacePoints  | [{"example": "special"}] |
+
+    When the command PublishWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints |
+
+    When soft removal garbage collection is run for content repository default
+    Then I expect exactly 10 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 9 is of type "NodeAggregateWasRemoved" with payload:
+      | Key                                  | Expected                |
+      | workspaceName                        | "live"                  |
+      | contentStreamId                      | "cs-identifier"         |
+      | nodeAggregateId                      | "nodingers-cat"         |
+      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}] |
+      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}] |
+
   Scenario: Garbage collection will ignore a soft removal if the node affects an unpublished inbound move in another workspace
     When the command TagSubtree is executed with payload:
       | Key                          | Value                 |

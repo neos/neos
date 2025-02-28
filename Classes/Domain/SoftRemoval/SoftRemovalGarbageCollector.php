@@ -77,9 +77,11 @@ final readonly class SoftRemovalGarbageCollector
 
         $softRemovalsWithoutImpendingConflicts = $this->subtractImpendingConflicts($softRemovalsAcrossWorkspaces, $contentRepository);
         foreach ($softRemovalsWithoutImpendingConflicts as $softRemovedNode) {
+            // the generalisations of the non-conflicting soft removed dimensions
             $generalizationsToRemoveWithAllSpecializations = self::getGeneralisations(
                 $contentRepository->getVariationGraph(),
                 $softRemovedNode->removedDimensionSpacePoints
+                    ->getDifference($softRemovedNode->conflictingDimensionSpacePoints)
             );
 
             foreach ($generalizationsToRemoveWithAllSpecializations as $generalization) {
