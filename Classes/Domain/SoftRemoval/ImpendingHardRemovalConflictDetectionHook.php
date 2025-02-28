@@ -184,15 +184,18 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
         $explicitlySoftRemovedAncestors = NodeAggregateIdsWithDimensionSpacePoints::create();
         while ($stack !== []) {
             $nodeAggregate = array_shift($stack);
-            $explicitlySoftRemovedDimensions = $nodeAggregate->getDimensionSpacePointsTaggedWith(SubtreeTag::removed())->getIntersection($dimensionSpacePoints);
-            if (!$explicitlySoftRemovedDimensions->isEmpty()) {
-                $explicitlySoftRemovedAncestors = $explicitlySoftRemovedAncestors->with(NodeAggregateIdWithDimensionSpacePoints::create(
-                    $nodeAggregate->nodeAggregateId,
-                    $explicitlySoftRemovedDimensions
-                ));
+            // we must stop if the current node aggregate is not by inheritance tagged via removed as otherwise we end up always traversing the whole tree up
+            $isSoftRemovedInAnyDimension = !$nodeAggregate->getCoveredDimensionsTaggedBy(SubtreeTag::removed(), withoutInherited: false)->isEmpty();
+            if ($isSoftRemovedInAnyDimension) {
+                $explicitlySoftRemovedDimensions = $nodeAggregate->getCoveredDimensionsTaggedBy(SubtreeTag::removed(), withoutInherited: true)->getIntersection($dimensionSpacePoints);
+                if (!$explicitlySoftRemovedDimensions->isEmpty()) {
+                    $explicitlySoftRemovedAncestors = $explicitlySoftRemovedAncestors->with(NodeAggregateIdWithDimensionSpacePoints::create(
+                        $nodeAggregate->nodeAggregateId,
+                        $explicitlySoftRemovedDimensions
+                    ));
+                }
+                $stack = [...$stack, ...iterator_to_array($contentGraph->findParentNodeAggregates($nodeAggregate->nodeAggregateId))];
             }
-            // todo we must stop if the current node aggregate is not by inheritance tagged via removed as otherwise we end up always traversing the whole tree up
-            $stack = [...$stack, ...iterator_to_array($contentGraph->findParentNodeAggregates($nodeAggregate->nodeAggregateId))];
         }
 
         return $explicitlySoftRemovedAncestors;

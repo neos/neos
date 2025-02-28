@@ -99,7 +99,7 @@ final readonly class SoftRemovalGarbageCollector
                             $generalization,
                             NodeVariantSelectionStrategy::STRATEGY_ALL_SPECIALIZATIONS
                         ));
-                    } catch (NodeAggregateCurrentlyDoesNotExist|NodeAggregateDoesCurrentlyNotCoverDimensionSpacePoint) {
+                    } catch (NodeAggregateCurrentlyDoesNotExist | NodeAggregateDoesCurrentlyNotCoverDimensionSpacePoint) {
                         // already removed by another command further up the graph
                     }
                 }
@@ -130,7 +130,7 @@ final readonly class SoftRemovalGarbageCollector
                 if ($nodeAggregateInWorkspace === null) {
                     continue;
                 }
-                $softDeletedDimensionsInWorkspace = $nodeAggregateInWorkspace->getDimensionSpacePointsTaggedWith(SubtreeTag::removed());
+                $softDeletedDimensionsInWorkspace = $nodeAggregateInWorkspace->getCoveredDimensionsTaggedBy(SubtreeTag::removed(), withoutInherited: true);
                 $notSoftDeletedDimensionsInWorkspace = $nodeAggregateInWorkspace->coveredDimensionSpacePoints->getDifference($softDeletedDimensionsInWorkspace);
 
                 $softRemovedNodesAcrossWorkspaces = $softRemovedNodesAcrossWorkspaces->with(
@@ -178,14 +178,14 @@ final readonly class SoftRemovalGarbageCollector
     private function findNodeAggregatesInWorkspaceByExplicitRemovedTag(ContentGraphInterface $contentGraph): SoftRemovedNodes
     {
         $softRemovedNodes = [];
-        foreach ($contentGraph->findNodeAggregatesTaggedWith(SubtreeTag::removed()) as $nodeAggregateTaggedRemoved) {
+        foreach ($contentGraph->findNodeAggregatesTaggedBy(SubtreeTag::removed()) as $nodeAggregateTaggedRemoved) {
             if ($nodeAggregateTaggedRemoved->classification->isRoot()) {
                 // we don't handle the soft removal of root nodes because root nodes cannot be removed via `STRATEGY_ALL_SPECIALIZATIONS`
                 continue;
             }
             $softRemovedNodes[] = SoftRemovedNode::create(
                 $nodeAggregateTaggedRemoved->nodeAggregateId,
-                $nodeAggregateTaggedRemoved->getDimensionSpacePointsTaggedWith(SubtreeTag::removed())
+                $nodeAggregateTaggedRemoved->getCoveredDimensionsTaggedBy(SubtreeTag::removed(), withoutInherited: true)
             );
         }
         return SoftRemovedNodes::fromArray($softRemovedNodes);
