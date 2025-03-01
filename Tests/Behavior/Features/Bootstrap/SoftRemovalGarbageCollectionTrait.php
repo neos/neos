@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Behat\Gherkin\Node\TableNode;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
-use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdWithDimensionSpacePoints;
+use Neos\Neos\Domain\SoftRemoval\ImpendingHardRemovalConflict;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\Neos\Domain\SoftRemoval\SoftRemovalGarbageCollector;
 use Neos\Neos\Domain\SoftRemoval\ImpendingHardRemovalConflictRepository;
@@ -30,7 +30,7 @@ trait SoftRemovalGarbageCollectionTrait
             return DimensionSpacePointSet::fromArray($points);
         };
 
-        $actualConflictsTable = array_map(static fn (NodeAggregateIdWithDimensionSpacePoints $conflict) => [
+        $actualConflictsTable = array_map(static fn (ImpendingHardRemovalConflict $conflict) => [
             'nodeAggregateId' => $conflict->nodeAggregateId->value,
             'dimensionSpacePoints' => $sortDsp($conflict->dimensionSpacePointSet)->toJson(),
         ], iterator_to_array($actualConflicts));

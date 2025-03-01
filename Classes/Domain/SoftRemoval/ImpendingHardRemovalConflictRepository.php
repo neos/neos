@@ -6,8 +6,6 @@ namespace Neos\Neos\Domain\SoftRemoval;
 
 use Doctrine\DBAL\Connection;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
-use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdsWithDimensionSpacePoints;
-use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdWithDimensionSpacePoints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
@@ -22,7 +20,7 @@ final readonly class ImpendingHardRemovalConflictRepository
     ) {
     }
 
-    public function findAllConflicts(ContentRepositoryId $contentRepositoryId): NodeAggregateIdsWithDimensionSpacePoints
+    public function findAllConflicts(ContentRepositoryId $contentRepositoryId): ImpendingHardRemovalConflicts
     {
         $table = self::CONFLICT_TABLE_NAME;
         $query = <<<SQL
@@ -38,31 +36,32 @@ final readonly class ImpendingHardRemovalConflictRepository
             'contentRepositoryId' => $contentRepositoryId->value,
         ]);
 
-        /** @var array<string, NodeAggregateIdWithDimensionSpacePoints> $conflicts */
+        /** @var array<string, ImpendingHardRemovalConflict> $conflicts */
         $conflicts = [];
         foreach ($rows as $row) {
             $nodeAggregateId = NodeAggregateId::fromString($row['node_aggregate_id']);
 
             if (!array_key_exists($nodeAggregateId->value, $conflicts)) {
-                $conflicts[$nodeAggregateId->value] = NodeAggregateIdWithDimensionSpacePoints::create(
+                $conflicts[$nodeAggregateId->value] = ImpendingHardRemovalConflict::create(
                     $nodeAggregateId,
                     DimensionSpacePointSet::fromJsonString($row['dimension_space_points'])
                 );
             } else {
-                $conflicts[$nodeAggregateId->value] = NodeAggregateIdWithDimensionSpacePoints::create(
+                $conflicts[$nodeAggregateId->value] = ImpendingHardRemovalConflict::create(
                     $nodeAggregateId,
-                    $conflicts[$nodeAggregateId->value]->dimensionSpacePointSet->getUnion(DimensionSpacePointSet::fromJsonString($row['dimension_space_points']))
+                    $conflicts[$nodeAggregateId->value]->dimensionSpacePointSet
+                        ->getUnion(DimensionSpacePointSet::fromJsonString($row['dimension_space_points']))
                 );
             }
         }
 
-        return NodeAggregateIdsWithDimensionSpacePoints::fromArray($conflicts);
+        return ImpendingHardRemovalConflicts::fromArray($conflicts);
     }
 
     public function addConflict(
         ContentRepositoryId $contentRepositoryId,
         WorkspaceName $workspaceName,
-        NodeAggregateIdsWithDimensionSpacePoints $softRemovals
+        ImpendingHardRemovalConflicts $conflicts
     ): void {
         $table = self::CONFLICT_TABLE_NAME;
         $query = <<<SQL
@@ -76,24 +75,25 @@ final readonly class ImpendingHardRemovalConflictRepository
                 AND node_aggregate_id = :nodeAggregateId
         SQL;
 
-        foreach ($softRemovals as $softRemoval) {
-            if ($softRemoval->dimensionSpacePointSet->isEmpty()) {
+        foreach ($conflicts as $conflict) {
+            if ($conflict->dimensionSpacePointSet->isEmpty()) {
                 continue;
             }
             $row = $this->dbal->fetchAssociative($query, [
                 'contentRepositoryId' => $contentRepositoryId->value,
                 'workspaceName' => $workspaceName->value,
-                'nodeAggregateId' => $softRemoval->nodeAggregateId->value
+                'nodeAggregateId' => $conflict->nodeAggregateId->value
             ]);
             if ($row === false) {
                 $this->dbal->insert($table, [
                     'content_repository_id' => $contentRepositoryId->value,
                     'workspace_name' => $workspaceName->value,
-                    'node_aggregate_id' => $softRemoval->nodeAggregateId->value,
-                    'dimension_space_points' => $softRemoval->dimensionSpacePointSet->toJson()
+                    'node_aggregate_id' => $conflict->nodeAggregateId->value,
+                    'dimension_space_points' => $conflict->dimensionSpacePointSet->toJson()
                 ]);
             } else {
-                $updatedDimensionSpacePoints = DimensionSpacePointSet::fromJsonString($row['dimension_space_points'])->getUnion($softRemoval->dimensionSpacePointSet);
+                $updatedDimensionSpacePoints = DimensionSpacePointSet::fromJsonString($row['dimension_space_points'])
+                    ->getUnion($conflict->dimensionSpacePointSet);
                 $this->dbal->update($table, [
                     'dimension_space_points' => $updatedDimensionSpacePoints->toJson()
                 ], [

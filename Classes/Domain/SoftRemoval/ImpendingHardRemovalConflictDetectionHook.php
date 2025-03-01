@@ -32,8 +32,8 @@ use Neos\ContentRepository\Core\Projection\CatchUpHook\CatchUpHookInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregate;
-use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdsWithDimensionSpacePoints;
-use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregateIdWithDimensionSpacePoints;
+use Neos\Neos\Domain\SoftRemoval\ImpendingHardRemovalConflicts;
+use Neos\Neos\Domain\SoftRemoval\ImpendingHardRemovalConflict;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\Subscription\SubscriptionStatus;
 use Neos\EventStore\Model\EventEnvelope;
@@ -177,11 +177,11 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
         ContentGraphInterface $contentGraph,
         NodeAggregate $entryNodeAggregate,
         DimensionSpacePointSet $dimensionSpacePoints
-    ): NodeAggregateIdsWithDimensionSpacePoints {
+    ): ImpendingHardRemovalConflicts {
         /** @var array<NodeAggregate> $stack */
         $stack = [$entryNodeAggregate];
 
-        $explicitlySoftRemovedAncestors = NodeAggregateIdsWithDimensionSpacePoints::create();
+        $explicitlySoftRemovedAncestors = ImpendingHardRemovalConflicts::create();
         while ($stack !== []) {
             $nodeAggregate = array_shift($stack);
             // we must stop if the current node aggregate is not by inheritance tagged via removed as otherwise we end up always traversing the whole tree up
@@ -189,7 +189,7 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
             if ($isSoftRemovedInAnyDimension) {
                 $explicitlySoftRemovedDimensions = $nodeAggregate->getCoveredDimensionsTaggedBy(SubtreeTag::removed(), withoutInherited: true)->getIntersection($dimensionSpacePoints);
                 if (!$explicitlySoftRemovedDimensions->isEmpty()) {
-                    $explicitlySoftRemovedAncestors = $explicitlySoftRemovedAncestors->with(NodeAggregateIdWithDimensionSpacePoints::create(
+                    $explicitlySoftRemovedAncestors = $explicitlySoftRemovedAncestors->with(ImpendingHardRemovalConflict::create(
                         $nodeAggregate->nodeAggregateId,
                         $explicitlySoftRemovedDimensions
                     ));
