@@ -119,20 +119,20 @@ Feature: Tests for soft removal garbage collection without impending conflicts
 
   Scenario: Garbage collection will transform nested soft removals of a node that only exists in a root workspace
     When the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId        | parentNodeAggregateId  | nodeTypeName       |
-      | nodingers-kitten | nodingers-cat | Neos.Neos:Document     |
-      | nodingers-kittens-plaything          | nodingers-kitten | Neos.Neos:Document |
+      | nodeAggregateId             | parentNodeAggregateId | nodeTypeName       |
+      | nodingers-kitten            | nodingers-cat         | Neos.Neos:Document |
+      | nodingers-kittens-plaything | nodingers-kitten      | Neos.Neos:Document |
+    And the command TagSubtree is executed with payload:
+      | Key                          | Value                         |
+      | workspaceName                | "live"                        |
+      | nodeAggregateId              | "nodingers-kittens-plaything" |
+      | coveredDimensionSpacePoint   | {"example": "source"}         |
+      | nodeVariantSelectionStrategy | "allSpecializations"          |
+      | tag                          | "removed"                     |
     And the command TagSubtree is executed with payload:
       | Key                          | Value                 |
       | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-kittens-plaything"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
-    And the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-kitten"       |
+      | nodeAggregateId              | "nodingers-kitten"    |
       | coveredDimensionSpacePoint   | {"example": "source"} |
       | nodeVariantSelectionStrategy | "allSpecializations"  |
       | tag                          | "removed"             |
@@ -162,7 +162,7 @@ Feature: Tests for soft removal garbage collection without impending conflicts
     # no exceptions must be thrown
 
   Scenario: Garbage collection will transform nested soft removals of a node that only exists in a root workspace
-    by also considering that the parent node might be removed first and skipping the removal of the child
+  by also considering that the parent node might be removed first and skipping the removal of the child
 
     # we need to have movements in the tree which will lead to the node returned by creation order does
     # not match the inversed hierarchy and we run into the case of deleting the parent first
@@ -178,16 +178,16 @@ Feature: Tests for soft removal garbage collection without impending conflicts
       | relationDistributionStrategy | "gatherAll"                   |
 
     And the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-kittens-plaything"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
+      | Key                          | Value                         |
+      | workspaceName                | "live"                        |
+      | nodeAggregateId              | "nodingers-kittens-plaything" |
+      | coveredDimensionSpacePoint   | {"example": "source"}         |
+      | nodeVariantSelectionStrategy | "allSpecializations"          |
+      | tag                          | "removed"                     |
     And the command TagSubtree is executed with payload:
       | Key                          | Value                 |
       | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-kitten"       |
+      | nodeAggregateId              | "nodingers-kitten"    |
       | coveredDimensionSpacePoint   | {"example": "source"} |
       | nodeVariantSelectionStrategy | "allSpecializations"  |
       | tag                          | "removed"             |
@@ -211,4 +211,41 @@ Feature: Tests for soft removal garbage collection without impending conflicts
       | workspaceName | "user-workspace" |
     # no exceptions must be thrown
 
-    # @todo removal on a not completely covered node aggregate
+  Scenario: Garbage collection will transform a soft removal of a partially covering node aggregate
+
+    When the command RemoveNodeAggregate is executed with payload:
+      | Key                          | Value                 |
+      | nodeAggregateId              | "nodingers-cat"       |
+      | coveredDimensionSpacePoint   | {"example":"special"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"  |
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+
+    And the command TagSubtree is executed with payload:
+      | Key                          | Value                 |
+      | workspaceName                | "live"                |
+      | nodeAggregateId              | "nodingers-cat"       |
+      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"  |
+      | tag                          | "removed"             |
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints |
+
+    When soft removal garbage collection is run for content repository default
+    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 6 is of type "NodeAggregateWasRemoved" with payload:
+      | Key                                  | Expected                |
+      | workspaceName                        | "live"                  |
+      | contentStreamId                      | "cs-identifier"         |
+      | nodeAggregateId                      | "nodingers-cat"         |
+      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}] |
+      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}] |
+
+    When the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+    # no exceptions must be thrown
