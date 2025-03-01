@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace Neos\Neos\Domain\SoftRemoval;
 
 use Neos\ContentRepository\Core\ContentRepository;
-use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
-use Neos\ContentRepository\Core\DimensionSpace\InterDimensionalVariationGraph;
-use Neos\ContentRepository\Core\DimensionSpace\VariantType;
 use Neos\ContentRepository\Core\Feature\NodeRemoval\Command\RemoveNodeAggregate;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
@@ -78,12 +75,10 @@ final readonly class SoftRemovalGarbageCollector
         $softRemovalsWithoutImpendingConflicts = $this->subtractImpendingConflicts($softRemovalsAcrossWorkspaces, $contentRepository);
         foreach ($softRemovalsWithoutImpendingConflicts as $softRemovedNode) {
             // the generalisations of the non-conflicting soft removed dimensions
-            $generalizationsToRemoveWithAllSpecializations = self::getGeneralisations(
-                $contentRepository->getVariationGraph(),
+            $generalizationsToRemoveWithAllSpecializations = $contentRepository->getVariationGraph()->reduceSetToRelativeRoots(
                 $softRemovedNode->removedDimensionSpacePoints
                     ->getDifference($softRemovedNode->conflictingDimensionSpacePoints)
             );
-
             foreach ($generalizationsToRemoveWithAllSpecializations as $generalization) {
                 if (
                     // check if any of the affected dimensions (STRATEGY_ALL_SPECIALIZATIONS) for the $generalization
@@ -189,24 +184,5 @@ final readonly class SoftRemovalGarbageCollector
             );
         }
         return SoftRemovedNodes::fromArray($softRemovedNodes);
-    }
-
-    /**
-     * Todo add utility to InterDimensionalVariationGraph
-     */
-    private static function getGeneralisations(InterDimensionalVariationGraph $variationGraph, DimensionSpacePointSet $dimensionSpacePointSet): DimensionSpacePointSet
-    {
-        $generalizations = $dimensionSpacePointSet->points;
-        foreach ($dimensionSpacePointSet as $dimensionSpacePointA) {
-            foreach ($dimensionSpacePointSet as $dimensionSpacePointB) {
-                switch ($variationGraph->getVariantType($dimensionSpacePointA, $dimensionSpacePointB)) {
-                    case VariantType::TYPE_SPECIALIZATION:
-                        unset($generalizations[$dimensionSpacePointA->hash]);
-                        break;
-                    default:
-                }
-            }
-        }
-        return DimensionSpacePointSet::fromArray($generalizations);
     }
 }
