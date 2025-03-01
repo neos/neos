@@ -154,12 +154,8 @@ final readonly class SoftRemovalGarbageCollector
             if ($impendingConflict === null) {
                 continue;
             }
-            $impendingConflictGeneralizationSet = $impendingConflict->dimensionSpacePointSet;
-            foreach ($impendingConflict->dimensionSpacePointSet as $dimensionSpacePoint) {
-                $impendingConflictGeneralizationSet = $impendingConflictGeneralizationSet->getUnion(
-                    $contentRepository->getVariationGraph()->getIndexedGeneralizations($dimensionSpacePoint)
-                );
-            }
+            $impendingConflictGeneralizationSet = $contentRepository->getVariationGraph()
+                ->getGeneralizationSetForSet($impendingConflict->dimensionSpacePointSet);
             $softRemovalsWithoutImpendingConflicts = $softRemovalsWithoutImpendingConflicts->with(
                 $softRemovedNode->withConflictingDimensionSpacePoints(
                     $softRemovedNode->conflictingDimensionSpacePoints->getUnion($impendingConflictGeneralizationSet)
