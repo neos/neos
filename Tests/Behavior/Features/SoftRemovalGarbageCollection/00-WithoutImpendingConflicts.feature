@@ -215,13 +215,10 @@ Feature: Tests for soft removal garbage collection without impending conflicts
 
     When the command RemoveNodeAggregate is executed with payload:
       | Key                          | Value                 |
+      | workspaceName                | "live"                |
       | nodeAggregateId              | "nodingers-cat"       |
       | coveredDimensionSpacePoint   | {"example":"special"} |
       | nodeVariantSelectionStrategy | "allSpecializations"  |
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
-
     And the command TagSubtree is executed with payload:
       | Key                          | Value                 |
       | workspaceName                | "live"                |

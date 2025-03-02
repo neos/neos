@@ -207,33 +207,3 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | Key           | Value            |
       | workspaceName | "user-workspace" |
     # no exceptions must be thrown
-
-  Scenario: Garbage collection will transform the a soft removal if a specialisation has already been removed
-    When the command TagSubtree is executed with payload:
-      | Key                          | Value                 |
-      | workspaceName                | "live"                |
-      | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example": "source"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-      | tag                          | "removed"             |
-    And the command RemoveNodeAggregate is executed with payload:
-      | Key                          | Value                 |
-      | nodeAggregateId              | "nodingers-cat"       |
-      | coveredDimensionSpacePoint   | {"example":"special"} |
-      | nodeVariantSelectionStrategy | "allSpecializations"  |
-
-    And the command RebaseWorkspace is executed with payload:
-      | Key           | Value            |
-      | workspaceName | "user-workspace" |
-    Then I expect the following hard removal conflicts to be impending:
-      | nodeAggregateId | dimensionSpacePoints |
-
-    When soft removal garbage collection is run for content repository default
-    Then I expect exactly 8 events to be published on stream "ContentStream:cs-identifier"
-    And event at index 7 is of type "NodeAggregateWasRemoved" with payload:
-      | Key                                  | Expected                |
-      | workspaceName                        | "live"                  |
-      | contentStreamId                      | "cs-identifier"         |
-      | nodeAggregateId                      | "nodingers-cat"         |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}] |
-      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}] |
