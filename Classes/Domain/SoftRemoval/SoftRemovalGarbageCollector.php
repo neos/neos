@@ -209,9 +209,9 @@ final readonly class SoftRemovalGarbageCollector
                 if (
                     // check if any of the affected dimensions (STRATEGY_ALL_SPECIALIZATIONS) for the $generalization
                     // impose a conflict
-                $contentRepository->getVariationGraph()->getSpecializationSet($generalization)
-                    ->getIntersection($softRemovedNode->conflictingDimensionSpacePoints)
-                    ->isEmpty()
+                    $contentRepository->getVariationGraph()->getSpecializationSet($generalization)
+                        ->getIntersection($softRemovedNode->conflictingDimensionSpacePoints)
+                        ->isEmpty()
                 ) {
                     try {
                         $contentRepository->handle(RemoveNodeAggregate::create(
