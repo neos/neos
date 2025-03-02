@@ -47,8 +47,7 @@ use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
 use Neos\EventStore\Model\EventEnvelope;
 
 /**
- * TODO: this class needs testing and probably a major refactoring!
- * @internal
+ * @internal Only for consumption inside Neos. Not public api because the implementation will be refactored sooner or later: https://github.com/neos/neos-development-collection/issues/5493
  * @implements ProjectionInterface<ChangeFinder>
  */
 class ChangeProjection implements ProjectionInterface
