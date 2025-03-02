@@ -14,8 +14,13 @@ declare(strict_types=1);
 
 use Behat\Gherkin\Node\TableNode;
 use Neos\ContentRepository\Core\DimensionSpace\OriginDimensionSpacePoint;
+use Neos\ContentRepository\Core\Feature\Common\EmbedsNodeAggregateId;
+use Neos\ContentRepository\Core\Feature\ContentStreamEventStreamName;
+use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
+use Neos\EventStore\Model\EventStream\VirtualStreamName;
+use Neos\Neos\Domain\Service\WorkspacePublishingService;
 use Neos\Neos\PendingChangesProjection\Change;
 use Neos\Neos\PendingChangesProjection\ChangeFinder;
 use PHPUnit\Framework\Assert;
@@ -27,6 +32,16 @@ use PHPUnit\Framework\Assert;
  */
 trait ChangeProjectionTrait
 {
+    /**
+     * @var array<\Neos\EventStore\Model\Event>
+     */
+    private array $pendingChanges_publishedEvents = [];
+
+    /**
+     * @var array<\Neos\EventStore\Model\Event>
+     */
+    private array $pendingChanges_remainingEvents = [];
+
     /**
      * @template T of object
      * @param class-string<T> $className
@@ -100,5 +115,89 @@ trait ChangeProjectionTrait
         $changes = iterator_to_array($changeFinder->findByContentStreamId(ContentStreamId::fromString($contentStreamId)));
 
         Assert::assertEmpty($changes, 'No changes expected, got: ' . json_encode($changes, JSON_PRETTY_PRINT));
+    }
+
+    /**
+     * @Then I expect for the site :siteNodeAggregateId to have :count publishable changes in workspace :workspace
+     */
+    public function iExpectTheSiteToHaveXPublishableChanges(string $siteNodeAggregateId, int $count, string $workspace): void
+    {
+        // the actual information for this resides in the Ui Neos\Neos\Ui\ContentRepository\Service\WorkspaceService in combination with client js calculation logic
+        // in the future the WorkspacePublishingService must be able to calculate the pending changes based on the publishing scope with hierarchy
+        $actualCount = $this->getObject(WorkspacePublishingService::class)->countPendingWorkspaceChanges($this->currentContentRepository->id, WorkspaceName::fromString($workspace));
+        Assert::assertEquals($count, $actualCount);
+    }
+
+    /**
+     * @Then I publish the :expectedCount changes in document :documentNodeAggregateId from workspace :workspace to :expectedTarget
+     */
+    public function iPublishTheDocumentFromWorkspace(string $documentNodeAggregateId, string $workspace, int $expectedCount, string $expectedTarget): void
+    {
+        $sourceWorkspace = $this->currentContentRepository->findWorkspaceByName(WorkspaceName::fromString($workspace));
+        Assert::assertEquals($expectedTarget, $sourceWorkspace->baseWorkspaceName->value);
+
+        $nextSequenceNumber = iterator_to_array($this->getEventStore()->load(VirtualStreamName::all())->backwards()->limit(1))[0]->sequenceNumber->next();
+
+        $actualResult = $this->getObject(WorkspacePublishingService::class)->publishChangesInDocument($this->currentContentRepository->id, WorkspaceName::fromString($workspace), NodeAggregateId::fromString($documentNodeAggregateId));
+        Assert::assertEquals($sourceWorkspace->baseWorkspaceName, $actualResult->targetWorkspaceName);
+        Assert::assertEquals($expectedCount, $actualResult->numberOfPublishedChanges);
+
+        /** @var \Neos\ContentRepository\Core\EventStore\EventNormalizer $eventNormaliser */
+        $eventNormaliser = \Neos\Utility\ObjectAccess::getProperty($this->currentContentRepository, 'eventNormalizer', true);
+
+        $targetWorkspace = $this->currentContentRepository->findWorkspaceByName($sourceWorkspace->baseWorkspaceName);
+
+        // refetch workspace with new cs id
+        $sourceWorkspace = $this->currentContentRepository->findWorkspaceByName(WorkspaceName::fromString($workspace));
+        $remainingEvents = [];
+        foreach ($this->getEventStore()->load(ContentStreamEventStreamName::fromContentStreamId($sourceWorkspace->currentContentStreamId)->getEventStreamName())->withMinimumSequenceNumber($nextSequenceNumber) as $eventEnvelope) {
+            if (in_array(EmbedsNodeAggregateId::class, class_implements($eventNormaliser->getEventClassName($eventEnvelope->event)))) {
+                $remainingEvents[] = $eventEnvelope->event;
+            }
+        }
+        $this->pendingChanges_remainingEvents = $remainingEvents;
+
+        $publishedEvents = [];
+        foreach ($this->getEventStore()->load(ContentStreamEventStreamName::fromContentStreamId($targetWorkspace->currentContentStreamId)->getEventStreamName())->withMinimumSequenceNumber($nextSequenceNumber) as $eventEnvelope) {
+            if (in_array(EmbedsNodeAggregateId::class, class_implements($eventNormaliser->getEventClassName($eventEnvelope->event)))) {
+                $publishedEvents[] = $eventEnvelope->event;
+            }
+        }
+        $this->pendingChanges_publishedEvents = $publishedEvents;
+    }
+
+    /**
+     * @Then I expect that the following node events have been published
+     */
+    public function iExpectTheFollowingNodeEventsToBePublished(TableNode $expectedNodeEvents): void
+    {
+        self::assertEventsTableMatchesExpected($expectedNodeEvents->getHash(), $this->pendingChanges_publishedEvents);
+    }
+
+    /**
+     * @Then I expect that the following node events are kept as remainder
+     */
+    public function iExpectTheFollowingNodeEventsToBeKept(TableNode $expectedNodeEvents): void
+    {
+        self::assertEventsTableMatchesExpected($expectedNodeEvents->getHash(), $this->pendingChanges_remainingEvents);
+    }
+
+    /**
+     * @param array<\Neos\EventStore\Model\Event> $actualEvents
+     */
+    private function assertEventsTableMatchesExpected(array $expectedEventsTable, array $actualEvents)
+    {
+        foreach ($expectedEventsTable as $i => $expectedRow) {
+            $actualEvent = $actualEvents[$i] ?? null;
+            Assert::assertEquals($expectedRow['type'], $actualEvent?->type->value, sprintf('Event at position %d does not match expected', $i));
+
+            $expectedPayload = json_decode($expectedRow['event payload'], true);
+            Assert::assertNotEmpty($expectedPayload, sprintf('Event at position %d does not specify a payload. Actual %s', $i, $actualEvent->data->value));
+
+            $actualPayload = json_decode($actualEvent->data->value, true);
+
+            Assert::assertEquals($expectedPayload, array_intersect_key($actualPayload, $expectedPayload), sprintf('Event at position %d does not match expected. Actual %s', $i, $actualEvent->data->value));
+        }
+        Assert::assertEquals(count($expectedEventsTable), count($actualEvents), sprintf('Not all actual rows were asserted %s', json_encode($actualEvents, JSON_PRETTY_PRINT)));
     }
 }
