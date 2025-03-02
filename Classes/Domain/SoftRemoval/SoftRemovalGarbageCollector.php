@@ -68,12 +68,13 @@ final readonly class SoftRemovalGarbageCollector
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
 
-        $liveSoftRemovals = $this->findNodeAggregatesInWorkspaceByExplicitRemovedTag($contentRepository->getContentGraph(WorkspaceName::forLive()));
+        $softRemovedNodes = $this->findNodeAggregatesInWorkspaceByExplicitRemovedTag($contentRepository->getContentGraph(WorkspaceName::forLive()));
 
-        $softRemovalsAcrossWorkspaces = $this->subtractNodesWhichAreNotSoftRemovedInOtherWorkspaces($liveSoftRemovals, $contentRepository);
+        $softRemovedNodes = $this->withVisibleInDependingWorkspacesConflicts($softRemovedNodes, $contentRepository);
 
-        $softRemovalsWithoutImpendingConflicts = $this->subtractImpendingConflicts($softRemovalsAcrossWorkspaces, $contentRepository);
-        foreach ($softRemovalsWithoutImpendingConflicts as $softRemovedNode) {
+        $softRemovedNodes = $this->withImpendingHardRemovalConflicts($softRemovedNodes, $contentRepository);
+
+        foreach ($softRemovedNodes as $softRemovedNode) {
             // the generalisations of the non-conflicting soft removed dimensions
             $generalizationsToRemoveWithAllSpecializations = $contentRepository->getVariationGraph()->reduceSetToRelativeRoots(
                 $softRemovedNode->removedDimensionSpacePoints
@@ -107,10 +108,8 @@ final readonly class SoftRemovalGarbageCollector
      * the user can still make changes to that node or children any time in the future - or might have done so already.
      * Heavily outdated workspaces might not even know the node yet and thus impose NO conflict.
      */
-    private function subtractNodesWhichAreNotSoftRemovedInOtherWorkspaces(SoftRemovedNodes $liveSoftRemovals, ContentRepository $contentRepository): SoftRemovedNodes
+    private function withVisibleInDependingWorkspacesConflicts(SoftRemovedNodes $softRemovedNodes, ContentRepository $contentRepository): SoftRemovedNodes
     {
-        $softRemovedNodesAcrossWorkspaces = $liveSoftRemovals;
-
         foreach ($contentRepository->findWorkspaces() as $workspace) {
             if ($workspace->isRootWorkspace()) {
                 // todo ignore non base workspaces of live?!
@@ -118,9 +117,9 @@ final readonly class SoftRemovalGarbageCollector
             }
             $contentGraph = $contentRepository->getContentGraph($workspace->workspaceName);
 
-            $nodeAggregatesInWorkspace = $contentGraph->findNodeAggregatesByIds($softRemovedNodesAcrossWorkspaces->toNodeAggregateIds());
+            $nodeAggregatesInWorkspace = $contentGraph->findNodeAggregatesByIds($softRemovedNodes->toNodeAggregateIds());
 
-            foreach ($softRemovedNodesAcrossWorkspaces as $softRemovedNode) {
+            foreach ($softRemovedNodes as $softRemovedNode) {
                 $nodeAggregateInWorkspace = $nodeAggregatesInWorkspace->get($softRemovedNode->nodeAggregateId);
                 if ($nodeAggregateInWorkspace === null) {
                     continue;
@@ -128,7 +127,7 @@ final readonly class SoftRemovalGarbageCollector
                 $softDeletedDimensionsInWorkspace = $nodeAggregateInWorkspace->getCoveredDimensionsTaggedBy(SubtreeTag::removed(), withoutInherited: true);
                 $notSoftDeletedDimensionsInWorkspace = $nodeAggregateInWorkspace->coveredDimensionSpacePoints->getDifference($softDeletedDimensionsInWorkspace);
 
-                $softRemovedNodesAcrossWorkspaces = $softRemovedNodesAcrossWorkspaces->with(
+                $softRemovedNodes = $softRemovedNodes->with(
                     $softRemovedNode->withConflictingDimensionSpacePoints(
                         $notSoftDeletedDimensionsInWorkspace
                     )
@@ -136,32 +135,30 @@ final readonly class SoftRemovalGarbageCollector
             }
         }
 
-        return $softRemovedNodesAcrossWorkspaces;
+        return $softRemovedNodes;
     }
 
     /**
      * Workspace that are already synchronised with live know the soft removals. This means that all pending changes have been rebased
-     * on live and at the time of the rebase each of the events was aware of soft removal. The conflicts are remembered via hook and will be checked here.
+     * on live and at the time of the rebase each of the events was aware of soft removal. The conflicts are remembered via hook.
      */
-    private function subtractImpendingConflicts(SoftRemovedNodes $softRemovals, ContentRepository $contentRepository): SoftRemovedNodes
+    private function withImpendingHardRemovalConflicts(SoftRemovedNodes $softRemovedNodes, ContentRepository $contentRepository): SoftRemovedNodes
     {
-        $softRemovalsWithoutImpendingConflicts = $softRemovals;
-
         $impendingConflicts = $this->impendingConflictRepository->findAllConflicts($contentRepository->id);
 
-        foreach ($softRemovalsWithoutImpendingConflicts as $softRemovedNode) {
+        foreach ($softRemovedNodes as $softRemovedNode) {
             $impendingConflict = $impendingConflicts->get($softRemovedNode->nodeAggregateId);
             if ($impendingConflict === null) {
                 continue;
             }
-            $softRemovalsWithoutImpendingConflicts = $softRemovalsWithoutImpendingConflicts->with(
+            $softRemovedNodes = $softRemovedNodes->with(
                 $softRemovedNode->withConflictingDimensionSpacePoints(
                     $softRemovedNode->conflictingDimensionSpacePoints->getUnion($impendingConflict->dimensionSpacePointSet)
                 )
             );
         }
 
-        return $softRemovalsWithoutImpendingConflicts;
+        return $softRemovedNodes;
     }
 
     private function findNodeAggregatesInWorkspaceByExplicitRemovedTag(ContentGraphInterface $contentGraph): SoftRemovedNodes
