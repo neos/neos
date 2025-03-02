@@ -187,17 +187,25 @@ trait ChangeProjectionTrait
      */
     private function assertEventsTableMatchesExpected(array $expectedEventsTable, array $actualEvents)
     {
-        foreach ($expectedEventsTable as $i => $expectedRow) {
-            $actualEvent = $actualEvents[$i] ?? null;
-            Assert::assertEquals($expectedRow['type'], $actualEvent?->type->value, sprintf('Event at position %d does not match expected', $i));
+        $expectedEventsTableNormalised = array_map(fn (array $row) => [
+            ...$row,
+            'event payload' => json_decode($row['event payload'], true)
+        ], $expectedEventsTable);
 
-            $expectedPayload = json_decode($expectedRow['event payload'], true);
-            Assert::assertNotEmpty($expectedPayload, sprintf('Event at position %d does not specify a payload. Actual %s', $i, $actualEvent->data->value));
-
+        $actualEventsTable = [];
+        foreach ($actualEvents as $i => $actualEvent) {
             $actualPayload = json_decode($actualEvent->data->value, true);
-
-            Assert::assertEquals($expectedPayload, array_intersect_key($actualPayload, $expectedPayload), sprintf('Event at position %d does not match expected. Actual %s', $i, $actualEvent->data->value));
+            $expectedPayload = $expectedEventsTableNormalised[$i]['event payload'] ?? [];
+            if ($expectedPayload !== []) {
+                // to simplify assertions we allow to only specify certain keys that will be compared instead of having to snapshot the full payload
+                $actualPayload = array_intersect_key($actualPayload, $expectedPayload);
+            }
+            $actualEventsTable[] = [
+                'type' => $actualEvent->type->value,
+                'event payload' => $actualPayload
+            ];
         }
-        Assert::assertEquals(count($expectedEventsTable), count($actualEvents), sprintf('Not all actual rows were asserted %s', json_encode($actualEvents, JSON_PRETTY_PRINT)));
+
+        Assert::assertSame($expectedEventsTableNormalised, $actualEventsTable);
     }
 }
