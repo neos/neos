@@ -110,12 +110,18 @@ final readonly class SoftRemovalGarbageCollector
      */
     private function withVisibleInDependingWorkspacesConflicts(SoftRemovedNodes $softRemovedNodes, ContentRepository $contentRepository): SoftRemovedNodes
     {
-        foreach ($contentRepository->findWorkspaces() as $workspace) {
-            if ($workspace->isRootWorkspace()) {
-                // todo ignore non base workspaces of live?!
-                continue;
-            }
-            $contentGraph = $contentRepository->getContentGraph($workspace->workspaceName);
+        $allWorkspace = $contentRepository->findWorkspaces();
+
+        $namesOfWorkspacesDependingOnLive = [];
+        $stack = iterator_to_array($allWorkspace->getDependantWorkspaces(WorkspaceName::forLive()));
+        while ($stack !== []) {
+            $workspace = array_shift($stack);
+            $namesOfWorkspacesDependingOnLive[] = $workspace->workspaceName;
+            $stack = [...$stack, ...iterator_to_array($allWorkspace->getDependantWorkspaces($workspace->workspaceName))];
+        }
+
+        foreach ($namesOfWorkspacesDependingOnLive as $workspaceName) {
+            $contentGraph = $contentRepository->getContentGraph($workspaceName);
 
             $nodeAggregatesInWorkspace = $contentGraph->findNodeAggregatesByIds($softRemovedNodes->toNodeAggregateIds());
 

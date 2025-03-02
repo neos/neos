@@ -1,4 +1,4 @@
-Feature: Tests for soft removal garbage collection with impending conflicts across workspaces
+Feature: Tests for soft removal garbage collection with conflicts across workspaces
 
   Background:
     Given using the following content dimensions:
@@ -51,13 +51,14 @@ Feature: Tests for soft removal garbage collection with impending conflicts acro
       | workspaceName      | "user-workspace" |
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
+
+  Scenario: Impending conflicts: Changes in multiple workspace will avoid garbage collection
     And the command CreateWorkspace is executed with payload:
       | Key                | Value                |
       | workspaceName      | "user-workspace-two" |
       | baseWorkspaceName  | "live"               |
       | newContentStreamId | "user-two-cs-id"     |
 
-  Scenario: Changes in multiple workspace will avoid garbage collection
     When the command TagSubtree is executed with payload:
       | Key                          | Value                  |
       | workspaceName                | "live"                 |
@@ -126,3 +127,66 @@ Feature: Tests for soft removal garbage collection with impending conflicts acro
       | nodeAggregateId              | "nodingers-cat"                                 |
       | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
       | tag                          | "removed"                                       |
+
+  Scenario: Visibility conflict: Node not soft removed in nested dependent workspace will avoid garbage collection
+    And the command CreateWorkspace is executed with payload:
+      | Key                | Value              |
+      | workspaceName      | "shared-workspace" |
+      | baseWorkspaceName  | "live"             |
+      | newContentStreamId | "shared-cs-id"     |
+    And the command CreateWorkspace is executed with payload:
+      | Key                | Value                |
+      | workspaceName      | "user-workspace-two" |
+      | baseWorkspaceName  | "shared-workspace"   |
+      | newContentStreamId | "user-two-cs-id"     |
+
+    When the command TagSubtree is executed with payload:
+      | Key                          | Value                 |
+      | workspaceName                | "live"                |
+      | nodeAggregateId              | "nodingers-cat"       |
+      | coveredDimensionSpacePoint   | {"example": "source"} |
+      | nodeVariantSelectionStrategy | "allSpecializations"  |
+      | tag                          | "removed"             |
+    # rebase only user one
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value            |
+      | workspaceName | "user-workspace" |
+
+    Then I expect the following hard removal conflicts to be impending:
+      | nodeAggregateId | dimensionSpacePoints     |
+
+    # no garbage collection
+    When soft removal garbage collection is run for content repository default
+    Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 5 is of type "SubtreeWasTagged" with payload:
+      | Key                          | Expected                                        |
+      | workspaceName                | "live"                                          |
+      | contentStreamId              | "cs-identifier"                                 |
+      | nodeAggregateId              | "nodingers-cat"                                 |
+      | affectedDimensionSpacePoints | [{"example": "source"}, {"example": "special"}] |
+      | tag                          | "removed"                                       |
+
+    # rebase only shared
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value              |
+      | workspaceName | "shared-workspace" |
+
+      # no garbage collection
+    When soft removal garbage collection is run for content repository default
+    Then I expect exactly 6 events to be published on stream "ContentStream:cs-identifier"
+
+    # rebase finally user two
+    And the command RebaseWorkspace is executed with payload:
+      | Key           | Value                |
+      | workspaceName | "user-workspace-two" |
+
+    # garbage collection removes
+    When soft removal garbage collection is run for content repository default
+    Then I expect exactly 7 events to be published on stream "ContentStream:cs-identifier"
+    And event at index 6 is of type "NodeAggregateWasRemoved" with payload:
+      | Key                                  | Expected                                        |
+      | workspaceName                        | "live"                                          |
+      | contentStreamId                      | "cs-identifier"                                 |
+      | nodeAggregateId                      | "nodingers-cat"                                 |
+      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
+      | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
