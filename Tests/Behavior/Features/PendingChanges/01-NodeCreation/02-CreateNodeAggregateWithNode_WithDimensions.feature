@@ -49,7 +49,7 @@ Feature: Create node aggregate with node with dimensions
       | nodeAggregateId            | nodeName | parentNodeAggregateId  | nodeTypeName                        | initialPropertyValues                                              |
       | sir-nodeward-nodington-iii | esquire  | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {"text": "This is a french text about Sir Nodeward Nodington III"} |
 
-    Then I expect the ChangeProjection to have no changes in "cs-identifier"
+    Then I expect to have no changes in workspace "live"
 
 
   Scenario: Nodes on user workspace have been created
@@ -66,10 +66,10 @@ Feature: Create node aggregate with node with dimensions
       | nodeAggregateId            | nodeName | parentNodeAggregateId  | nodeTypeName                        | initialPropertyValues                                                |
       | sir-nodeward-nodington-iii | esquire  | lady-eleonode-rootford | Neos.ContentRepository.Testing:Node | {"text": "This is a extended text about Sir Nodeward Nodington III"} |
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+    Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId            | created | changed | moved | deleted | originDimensionSpacePoint |
       | sir-david-nodenborough     | 1       | 1       | 0     | 0       | {"language":"de"}         |
       | nody-mc-nodeface           | 1       | 1       | 0     | 0       | {"language":"de"}         |
       | sir-nodeward-nodington-iv  | 1       | 1       | 0     | 0       | {"language":"de"}         |
       | sir-nodeward-nodington-iii | 1       | 1       | 0     | 0       | {"language":"fr"}         |
-    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    And I expect to have no changes in workspace "live"

@@ -15,6 +15,7 @@ declare(strict_types=1);
 use Behat\Gherkin\Node\TableNode;
 use Neos\ContentRepository\Core\DimensionSpace\OriginDimensionSpacePoint;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
+use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\Neos\PendingChangesProjection\Change;
 use Neos\Neos\PendingChangesProjection\ChangeFinder;
 use PHPUnit\Framework\Assert;
@@ -35,12 +36,16 @@ trait ChangeProjectionTrait
     abstract private function getObject(string $className): object;
 
     /**
-     * @Then I expect the ChangeProjection to have the following changes in :contentStreamId:
+     * @Then I expect to have the following changes in workspace :workspace:
      */
-    public function iExpectTheChangeProjectionToHaveTheFollowingChangesInContentStream(TableNode $table, string $contentStreamId)
+    public function iExpectTheChangeProjectionToHaveTheFollowingChangesInContentStream(TableNode $table, string $workspace)
     {
+        // forwards compatible adjustment, we make the test assertions on workspace names even tough we store the data in content streams
+        $workspaceInstance = $this->currentContentRepository->findWorkspaceByName(WorkspaceName::fromString($workspace));
+        Assert::assertNotNull($workspaceInstance, 'workspace doesnt exist');
+
         $changeFinder = $this->currentContentRepository->projectionState(ChangeFinder::class);
-        $changes = iterator_to_array($changeFinder->findByContentStreamId(ContentStreamId::fromString($contentStreamId)));
+        $changes = iterator_to_array($changeFinder->findByContentStreamId($workspaceInstance->currentContentStreamId));
 
         $actualChangesTable = array_map(static fn (Change $change) => [
             'nodeAggregateId' => $change->nodeAggregateId->value,
@@ -71,13 +76,29 @@ trait ChangeProjectionTrait
     }
 
     /**
+     * @Then I expect to have no changes in workspace :workspace
+     */
+    public function iExpectToHaveNoChangesInWorkspace(string $workspace)
+    {
+        // forwards compatible adjustment, we make the test assertions on workspace names even tough we store the data in content streams
+        $workspaceInstance = $this->currentContentRepository->findWorkspaceByName(WorkspaceName::fromString($workspace));
+        Assert::assertNotNull($workspaceInstance, 'workspace doesnt exist');
+
+        $changeFinder = $this->currentContentRepository->projectionState(ChangeFinder::class);
+        $changes = iterator_to_array($changeFinder->findByContentStreamId($workspaceInstance->currentContentStreamId));
+
+        Assert::assertEmpty($changes, 'No changes expected, got: ' . json_encode($changes, JSON_PRETTY_PRINT));
+    }
+
+    /**
      * @Then I expect the ChangeProjection to have no changes in :contentStreamId
+     * @deprecated assertions to check that the internal change projection is really empty for that stream. Can be removed when migrating to workspaces
      */
     public function iExpectTheChangeProjectionToHaveNoChangesInContentStream(string $contentStreamId)
     {
         $changeFinder = $this->currentContentRepository->projectionState(ChangeFinder::class);
         $changes = iterator_to_array($changeFinder->findByContentStreamId(ContentStreamId::fromString($contentStreamId)));
 
-        Assert::assertEmpty($changes, "No changes expected, got: " . json_encode($changes, JSON_PRETTY_PRINT));
+        Assert::assertEmpty($changes, 'No changes expected, got: ' . json_encode($changes, JSON_PRETTY_PRINT));
     }
 }

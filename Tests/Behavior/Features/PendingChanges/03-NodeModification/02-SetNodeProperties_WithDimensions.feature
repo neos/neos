@@ -62,10 +62,10 @@ Feature: Create node aggregate with node with dimensions
       | originDimensionSpacePoint | {"language":"de"}        |
       | propertyValues            | {"text": "Other text"}   |
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+    Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId        | created | changed | moved | deleted | originDimensionSpacePoint |
       | sir-david-nodenborough | 0       | 1       | 0     | 0       | {"language":"de"}         |
-    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    And I expect to have no changes in workspace "live"
 
 
   Scenario: Remove an text from an existing property
@@ -76,8 +76,8 @@ Feature: Create node aggregate with node with dimensions
       | originDimensionSpacePoint | {"language":"de"}        |
       | propertyValues            | {"text": null}           |
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+    Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId        | created | changed | moved | deleted | originDimensionSpacePoint |
       | sir-david-nodenborough | 0       | 1       | 0     | 0       | {"language":"de"}         |
-    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    And I expect to have no changes in workspace "live"
 
