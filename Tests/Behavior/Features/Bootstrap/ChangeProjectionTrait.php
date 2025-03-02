@@ -13,9 +13,9 @@ declare(strict_types=1);
 
 
 use Behat\Gherkin\Node\TableNode;
-use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
-use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
+use Neos\ContentRepository\Core\DimensionSpace\OriginDimensionSpacePoint;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
+use Neos\Neos\PendingChangesProjection\Change;
 use Neos\Neos\PendingChangesProjection\ChangeFinder;
 use PHPUnit\Framework\Assert;
 
@@ -42,32 +42,32 @@ trait ChangeProjectionTrait
         $changeFinder = $this->currentContentRepository->projectionState(ChangeFinder::class);
         $changes = iterator_to_array($changeFinder->findByContentStreamId(ContentStreamId::fromString($contentStreamId)));
 
-        $tableRows = $table->getHash();
-        foreach ($changes as $change) {
-            foreach ($tableRows as $tableRowIndex => $tableRow) {
-                if (!$change->nodeAggregateId->equals(NodeAggregateId::fromString($tableRow['nodeAggregateId']))
-                    || $change->created !== (bool)$tableRow['created']
-                    || $change->deleted !== (bool)$tableRow['deleted']
-                    || $change->changed !== (bool)$tableRow['changed']
-                    || $change->moved !== (bool)$tableRow['moved']
-                    || (
-                        ($change->originDimensionSpacePoint === null && strtolower($tableRow['originDimensionSpacePoint']) !== "null")
-                        &&
-                        ($change->originDimensionSpacePoint !== null && strtolower($tableRow['originDimensionSpacePoint']) !== "null" && !$change->originDimensionSpacePoint->equals(DimensionSpacePoint::fromJsonString($tableRow['originDimensionSpacePoint'])))
-                    )
-                ) {
-                    continue;
-                }
-                unset($tableRows[$tableRowIndex]);
-                continue 2;
-            }
-        }
+        $actualChangesTable = array_map(static fn (Change $change) => [
+            'nodeAggregateId' => $change->nodeAggregateId->value,
+            'created' => (string)(int)$change->created,
+            'changed' => (string)(int)$change->changed,
+            'moved' => (string)(int)$change->moved,
+            'deleted' => (string)(int)$change->deleted,
+            'originDimensionSpacePoint' => $change->originDimensionSpacePoint?->toJson(),
+        ], iterator_to_array($changes));
 
-
-        Assert::assertTrue(
-            $tableRows === [] && count($table->getHash()) === count($changes),
-            sprintf('Mismatch between all actual changes usages %s and leftover changes to match %s', json_encode($changes, JSON_PRETTY_PRINT), json_encode($tableRows, JSON_PRETTY_PRINT))
+        $expectedChangesWithNormalisedJson = array_map(
+            fn (array $row) => [
+                ...$row,
+                'originDimensionSpacePoint' => ($originDimensionSpacePoint = json_decode($row['originDimensionSpacePoint'], true)) !== null
+                    ? OriginDimensionSpacePoint::fromArray($originDimensionSpacePoint)->toJson()
+                    : null,
+            ],
+            $table->getHash()
         );
+
+        // assertEqualsCanonicalizing removes keys by using sort recursively that's why we sort manually
+        array_walk($actualChangesTable, 'ksort');
+        array_walk($expectedChangesWithNormalisedJson, 'ksort');
+        sort($actualChangesTable);
+        sort($expectedChangesWithNormalisedJson);
+
+        Assert::assertEquals($expectedChangesWithNormalisedJson, $actualChangesTable, 'Mismatch of changes');
     }
 
     /**
