@@ -1,5 +1,15 @@
 <?php
 
+/*
+ * This file is part of the Neos.Neos package.
+ *
+ * (c) Contributors of the Neos Project - www.neos.io
+ *
+ * This package is Open Source Software. For the full copyright and license
+ * information, please view the LICENSE file which was distributed with this
+ * source code.
+ */
+
 declare(strict_types=1);
 
 namespace Neos\Neos\Domain\SoftRemoval;
@@ -21,14 +31,42 @@ use Neos\Neos\Domain\Service\WorkspacePublishingService;
  * Service that detects which soft removals in a content repository can be safely transformed to hard removals
  * and executes those.
  *
- * The detection/execution is done in the following steps:
- * 1) find all soft removals in the root workspace(s)
- * For each soft removal
- * 2) check if any workspace objects to the transformation (i.e. would run into conflicts on rebase)
- * 3) if there are no impending conflicts, execute the hard removal on the root workspace(s)
- * 4) the hard removal will then propagate to the other workspace automatically via rebase
+ * *Invalidation*
  *
- * @internal safe to run at any time, but manual runs should be unnecessary
+ * Triggering of the soft removal garbage collection is done via the {@see WorkspacePublishingService}
+ *
+ * For these commands the contents of the workspace change and afterward there are less pending changes - e.g. less impending conflicts.
+ * Which means that we can trigger the garbage collection in hope to have something cleaned up.
+ *
+ * - PublishWorkspace
+ * - PublishIndividualNodesFromWorkspace
+ * - DiscardIndividualNodesFromWorkspace
+ * - DiscardWorkspace
+ * - DeleteWorkspace
+ * - RebaseWorkspace
+ *
+ * The command `RebaseWorkspace` is a special case. Because (expect for force-rebase with dropped changes) no changes are expected to be dropped
+ * and thus there are no subtractions from the impending conflicts. Instead, the rebase takes care of synchronizing the new soft removals into the workspace.
+ * New soft removals can either cause new impending conflicts or free the claim of the workspace as the node will no longer be visible.
+ *
+ * *Implementation*
+ *
+ * The detection/execution is done in the following steps:
+ *   1) find all soft removals in the root workspace live {@see self::findNodeAggregatesInWorkspaceByExplicitRemovedTag()}
+ * For each soft removal:
+ *   2) check if any workspace objects to the transformation
+ *       2.a) by not knowing about the soft removal yet {@see self::withVisibleInDependingWorkspacesConflicts()}
+ *       2.b) by having pending changes inside the synchronized soft removal {@see self::withImpendingHardRemovalConflicts()}
+ *   3) if there are no impending conflicts, execute the hard removal on the root workspace
+ *   4) the hard removal will then propagate to the other workspace automatically via rebase
+ *
+ * *Sync vs async*
+ *
+ * In the future we could allow to disable the garbage collection being run synchronously but offer an async job.
+ *
+ * *Impediments*
+ *
+ * In a single user system the garbage collection will immediately turn the users workspace outdated after publishing a non-conflicting removal.
  */
 final readonly class SoftRemovalGarbageCollector
 {
@@ -39,31 +77,7 @@ final readonly class SoftRemovalGarbageCollector
     }
 
     /**
-     * Triggering of the soft removal garbage collection is done via the {@see WorkspacePublishingService}
-     *
-     * *Invalidation*
-     *
-     * For these commands the contents of the workspace change and afterward there are less pending changes - e.g. less impending conflicts.
-     * Which means that we can trigger the garbage collection in hope to have something cleaned up.
-     *
-     * - PublishWorkspace
-     * - PublishIndividualNodesFromWorkspace
-     * - DiscardIndividualNodesFromWorkspace
-     * - DiscardWorkspace
-     * - DeleteWorkspace
-     * - RebaseWorkspace
-     *
-     * The command `RebaseWorkspace` is a special case. Because (expect for force-rebase with dropped changes) no changes are expected to be dropped
-     * and thus there are no subtractions from the impending conflicts. Instead, the rebase takes care of synchronizing the new soft removals into the workspace.
-     * New soft removals can either cause new impending conflicts or free the claim of the workspace as the node will no longer be visible.
-     *
-     * *Sync vs async*
-     *
-     * In the future we could allow to disable the garbage collection being run synchronously but offer an async job.
-     *
-     * *Impediments*
-     *
-     * In a single user system the garbage collection will immediately turn the users workspace outdated after publishing a non-conflicting removal.
+     * Entry point to trigger the hard removal
      */
     public function run(ContentRepositoryId $contentRepositoryId): void
     {
@@ -112,6 +126,29 @@ final readonly class SoftRemovalGarbageCollector
     }
 
     /**
+     * Step 1
+     *
+     * All soft removals that were published to live will be fetched to evaluate the hard removal
+     */
+    private function findNodeAggregatesInWorkspaceByExplicitRemovedTag(ContentGraphInterface $contentGraph): SoftRemovedNodes
+    {
+        $softRemovedNodes = [];
+        foreach ($contentGraph->findNodeAggregatesTaggedBy(SubtreeTag::removed()) as $nodeAggregateTaggedRemoved) {
+            if ($nodeAggregateTaggedRemoved->classification->isRoot()) {
+                // we don't handle the soft removal of root nodes because root nodes cannot be removed via `STRATEGY_ALL_SPECIALIZATIONS`
+                continue;
+            }
+            $softRemovedNodes[] = SoftRemovedNode::create(
+                $nodeAggregateTaggedRemoved->nodeAggregateId,
+                $nodeAggregateTaggedRemoved->getCoveredDimensionsTaggedBy(SubtreeTag::removed(), withoutInherited: true)
+            );
+        }
+        return SoftRemovedNodes::fromArray($softRemovedNodes);
+    }
+
+    /**
+     * Step 2.a
+     *
      * If a workspace is outdated and does not have the soft removal yet, but knows the node we cannot safely remove the node as
      * the user can still make changes to that node or children any time in the future - or might have done so already.
      * Heavily outdated workspaces might not even know the node yet and thus impose NO conflict.
@@ -153,6 +190,8 @@ final readonly class SoftRemovalGarbageCollector
     }
 
     /**
+     * Step 2.b
+     *
      * Workspace that are already synchronised with live know the soft removals. This means that all pending changes have been rebased
      * on live and at the time of the rebase each of the events was aware of soft removal. The conflicts are remembered via hook.
      */
@@ -173,21 +212,5 @@ final readonly class SoftRemovalGarbageCollector
         }
 
         return $softRemovedNodes;
-    }
-
-    private function findNodeAggregatesInWorkspaceByExplicitRemovedTag(ContentGraphInterface $contentGraph): SoftRemovedNodes
-    {
-        $softRemovedNodes = [];
-        foreach ($contentGraph->findNodeAggregatesTaggedBy(SubtreeTag::removed()) as $nodeAggregateTaggedRemoved) {
-            if ($nodeAggregateTaggedRemoved->classification->isRoot()) {
-                // we don't handle the soft removal of root nodes because root nodes cannot be removed via `STRATEGY_ALL_SPECIALIZATIONS`
-                continue;
-            }
-            $softRemovedNodes[] = SoftRemovedNode::create(
-                $nodeAggregateTaggedRemoved->nodeAggregateId,
-                $nodeAggregateTaggedRemoved->getCoveredDimensionsTaggedBy(SubtreeTag::removed(), withoutInherited: true)
-            );
-        }
-        return SoftRemovedNodes::fromArray($softRemovedNodes);
     }
 }
