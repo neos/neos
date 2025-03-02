@@ -30,7 +30,7 @@ use PHPUnit\Framework\Assert;
  *
  * @internal only for behat tests within the Neos.Neos package
  */
-trait ChangeProjectionTrait
+trait PendingChangesTrait
 {
     /**
      * @var array<\Neos\EventStore\Model\Event>
