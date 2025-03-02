@@ -122,11 +122,13 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
             return;
         }
 
+        // possible optimisation: to further avoid false-positives, we could adjust to store really only the affected source origin dimensions for property modification, references and node type change ...
         $dimensionSpacePoints = match ($eventInstance::class) {
             NodeAggregateWasMoved::class => $eventInstance->succeedingSiblingsForCoverage->toDimensionSpacePointSet(),
             NodePropertiesWereSet::class => $eventInstance->affectedDimensionSpacePoints,
             NodeAggregateWithNodeWasCreated::class => $eventInstance->succeedingSiblingsForCoverage->toDimensionSpacePointSet(),
             NodeReferencesWereSet::class => DimensionSpacePointSet::fromArray(array_merge(...array_map(
+                // find out where the reference change is 'visible' e.g. like NodePropertiesWereSet::$affectedDimensionSpacePoints
                 fn (OriginDimensionSpacePoint $sourceOrigin): array => $nodeAggregate->getCoverageByOccupant($sourceOrigin)->points,
                 array_values($eventInstance->affectedSourceOriginDimensionSpacePoints->getPoints())
             ))),
