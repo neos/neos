@@ -11,6 +11,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateCurrentlyDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateDoesCurrentlyNotCoverDimensionSpacePoint;
+use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeVariantSelectionStrategy;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
@@ -68,7 +69,14 @@ final readonly class SoftRemovalGarbageCollector
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
 
-        $softRemovedNodes = $this->findNodeAggregatesInWorkspaceByExplicitRemovedTag($contentRepository->getContentGraph(WorkspaceName::forLive()));
+        try {
+            $liveContentGraph = $contentRepository->getContentGraph(WorkspaceName::forLive());
+        } catch (WorkspaceDoesNotExist) {
+            // nothing to do if live doest exist
+            return;
+        }
+
+        $softRemovedNodes = $this->findNodeAggregatesInWorkspaceByExplicitRemovedTag($liveContentGraph);
 
         $softRemovedNodes = $this->withVisibleInDependingWorkspacesConflicts($softRemovedNodes, $contentRepository);
 
