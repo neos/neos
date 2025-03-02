@@ -26,6 +26,7 @@ use Neos\ContentRepository\Core\SharedModel\Node\NodeVariantSelectionStrategy;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Neos\Domain\Service\WorkspacePublishingService;
+use Neos\Flow\Security\Context as SecurityContext;
 
 /**
  * Service that detects which soft removals in a content repository can be safely transformed to hard removals
@@ -57,7 +58,7 @@ use Neos\Neos\Domain\Service\WorkspacePublishingService;
  *   2) check if any workspace objects to the transformation
  *       2.a) by not knowing about the soft removal yet {@see self::withVisibleInDependingWorkspacesConflicts()}
  *       2.b) by having pending changes inside the synchronized soft removal {@see self::withImpendingHardRemovalConflicts()}
- *   3) if there are no impending conflicts, execute the hard removal on the root workspace
+ *   3) if there are no impending conflicts, execute the hard removal on the root workspace {@see self::hardRemoveNodesInDimensionsThatImposeNoConflicts}
  *   4) the hard removal will then propagate to the other workspace automatically via rebase
  *
  * *Sync vs async*
@@ -73,6 +74,7 @@ final readonly class SoftRemovalGarbageCollector
     public function __construct(
         private ContentRepositoryRegistry $contentRepositoryRegistry,
         private ImpendingHardRemovalConflictRepository $impendingConflictRepository,
+        private SecurityContext $securityContext,
     ) {
     }
 
@@ -82,47 +84,22 @@ final readonly class SoftRemovalGarbageCollector
     public function run(ContentRepositoryId $contentRepositoryId): void
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
-
-        try {
-            $liveContentGraph = $contentRepository->getContentGraph(WorkspaceName::forLive());
-        } catch (WorkspaceDoesNotExist) {
-            // nothing to do if live doest exist
-            return;
-        }
-
-        $softRemovedNodes = $this->findNodeAggregatesInWorkspaceByExplicitRemovedTag($liveContentGraph);
-
-        $softRemovedNodes = $this->withVisibleInDependingWorkspacesConflicts($softRemovedNodes, $contentRepository);
-
-        $softRemovedNodes = $this->withImpendingHardRemovalConflicts($softRemovedNodes, $contentRepository);
-
-        foreach ($softRemovedNodes as $softRemovedNode) {
-            // the generalisations of the non-conflicting soft removed dimensions
-            $generalizationsToRemoveWithAllSpecializations = $contentRepository->getVariationGraph()->reduceSetToRelativeRoots(
-                $softRemovedNode->removedDimensionSpacePoints
-                    ->getDifference($softRemovedNode->conflictingDimensionSpacePoints)
-            );
-            foreach ($generalizationsToRemoveWithAllSpecializations as $generalization) {
-                if (
-                    // check if any of the affected dimensions (STRATEGY_ALL_SPECIALIZATIONS) for the $generalization
-                    // impose a conflict
-                    $contentRepository->getVariationGraph()->getSpecializationSet($generalization)
-                        ->getIntersection($softRemovedNode->conflictingDimensionSpacePoints)
-                        ->isEmpty()
-                ) {
-                    try {
-                        $contentRepository->handle(RemoveNodeAggregate::create(
-                            WorkspaceName::forLive(),
-                            $softRemovedNode->nodeAggregateId,
-                            $generalization,
-                            NodeVariantSelectionStrategy::STRATEGY_ALL_SPECIALIZATIONS
-                        ));
-                    } catch (NodeAggregateCurrentlyDoesNotExist | NodeAggregateDoesCurrentlyNotCoverDimensionSpacePoint) {
-                        // already removed by another command further up the graph
-                    }
-                }
+        $this->securityContext->withoutAuthorizationChecks(function () use ($contentRepository) {
+            try {
+                $liveContentGraph = $contentRepository->getContentGraph(WorkspaceName::forLive());
+            } catch (WorkspaceDoesNotExist) {
+                // nothing to do if live doest exist
+                return;
             }
-        }
+
+            $softRemovedNodes = $this->findNodeAggregatesInWorkspaceByExplicitRemovedTag($liveContentGraph);
+
+            $softRemovedNodes = $this->withVisibleInDependingWorkspacesConflicts($softRemovedNodes, $contentRepository);
+
+            $softRemovedNodes = $this->withImpendingHardRemovalConflicts($softRemovedNodes, $contentRepository);
+
+            $this->hardRemoveNodesInDimensionsThatImposeNoConflicts($softRemovedNodes, $contentRepository);
+        });
     }
 
     /**
@@ -212,5 +189,42 @@ final readonly class SoftRemovalGarbageCollector
         }
 
         return $softRemovedNodes;
+    }
+
+    /**
+     * Step 3
+     *
+     * For the dimensions a node was soft-removed we calculate the dimensions that will via STRATEGY_ALL_SPECIALIZATIONS remove exactly it.
+     * If a variant that is about to be removed imposes a conflict here we will skip the hard removal.
+     */
+    private function hardRemoveNodesInDimensionsThatImposeNoConflicts(SoftRemovedNodes $softRemovedNodes, ContentRepository $contentRepository): void
+    {
+        foreach ($softRemovedNodes as $softRemovedNode) {
+            // the generalisations of the non-conflicting soft removed dimensions
+            $generalizationsToRemoveWithAllSpecializations = $contentRepository->getVariationGraph()->reduceSetToRelativeRoots(
+                $softRemovedNode->removedDimensionSpacePoints
+                    ->getDifference($softRemovedNode->conflictingDimensionSpacePoints)
+            );
+            foreach ($generalizationsToRemoveWithAllSpecializations as $generalization) {
+                if (
+                    // check if any of the affected dimensions (STRATEGY_ALL_SPECIALIZATIONS) for the $generalization
+                    // impose a conflict
+                $contentRepository->getVariationGraph()->getSpecializationSet($generalization)
+                    ->getIntersection($softRemovedNode->conflictingDimensionSpacePoints)
+                    ->isEmpty()
+                ) {
+                    try {
+                        $contentRepository->handle(RemoveNodeAggregate::create(
+                            WorkspaceName::forLive(),
+                            $softRemovedNode->nodeAggregateId,
+                            $generalization,
+                            NodeVariantSelectionStrategy::STRATEGY_ALL_SPECIALIZATIONS
+                        ));
+                    } catch (NodeAggregateCurrentlyDoesNotExist | NodeAggregateDoesCurrentlyNotCoverDimensionSpacePoint) {
+                        // already removed by another command further up the graph
+                    }
+                }
+            }
+        }
     }
 }
