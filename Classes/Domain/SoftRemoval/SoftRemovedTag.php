@@ -9,6 +9,7 @@ use Neos\ContentRepository\Core\Feature\SubtreeTagging\Command\TagSubtree;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\Neos\Domain\Service\WorkspacePublishingService;
+use Neos\Flow\Annotations as Flow;
 
 /**
  * Content repository subtree tag which is used to denote that a node is soft removed
