@@ -694,13 +694,13 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
 
     private function isNodeExplicitlyRemoved(DocumentNodeInfo $node, DocumentNodeInfo|null $parentNode): bool
     {
-        if ($node->getDisableLevel() === 0) {
+        if ($node->getRemovedLevel() === 0) {
             return false;
         }
         if ($parentNode === null) {
-            return $node->getDisableLevel() !== 0;
+            return $node->getRemovedLevel() !== 0;
         }
-        return $node->getDisableLevel() - $parentNode->getDisableLevel() !== 0;
+        return $node->getRemovedLevel() - $parentNode->getRemovedLevel() !== 0;
     }
 
     private function getDocumentTypeClassification(NodeTypeName $nodeTypeName): DocumentTypeClassification
