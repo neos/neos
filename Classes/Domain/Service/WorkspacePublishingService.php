@@ -380,7 +380,7 @@ final class WorkspacePublishingService
         if ($change->originDimensionSpacePoint) {
             $subgraph = $contentRepository->getContentGraph($workspaceName)->getSubgraph(
                 $change->originDimensionSpacePoint->toDimensionSpacePoint(),
-                VisibilityConstraints::withoutRestrictions()
+                VisibilityConstraints::createEmpty()
             );
 
             // A Change is publishable if the respective node has a closest ancestor that matches our
