@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Security\Authorization;
 
-use Neos\ContentRepository\Core\ContentRepository;
-use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
-use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTags;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
@@ -23,7 +20,7 @@ use Neos\Neos\Domain\Model\WorkspaceRole;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubject;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubjects;
 use Neos\Neos\Domain\Repository\WorkspaceMetadataAndRoleRepository;
-use Neos\Neos\Domain\SoftRemoval\SoftRemovedTag;
+use Neos\Neos\Domain\Service\NeosVisibilityConstraints;
 use Neos\Neos\Security\Authorization\Privilege\EditNodePrivilege;
 use Neos\Neos\Security\Authorization\Privilege\ReadNodePrivilege;
 use Neos\Neos\Security\Authorization\Privilege\SubtreeTagPrivilegeSubject;
@@ -107,7 +104,7 @@ final readonly class ContentRepositoryAuthorizationService
     public function getVisibilityConstraints(ContentRepositoryId $contentRepositoryId, array $roles): VisibilityConstraints
     {
         // soft removals are never visible by default
-        $restrictedSubtreeTags = SubtreeTags::createEmpty()->with(SoftRemovedTag::getSubtreeTag());
+        $restrictedSubtreeTags = NeosVisibilityConstraints::withoutRemoved()->tagConstraints;
         /** @var ReadNodePrivilege $privilege */
         foreach ($this->policyService->getAllPrivilegesByType(ReadNodePrivilege::class) as $privilege) {
             if (!$this->privilegeManager->isGrantedForRoles($roles, ReadNodePrivilege::class, new SubtreeTagPrivilegeSubject($privilege->getSubtreeTags(), $contentRepositoryId))) {
@@ -115,30 +112,5 @@ final readonly class ContentRepositoryAuthorizationService
             }
         }
         return VisibilityConstraints::fromTagConstraints($restrictedSubtreeTags);
-    }
-
-    /**
-     * Default constraints for frontend rendering, ensuring that neither disabled nor soft removed nodes are visible
-     *
-     * Note, to ensure custom ReadNodePrivilege's are evaluated use {@see ContentRepository::getContentSubgraph()} instead to acquire a subgraph.
-     */
-    public static function frontendVisibilityConstraints(): VisibilityConstraints
-    {
-        return VisibilityConstraints::fromTagConstraints(SubtreeTags::create(
-            SubtreeTag::disabled(),
-            SoftRemovedTag::getSubtreeTag()
-        ));
-    }
-
-    /**
-     * Default constraints for the backend, ensuring that disabled are visible, but not soft removed nodes
-     *
-     * Note, to ensure custom ReadNodePrivilege's are evaluated use {@see ContentRepository::getContentSubgraph()} instead to acquire a subgraph.
-     */
-    public static function backendVisibilityConstraints(): VisibilityConstraints
-    {
-        return VisibilityConstraints::fromTagConstraints(SubtreeTags::create(
-            SoftRemovedTag::getSubtreeTag()
-        ));
     }
 }

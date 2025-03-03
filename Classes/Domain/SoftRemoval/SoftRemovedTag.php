@@ -44,6 +44,11 @@ final readonly class SoftRemovedTag
 {
     private const IDENTIFIER = 'removed';
 
+    private function __construct()
+    {
+        // no instances
+    }
+
     public static function getSubtreeTag(): SubtreeTag
     {
         return SubtreeTag::fromString(self::IDENTIFIER);
