@@ -58,7 +58,7 @@ readonly class AssetUsageIndexingProcessor
             foreach ($dimensionSpacePoints as $dimensionSpacePoint) {
                 $this->dispatchMessage($callback, sprintf('    DimensionSpacePoint: %s', $dimensionSpacePoint->toJson()));
 
-                $subgraph = $contentGraph->getSubgraph($dimensionSpacePoint, VisibilityConstraints::withoutRestrictions());
+                $subgraph = $contentGraph->getSubgraph($dimensionSpacePoint, VisibilityConstraints::createEmpty());
                 $childNodes = iterator_to_array($subgraph->findChildNodes($rootNodeAggregateId, FindChildNodesFilter::create()));
 
                 while ($childNodes !== []) {
