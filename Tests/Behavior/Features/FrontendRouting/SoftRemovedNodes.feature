@@ -66,7 +66,7 @@ Feature: Routing behavior of soft removed nodes
       | nodeVariantSelectionStrategy | "allVariants"  |
       | tag                          | "removed"      |
     Then No node should match URL "/david-nodenborough/earl-document/leaf"
-    And The node "leaf-mc-node" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
+    And The node "leaf-mc-node" in dimension "{}" should not resolve to an URL
 
   Scenario: Soft remove leaf node and reinstate
     When the command TagSubtree is executed with payload:
@@ -76,7 +76,7 @@ Feature: Routing behavior of soft removed nodes
       | nodeVariantSelectionStrategy | "allVariants"  |
       | tag                          | "removed"      |
     Then No node should match URL "/david-nodenborough/earl-document/leaf"
-    And The node "leaf-mc-node" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
+    And The node "leaf-mc-node" in dimension "{}" should not resolve to an URL
 
     When the command UntagSubtree is executed with payload:
       | Key                          | Value          |
@@ -85,8 +85,8 @@ Feature: Routing behavior of soft removed nodes
       | nodeVariantSelectionStrategy | "allVariants"  |
       | tag                          | "removed"      |
     When I am on URL "/david-nodenborough/earl-document/leaf"
-    Then the matched node should be "leaf-mc-node" in content stream "cs-identifier" and dimension "{}"
-    And The node "leaf-mc-node" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
+    Then the matched node should be "leaf-mc-node" in dimension "{}"
+    And The node "leaf-mc-node" in dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
 
   Scenario: Soft remove node with child nodes
     When the command TagSubtree is executed with payload:
@@ -97,8 +97,8 @@ Feature: Routing behavior of soft removed nodes
       | tag                          | "removed"                |
     Then No node should match URL "/david-nodenborough"
     And No node should match URL "/david-nodenborough/earl-document"
-    And The node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
-    And The node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
+    And The node "sir-david-nodenborough" in dimension "{}" should not resolve to an URL
+    And The node "earl-o-documentbourgh" in dimension "{}" should not resolve to an URL
 
   Scenario: Soft remove two nodes, reinstate the higher one
     When the command TagSubtree is executed with payload:
@@ -115,8 +115,8 @@ Feature: Routing behavior of soft removed nodes
       | tag                          | "removed"               |
     Then No node should match URL "/david-nodenborough"
     And No node should match URL "/david-nodenborough/earl-document"
-    And The node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
-    And The node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
+    And The node "sir-david-nodenborough" in dimension "{}" should not resolve to an URL
+    And The node "earl-o-documentbourgh" in dimension "{}" should not resolve to an URL
     When the command UntagSubtree is executed with payload:
       | Key                          | Value                    |
       | nodeAggregateId              | "sir-david-nodenborough" |
@@ -124,10 +124,10 @@ Feature: Routing behavior of soft removed nodes
       | nodeVariantSelectionStrategy | "allVariants"            |
       | tag                          | "removed"                |
     When I am on URL "/david-nodenborough"
-    Then the matched node should be "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}"
+    Then the matched node should be "sir-david-nodenborough" in dimension "{}"
     And No node should match URL "/david-nodenborough/earl-document"
-    And The node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough"
-    And The node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
+    And The node "sir-david-nodenborough" in dimension "{}" should resolve to URL "/david-nodenborough"
+    And The node "earl-o-documentbourgh" in dimension "{}" should not resolve to an URL
 
   Scenario: Soft remove two nodes, reinstate the lower one
     When the command TagSubtree is executed with payload:
@@ -144,8 +144,8 @@ Feature: Routing behavior of soft removed nodes
       | tag                          | "removed"               |
     Then No node should match URL "/david-nodenborough"
     And No node should match URL "/david-nodenborough/earl-document"
-    And The node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
-    And The node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
+    And The node "sir-david-nodenborough" in dimension "{}" should not resolve to an URL
+    And The node "earl-o-documentbourgh" in dimension "{}" should not resolve to an URL
     When the command UntagSubtree is executed with payload:
       | Key                          | Value                   |
       | nodeAggregateId              | "earl-o-documentbourgh" |
@@ -154,8 +154,8 @@ Feature: Routing behavior of soft removed nodes
       | tag                          | "removed"               |
     Then No node should match URL "/david-nodenborough"
     And No node should match URL "/david-nodenborough/earl-document"
-    And The node "sir-david-nodenborough" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
-    And The node "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
+    And The node "sir-david-nodenborough" in dimension "{}" should not resolve to an URL
+    And The node "earl-o-documentbourgh" in dimension "{}" should not resolve to an URL
 
   Scenario: Move implicit soft removed node
     When the command TagSubtree is executed with payload:
@@ -171,7 +171,7 @@ Feature: Routing behavior of soft removed nodes
       | newParentNodeAggregateId            | "nody-mc-nodeface"      |
       | newSucceedingSiblingNodeAggregateId | null                    |
     When I am on URL "/nody/earl-document"
-    Then the matched node should be "earl-o-documentbourgh" in content stream "cs-identifier" and dimension "{}"
+    Then the matched node should be "earl-o-documentbourgh" in dimension "{}"
 
   Scenario: Move explicit soft removed node
     When the command TagSubtree is executed with payload:
@@ -187,7 +187,7 @@ Feature: Routing behavior of soft removed nodes
       | newParentNodeAggregateId            | "nody-mc-nodeface"      |
       | newSucceedingSiblingNodeAggregateId | null                    |
     Then No node should match URL "/nody/earl-document"
-    And The node "leaf-mc-node" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
+    And The node "leaf-mc-node" in dimension "{}" should not resolve to an URL
 
   Scenario: Add child node underneath soft remove node and reinstantiate parent (see https://github.com/neos/neos-development-collection/issues/4639)
     When the command TagSubtree is executed with payload:
@@ -206,12 +206,12 @@ Feature: Routing behavior of soft removed nodes
       | nodeVariantSelectionStrategy | "allVariants"      |
       | tag                          | "removed"          |
     When I am on URL "/nody/nody-child"
-    Then the matched node should be "nody-mc-nodeface-child" in content stream "cs-identifier" and dimension "{}"
+    Then the matched node should be "nody-mc-nodeface-child" in dimension "{}"
 
   Scenario: Soft remove leaf node and create sibling with same uri path segment
     When I am on URL "/david-nodenborough/earl-document/leaf"
-    Then the matched node should be "leaf-mc-node" in content stream "cs-identifier" and dimension "{}"
-    And The node "leaf-mc-node" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
+    Then the matched node should be "leaf-mc-node" in dimension "{}"
+    And The node "leaf-mc-node" in dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
 
     When the command TagSubtree is executed with payload:
       | Key                          | Value          |
@@ -220,7 +220,7 @@ Feature: Routing behavior of soft removed nodes
       | nodeVariantSelectionStrategy | "allVariants"  |
       | tag                          | "removed"      |
     Then No node should match URL "/david-nodenborough/earl-document/leaf"
-    And The node "leaf-mc-node" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
+    And The node "leaf-mc-node" in dimension "{}" should not resolve to an URL
 
     # create sibling with the same path
     When the command CreateNodeAggregateWithNode is executed with payload:
@@ -231,5 +231,5 @@ Feature: Routing behavior of soft removed nodes
       | initialPropertyValues | {"uriPathSegment": "leaf"}    |
 
     When I am on URL "/david-nodenborough/earl-document/leaf"
-    Then the matched node should be "leaf-sibling" in content stream "cs-identifier" and dimension "{}"
-    And The node "leaf-sibling" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
+    Then the matched node should be "leaf-sibling" in dimension "{}"
+    And The node "leaf-sibling" in dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
