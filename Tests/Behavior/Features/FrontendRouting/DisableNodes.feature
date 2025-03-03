@@ -73,6 +73,7 @@ Feature: Routing behavior of removed, disabled and re-enabled nodes
       | coveredDimensionSpacePoint   | {}             |
       | nodeVariantSelectionStrategy | "allVariants"  |
     Then No node should match URL "/david-nodenborough/earl-document/leaf"
+    # contraire to matching, we DO allow resolving of disabled nodes https://github.com/neos/neos-development-collection/pull/4363
     And The node "leaf-mc-node" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
 
   Scenario: Disable node with child nodes

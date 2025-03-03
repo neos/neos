@@ -158,6 +158,11 @@ final class DocumentNodeInfo
         return $this->getDisableLevel() > 0;
     }
 
+    public function isRemoved(): bool
+    {
+        return $this->getRemovedLevel() > 0;
+    }
+
     public function getDisableLevel(): int
     {
         return (int)$this->source['disabled'];
