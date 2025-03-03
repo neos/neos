@@ -207,3 +207,29 @@ Feature: Routing behavior of soft removed nodes
       | tag                          | "removed"          |
     When I am on URL "/nody/nody-child"
     Then the matched node should be "nody-mc-nodeface-child" in content stream "cs-identifier" and dimension "{}"
+
+  Scenario: Soft remove leaf node and create sibling with same uri path segment
+    When I am on URL "/david-nodenborough/earl-document/leaf"
+    Then the matched node should be "leaf-mc-node" in content stream "cs-identifier" and dimension "{}"
+    And The node "leaf-mc-node" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
+
+    When the command TagSubtree is executed with payload:
+      | Key                          | Value          |
+      | nodeAggregateId              | "leaf-mc-node" |
+      | coveredDimensionSpacePoint   | {}             |
+      | nodeVariantSelectionStrategy | "allVariants"  |
+      | tag                          | "removed"      |
+    Then No node should match URL "/david-nodenborough/earl-document/leaf"
+    And The node "leaf-mc-node" in content stream "cs-identifier" and dimension "{}" should not resolve to an URL
+
+    # create sibling with the same path
+    When the command CreateNodeAggregateWithNode is executed with payload:
+      | Key                   | Value                         |
+      | nodeAggregateId       | "leaf-sibling"                |
+      | nodeTypeName          | "Neos.Neos:Test.Routing.Page" |
+      | parentNodeAggregateId | "earl-o-documentbourgh"       |
+      | initialPropertyValues | {"uriPathSegment": "leaf"}    |
+
+    When I am on URL "/david-nodenborough/earl-document/leaf"
+    Then the matched node should be "leaf-sibling" in content stream "cs-identifier" and dimension "{}"
+    And The node "leaf-sibling" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"

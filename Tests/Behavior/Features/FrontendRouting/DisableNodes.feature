@@ -184,3 +184,29 @@ Feature: Routing behavior of removed, disabled and re-enabled nodes
       | nodeVariantSelectionStrategy | "allVariants"      |
     When I am on URL "/nody/nody-child"
     Then the matched node should be "nody-mc-nodeface-child" in content stream "cs-identifier" and dimension "{}"
+
+  Scenario: Disable leaf node and create sibling with same uri path segment
+    When I am on URL "/david-nodenborough/earl-document/leaf"
+    Then the matched node should be "leaf-mc-node" in content stream "cs-identifier" and dimension "{}"
+    And The node "leaf-mc-node" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
+
+    When the command DisableNodeAggregate is executed with payload:
+      | Key                          | Value              |
+      | nodeAggregateId              | "leaf-mc-node" |
+      | coveredDimensionSpacePoint   | {}                 |
+      | nodeVariantSelectionStrategy | "allVariants"      |
+    Then No node should match URL "/david-nodenborough/earl-document/leaf"
+    # uri building is ambiguous but not matching!
+    And The node "leaf-mc-node" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
+
+    # create sibling with the same path
+    When the command CreateNodeAggregateWithNode is executed with payload:
+      | Key                   | Value                         |
+      | nodeAggregateId       | "leaf-sibling"                |
+      | nodeTypeName          | "Neos.Neos:Test.Routing.Page" |
+      | parentNodeAggregateId | "earl-o-documentbourgh"       |
+      | initialPropertyValues | {"uriPathSegment": "leaf"}    |
+
+    When I am on URL "/david-nodenborough/earl-document/leaf"
+    Then the matched node should be "leaf-sibling" in content stream "cs-identifier" and dimension "{}"
+    And The node "leaf-sibling" in content stream "cs-identifier" and dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
