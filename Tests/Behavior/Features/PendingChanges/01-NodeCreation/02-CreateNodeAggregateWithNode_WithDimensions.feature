@@ -44,7 +44,6 @@ Feature: Create node aggregate with node with dimensions
 
     And I am in workspace "live"
     And I am in dimension space point {"language": "de"}
-    And I am user identified by "initiating-user-identifier"
     And the command CreateRootNodeAggregateWithNode is executed with payload:
       | Key             | Value             |
       | nodeAggregateId | "root"            |

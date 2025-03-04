@@ -1,7 +1,7 @@
 @contentrepository @adapters=DoctrineDBAL
 @flowEntities
 Feature: Create node aggregate with node without dimensions
-
+  TODO Remove this test, obsolete because of 02-CreateNodeAggregateWithNode_WithDimensions
   Background:
     Given using no content dimensions
     And using the following node types:
