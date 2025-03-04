@@ -174,6 +174,19 @@ trait PendingChangesTrait
     }
 
     /**
+     * @Then I expect the publishing of document :documentNodeAggregateId from workspace :workspace to fail
+     */
+    public function iExpectThePublicationOfTheDocumentFromWorkspaceToFail(string $workspace, string $documentNodeAggregateId): void
+    {
+        $workspacePublishingService = $this->getObject(WorkspacePublishingService::class);
+        $this->tryCatchingExceptions(fn () =>
+            $workspacePublishingService->publishChangesInDocument($this->currentContentRepository->id, WorkspaceName::fromString($workspace), NodeAggregateId::fromString($documentNodeAggregateId))
+        );
+        Assert::assertNotNull($this->lastCaughtException, 'Expected an exception but none was thrown');
+    }
+
+
+    /**
      * @Then I expect that the following node events have been published
      */
     public function iExpectTheFollowingNodeEventsToBePublished(TableNode $expectedNodeEvents): void

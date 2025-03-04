@@ -1,6 +1,6 @@
 @contentrepository @adapters=DoctrineDBAL
 @flowEntities
-Feature: Soft remove node aggregate with node without dimensions
+Feature: Soft remove node aggregate with node
 
   Background:
     Given using the following content dimensions:
@@ -126,6 +126,7 @@ Feature: Soft remove node aggregate with node without dimensions
     Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
       | nody-mc-nodeface | 0       | 0       | 0     | 1       | {"language": "de"}        |
+      # different to the actual NodeAggregateWasRemoved event, we dont have the $affectedOccupiedDimensionSpacePoints and mark all dimensions as removed, also fallbacks
       | nody-mc-nodeface | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
       | other-removal    | 0       | 0       | 0     | 1       | {"language": "de"}        |
       | other-removal    | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
