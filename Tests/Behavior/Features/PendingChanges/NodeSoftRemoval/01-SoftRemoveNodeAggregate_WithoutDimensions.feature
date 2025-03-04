@@ -1,6 +1,7 @@
 @contentrepository @adapters=DoctrineDBAL
 @flowEntities
 Feature: Soft remove node aggregate with node without dimensions
+  TODO obsolete because of 02-SoftRemoveNodeAggregate_WithDimensions.feature
 
   Background:
     Given using no content dimensions
