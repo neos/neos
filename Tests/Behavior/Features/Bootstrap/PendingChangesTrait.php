@@ -82,10 +82,10 @@ trait PendingChangesTrait
         );
 
         // assertEqualsCanonicalizing removes keys by using sort recursively that's why we sort manually
-        array_walk($actualChangesTable, 'ksort');
-        array_walk($expectedChangesWithNormalisedJson, 'ksort');
-        sort($actualChangesTable);
-        sort($expectedChangesWithNormalisedJson);
+        // sort by unique index to make rows easier comparable when diffing
+        $sortRows = fn ($rowA, $rowB) => strcmp($rowA['nodeAggregateId'], $rowB['nodeAggregateId']) ?: strcmp($rowA['originDimensionSpacePoint'] ?? '', $rowB['originDimensionSpacePoint'] ?? '');
+        usort($actualChangesTable, $sortRows);
+        usort($expectedChangesWithNormalisedJson, $sortRows);
 
         Assert::assertEquals($expectedChangesWithNormalisedJson, $actualChangesTable, 'Mismatch of changes');
     }
@@ -196,7 +196,7 @@ trait PendingChangesTrait
         foreach ($actualEvents as $i => $actualEvent) {
             $actualPayload = json_decode($actualEvent->data->value, true);
             $expectedPayload = $expectedEventsTableNormalised[$i]['event payload'] ?? [];
-            if ($expectedPayload !== []) {
+            if ($expectedPayload !== [] && array_diff_key($expectedPayload, $actualPayload) === []) {
                 // to simplify assertions we allow to only specify certain keys that will be compared instead of having to snapshot the full payload
                 $actualPayload = array_intersect_key($actualPayload, $expectedPayload);
             }
