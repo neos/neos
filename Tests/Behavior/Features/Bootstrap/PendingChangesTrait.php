@@ -130,15 +130,22 @@ trait PendingChangesTrait
 
     /**
      * @Then I publish the :expectedCount changes in document :documentNodeAggregateId from workspace :workspace to :expectedTarget
+     * @Then I publish the :expectedCount changes in site :siteNodeAggregateId from workspace :workspace to :expectedTarget
      */
-    public function iPublishTheDocumentFromWorkspace(string $documentNodeAggregateId, string $workspace, int $expectedCount, string $expectedTarget): void
+    public function iPublishTheDocumentFromWorkspace(string $workspace, int $expectedCount, string $expectedTarget, ?string $documentNodeAggregateId = null, ?string $siteNodeAggregateId = null): void
     {
         $sourceWorkspace = $this->currentContentRepository->findWorkspaceByName(WorkspaceName::fromString($workspace));
         Assert::assertEquals($expectedTarget, $sourceWorkspace->baseWorkspaceName->value);
 
         $nextSequenceNumber = iterator_to_array($this->getEventStore()->load(VirtualStreamName::all())->backwards()->limit(1))[0]->sequenceNumber->next();
 
-        $actualResult = $this->getObject(WorkspacePublishingService::class)->publishChangesInDocument($this->currentContentRepository->id, WorkspaceName::fromString($workspace), NodeAggregateId::fromString($documentNodeAggregateId));
+        $workspacePublishingService = $this->getObject(WorkspacePublishingService::class);
+
+        $actualResult = match(true) {
+            $siteNodeAggregateId !== null => $workspacePublishingService->publishChangesInSite($this->currentContentRepository->id, WorkspaceName::fromString($workspace), NodeAggregateId::fromString($siteNodeAggregateId)),
+            $documentNodeAggregateId !== null => $workspacePublishingService->publishChangesInDocument($this->currentContentRepository->id, WorkspaceName::fromString($workspace), NodeAggregateId::fromString($documentNodeAggregateId))
+        };
+
         Assert::assertEquals($sourceWorkspace->baseWorkspaceName, $actualResult->targetWorkspaceName);
         Assert::assertEquals($expectedCount, $actualResult->numberOfPublishedChanges);
 

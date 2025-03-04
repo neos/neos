@@ -21,6 +21,9 @@ Feature: Soft remove node aggregate with node without dimensions
           type: string
         uriPathSegment:
           type: string
+    'Neos.Neos:Test.HomePage':
+      superTypes:
+        'Neos.Neos:Site': true
     'Neos.Neos:Test.DocumentType':
       superTypes:
         'Neos.Neos:Document': true
@@ -52,31 +55,21 @@ Feature: Soft remove node aggregate with node without dimensions
       | nodeAggregateId | "root"            |
       | nodeTypeName    | "Neos.Neos:Sites" |
 
-    And the command CreateNodeAggregateWithNode is executed with payload:
-      | Key                   | Value            |
-      | nodeAggregateId       | "site"           |
-      | nodeTypeName          | "Neos.Neos:Site" |
-      | parentNodeAggregateId | "root"           |
-      | nodeName              | "site"           |
+    And the following CreateNodeAggregateWithNode commands are executed:
+      | nodeAggregateId           | parentNodeAggregateId  | nodeTypeName                | initialPropertyValues                                       | tetheredDescendantNodeAggregateIds |
+      | site                      | root                   | Neos.Neos:Test.HomePage     | {}                                                          |                                    |
+      | sir-david-nodenborough    | site                   | Neos.Neos:Test.DocumentType | {}                                                          | { "main": "main-1"}                |
+      | davids-child              | main-1                 | Neos.Neos:Test.ContentType  | {}                                                          |                                    |
+      | nody-mc-nodeface          | sir-david-nodenborough | Neos.Neos:Test.DocumentType | {"title": "This is a text about Nody Mc Nodeface"}          | { "main": "main-2"}                |
+      | sir-nodeward-nodington-iv | site                   | Neos.Neos:Test.DocumentType | {"title": "This is a text about Sir Nodeward Nodington IV"} | { "main": "main-3"}                |
+      | other-removal             | main-3                 | Neos.Neos:Test.ContentType  | {}                                                          |                                    |
+      | site-two                  | root                   | Neos.Neos:Test.HomePage     | {}                                                          |                                    |
 
     And the command CreateNodeVariant is executed with payload:
       | Key             | Value             |
       | nodeAggregateId | "site"            |
       | sourceOrigin    | {"language":"de"} |
       | targetOrigin    | {"language":"fr"} |
-
-    And the following CreateNodeAggregateWithNode commands are executed:
-      | nodeAggregateId           | parentNodeAggregateId  | nodeTypeName                | initialPropertyValues                                       | tetheredDescendantNodeAggregateIds |
-      | sir-david-nodenborough    | site                   | Neos.Neos:Test.DocumentType | {}                                                          | { "main": "main-1"}                |
-      | davids-child              | main-1                 | Neos.Neos:Test.ContentType  | {}                                                          |                                    |
-      | nody-mc-nodeface          | sir-david-nodenborough | Neos.Neos:Test.DocumentType | {"title": "This is a text about Nody Mc Nodeface"}          | { "main": "main-2"}                |
-      | sir-nodeward-nodington-iv | site                   | Neos.Neos:Test.DocumentType | {"title": "This is a text about Sir Nodeward Nodington IV"} | { "main": "main-3"}                |
-
-    When the command CreateNodeAggregateWithNode is executed with payload:
-      | Key                   | Value                        |
-      | nodeAggregateId       | "other-removal"              |
-      | nodeTypeName          | "Neos.Neos:Test.ContentType" |
-      | parentNodeAggregateId | "main-3"                     |
 
     And the command CreateNodeVariant is executed with payload:
       | Key             | Value                    |
@@ -356,6 +349,54 @@ Feature: Soft remove node aggregate with node without dimensions
       | type                  | event payload                                                                                                 |
       | SubtreeWasTagged      | {"nodeAggregateId":"other-removal","affectedDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]}    |
       | NodePropertiesWereSet | {"nodeAggregateId":"nody-mc-nodeface","affectedDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]} |
+
+  Scenario: Soft remove node aggregate in user workspace with modified child documents via "allSpecializations" and publish site
+    # other change to site 2 that must be ignored
+    And the command TagSubtree is executed with payload:
+      | Key                          | Value                    |
+      | workspaceName                | "user-workspace"         |
+      | nodeAggregateId              | "site-two" |
+      | coveredDimensionSpacePoint   | {"language": "de"}       |
+      | nodeVariantSelectionStrategy | "allSpecializations"     |
+      | tag                          | "removed"                |
+
+    Given the command SetNodeProperties is executed with payload:
+      | Key                       | Value                 |
+      | workspaceName             | "user-workspace"      |
+      | nodeAggregateId           | "nody-mc-nodeface"    |
+      | originDimensionSpacePoint | {"language": "de"}    |
+      | propertyValues            | {"title": "New text"} |
+
+    And the command TagSubtree is executed with payload:
+      | Key                          | Value                    |
+      | workspaceName                | "user-workspace"         |
+      | nodeAggregateId              | "sir-david-nodenborough" |
+      | coveredDimensionSpacePoint   | {"language": "de"}       |
+      | nodeVariantSelectionStrategy | "allSpecializations"     |
+      | tag                          | "removed"                |
+
+    Then I expect to have the following changes in workspace "user-workspace":
+      | nodeAggregateId        | created | changed | moved | deleted | originDimensionSpacePoint |
+      | sir-david-nodenborough | 0       | 0       | 0     | 1       | {"language": "de"}        |
+      | sir-david-nodenborough | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
+      | nody-mc-nodeface       | 0       | 1       | 0     | 0       | {"language": "de"}        |
+      | other-removal          | 0       | 0       | 0     | 1       | {"language": "de"}        |
+      | other-removal          | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
+      | site-two               | 0       | 0       | 0     | 1       | {"language": "de"}        |
+      | site-two               | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
+
+    And I expect to have no changes in workspace "live"
+
+    When I publish the 3 changes in site "site" from workspace "user-workspace" to "live"
+    Then I expect that the following node events have been published
+      | type                  | event payload                                                                                                       |
+      | SubtreeWasTagged      | {"nodeAggregateId":"other-removal","affectedDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]}          |
+      | NodePropertiesWereSet | {"nodeAggregateId":"nody-mc-nodeface","affectedDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]}       |
+      | SubtreeWasTagged      | {"nodeAggregateId":"sir-david-nodenborough","affectedDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]} |
+
+    Then I expect that the following node events are kept as remainder
+      | type                  | event payload                                                                                                 |
+      | SubtreeWasTagged      | {"nodeAggregateId":"site-two","affectedDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]} |
 
   Scenario: Soft remove newly created child node aggregate in user workspace via "allSpecializations"
     When the command CreateNodeAggregateWithNode is executed with payload:
