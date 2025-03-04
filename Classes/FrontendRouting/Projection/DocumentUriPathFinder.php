@@ -14,6 +14,7 @@ use Neos\Neos\FrontendRouting\Exception\NodeNotFoundException;
 
 /**
  * @Flow\Proxy(false)
+ * @internal implementation detail to manage document node uris. For resolving please use the NodeUriBuilder and for matching the Router.
  */
 final class DocumentUriPathFinder implements ProjectionStateInterface
 {
@@ -39,7 +40,6 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
      * @return DocumentNodeInfo
      * @throws NodeNotFoundException if no matching DocumentNodeInfo can be found
      * (node is disabled, node doesn't exist in live workspace, projection not up to date)
-     * @api
      */
     public function getEnabledBySiteNodeNameUriPathAndDimensionSpacePointHash(
         SiteNodeName $siteNodeName,
@@ -71,7 +71,6 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
      * @return DocumentNodeInfo
      * @throws NodeNotFoundException if no matching DocumentNodeInfo can be found
      *  (node doesn't exist in live workspace, projection not up to date)
-     * @api
      */
     public function getByIdAndDimensionSpacePointHash(
         NodeAggregateId $nodeAggregateId,
@@ -104,7 +103,6 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
      * @return DocumentNodeInfo
      * @throws NodeNotFoundException if no matching DocumentNodeInfo can be found
      *  (given $nodeInfo belongs to a site root node, projection not up to date)
-     * @api
      */
     public function getParentNode(DocumentNodeInfo $nodeInfo): DocumentNodeInfo
     {
@@ -127,7 +125,7 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
      * @throws NodeNotFoundException if no preceding DocumentNodeInfo can be found
      *  (given $succeedingNodeAggregateId doesn't exist or refers to the first/only node
      *  with the given $parentNodeAggregateId)
-     * @internal
+     * @internal only for use within the document uri path projection
      */
     public function getPrecedingNode(
         NodeAggregateId $succeedingNodeAggregateId,
@@ -155,7 +153,6 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
      * @param string $dimensionSpacePointHash
      * @return DocumentNodeInfo
      * @throws NodeNotFoundException
-     * @api
      */
     public function getFirstEnabledChildNode(
         NodeAggregateId $parentNodeAggregateId,
@@ -179,7 +176,7 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
      * @param string $dimensionSpacePointHash
      * @return DocumentNodeInfo
      * @throws NodeNotFoundException
-     * @internal
+     * @internal only for use within the document uri path projection
      */
     public function getLastChildNode(
         NodeAggregateId $parentNodeAggregateId,
@@ -198,7 +195,7 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
 
     /**
      * @throws NodeNotFoundException
-     * @internal
+     * @internal only for use within the document uri path projection
      */
     public function getLastChildNodeNotBeing(
         NodeAggregateId $parentNodeAggregateId,

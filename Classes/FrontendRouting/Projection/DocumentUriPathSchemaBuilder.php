@@ -15,7 +15,10 @@ use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\Types;
 use Neos\ContentRepository\Core\Infrastructure\DbalSchemaFactory;
 
-class DocumentUriPathSchemaBuilder
+/**
+ * @internal implementation detail to manage document node uris. For resolving please use the NodeUriBuilder and for matching the Router.
+ */
+final class DocumentUriPathSchemaBuilder
 {
     public function __construct(
         private readonly string $tableNamePrefix,

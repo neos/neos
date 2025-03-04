@@ -39,6 +39,7 @@ use Neos\Neos\FrontendRouting\Exception\NodeNotFoundException;
 
 /**
  * @implements ProjectionInterface<DocumentUriPathFinder>
+ * @internal implementation detail to manage document node uris. For resolving please use the NodeUriBuilder and for matching the Router.
  */
 final class DocumentUriPathProjection implements ProjectionInterface, WithMarkStaleInterface
 {
