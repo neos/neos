@@ -71,11 +71,11 @@ Feature: Soft remove node aggregate with node without dimensions
       | nodeVariantSelectionStrategy | "allSpecializations" |
       | tag                          | "removed"            |
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+    Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
       | nody-mc-nodeface | 0       | 0       | 0     | 1       | {"language": "de"}        |
       | nody-mc-nodeface | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
-    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    And I expect to have no changes in workspace "live"
 
   Scenario: Soft remove node aggregate in live workspace
     Given the command TagSubtree is executed with payload:
@@ -86,8 +86,8 @@ Feature: Soft remove node aggregate with node without dimensions
       | nodeVariantSelectionStrategy | "allSpecializations" |
       | tag                          | "removed"            |
 
-    Then I expect the ChangeProjection to have no changes in "cs-identifier"
-    And I expect the ChangeProjection to have no changes in "user-cs-id"
+    Then I expect to have no changes in workspace "live"
+    And I expect to have no changes in workspace "user-workspace"
 
   Scenario: Soft remove node aggregate with children in user workspace with "allSpecializations"
     Given the command TagSubtree is executed with payload:
@@ -98,11 +98,11 @@ Feature: Soft remove node aggregate with node without dimensions
       | nodeVariantSelectionStrategy | "allSpecializations"     |
       | tag                          | "removed"                |
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+    Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId        | created | changed | moved | deleted | originDimensionSpacePoint |
       | sir-david-nodenborough | 0       | 0       | 0     | 1       | {"language": "de"}        |
       | sir-david-nodenborough | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
-    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    And I expect to have no changes in workspace "live"
 
   Scenario: Soft remove node aggregate with children in user workspace with "allVariants"
     Given the command TagSubtree is executed with payload:
@@ -113,12 +113,12 @@ Feature: Soft remove node aggregate with node without dimensions
       | nodeVariantSelectionStrategy | "allVariants"            |
       | tag                          | "removed"                |
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+    Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId        | created | changed | moved | deleted | originDimensionSpacePoint |
       | sir-david-nodenborough | 0       | 0       | 0     | 1       | {"language": "de"}        |
       | sir-david-nodenborough | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
       | sir-david-nodenborough | 0       | 0       | 0     | 1       | {"language": "fr"}        |
-    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    And I expect to have no changes in workspace "live"
 
   Scenario: Soft remove node aggregate with children in live workspace
     Given the command TagSubtree is executed with payload:
@@ -129,8 +129,8 @@ Feature: Soft remove node aggregate with node without dimensions
       | nodeVariantSelectionStrategy | "allSpecializations"     |
       | tag                          | "removed"                |
 
-    Then I expect the ChangeProjection to have no changes in "cs-identifier"
-    And I expect the ChangeProjection to have no changes in "user-cs-id"
+    Then I expect to have no changes in workspace "live"
+    And I expect to have no changes in workspace "user-workspace"
 
   Scenario: Soft remove node aggregate in user workspace which was already modified with "allSpecializations"
     Given the command SetNodeProperties is executed with payload:
@@ -154,12 +154,12 @@ Feature: Soft remove node aggregate with node without dimensions
       | nodeVariantSelectionStrategy | "allSpecializations"     |
       | tag                          | "removed"                |
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+    Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId        | created | changed | moved | deleted | originDimensionSpacePoint |
       | sir-david-nodenborough | 0       | 1       | 0     | 1       | {"language": "de"}        |
       | sir-david-nodenborough | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
       | sir-david-nodenborough | 0       | 1       | 0     | 0       | {"language": "fr"}        |
-    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    And I expect to have no changes in workspace "live"
 
   Scenario: Soft remove node aggregate in user workspace which was already modified with "allVariants"
     Given the command SetNodeProperties is executed with payload:
@@ -183,9 +183,9 @@ Feature: Soft remove node aggregate with node without dimensions
       | nodeVariantSelectionStrategy | "allVariants"            |
       | tag                          | "removed"                |
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+    Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId        | created | changed | moved | deleted | originDimensionSpacePoint |
       | sir-david-nodenborough | 0       | 1       | 0     | 1       | {"language": "de"}        |
       | sir-david-nodenborough | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
       | sir-david-nodenborough | 0       | 1       | 0     | 1       | {"language": "fr"}        |
-    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    And I expect to have no changes in workspace "live"
