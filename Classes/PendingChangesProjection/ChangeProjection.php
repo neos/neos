@@ -35,7 +35,6 @@ use Neos\ContentRepository\Core\Feature\NodeTypeChange\Event\NodeAggregateTypeWa
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeGeneralizationVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodePeerVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeSpecializationVariantWasCreated;
-use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasTagged;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasUntagged;
 use Neos\ContentRepository\Core\Infrastructure\DbalSchemaDiff;
@@ -113,6 +112,8 @@ class ChangeProjection implements ProjectionInterface
             DbalSchemaFactory::columnForDimensionSpacePoint('originDimensionSpacePoint', $platform)->setNotnull(false),
             DbalSchemaFactory::columnForDimensionSpacePointHash('originDimensionSpacePointHash', $platform)->setNotnull(true),
             (new Column('deleted', Type::getType(Types::BOOLEAN)))->setNotnull(true),
+            // Despite the name suggesting this might be an anchor point of sorts, this is a nodeAggregateId type
+            DbalSchemaFactory::columnForNodeAggregateId('removalAttachmentPoint', $platform)->setNotnull(false)
         ]);
 
         $changeTable->setPrimaryKey([
@@ -141,7 +142,7 @@ class ChangeProjection implements ProjectionInterface
             NodeAggregateWithNodeWasCreated::class => $this->whenNodeAggregateWithNodeWasCreated($event),
             SubtreeWasTagged::class => $this->whenSubtreeWasTagged($event),
             SubtreeWasUntagged::class => $this->whenSubtreeWasUntagged($event),
-            NodeAggregateWasRemoved::class => $this->whenNodeAggregateWasRemoved($event),
+            NodeAggregateWasRemoved::class => $this->whenNodeAggregateWasRemoved($event, $eventEnvelope),
             DimensionSpacePointWasMoved::class => $this->whenDimensionSpacePointWasMoved($event),
             NodeSpecializationVariantWasCreated::class => $this->whenNodeSpecializationVariantWasCreated($event),
             NodeGeneralizationVariantWasCreated::class => $this->whenNodeGeneralizationVariantWasCreated($event),
@@ -257,11 +258,15 @@ class ChangeProjection implements ProjectionInterface
         }
     }
 
-    private function whenNodeAggregateWasRemoved(NodeAggregateWasRemoved $event): void
+    private function whenNodeAggregateWasRemoved(NodeAggregateWasRemoved $event, EventEnvelope $eventEnvelope): void
     {
         if ($event->workspaceName->isLive()) {
             return;
         }
+
+        /** hack to extract legacy information that is not API anymore: {@see Change::getLegacyRemovalAttachmentPoint()} */
+        $rawEventPayload = json_decode($eventEnvelope->event->data->value, true) ?: [];
+        $legacyRemovalAttachmentPoint = $rawEventPayload['removalAttachmentPoint'] ?? null;
 
         $this->dbal->executeStatement(
             'DELETE FROM ' . $this->tableNamePrefix . '
@@ -285,7 +290,7 @@ class ChangeProjection implements ProjectionInterface
             $this->dbal->executeStatement(
                 'INSERT INTO ' . $this->tableNamePrefix . '
                         (contentStreamId, nodeAggregateId, originDimensionSpacePoint,
-                         originDimensionSpacePointHash, created, deleted, changed, moved)
+                         originDimensionSpacePointHash, created, deleted, changed, moved, removalAttachmentPoint)
                     VALUES (
                         :contentStreamId,
                         :nodeAggregateId,
@@ -294,14 +299,16 @@ class ChangeProjection implements ProjectionInterface
                         0,
                         1,
                         0,
-                        0
+                        0,
+                        :removalAttachmentPoint
                     )
                 ',
                 [
                     'contentStreamId' => $event->contentStreamId->value,
                     'nodeAggregateId' => $event->nodeAggregateId->value,
                     'originDimensionSpacePoint' => json_encode($occupiedDimensionSpacePoint),
-                    'originDimensionSpacePointHash' => $occupiedDimensionSpacePoint->hash
+                    'originDimensionSpacePointHash' => $occupiedDimensionSpacePoint->hash,
+                    'removalAttachmentPoint' => $legacyRemovalAttachmentPoint,
                 ]
             );
         }

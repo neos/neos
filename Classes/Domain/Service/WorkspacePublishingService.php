@@ -386,20 +386,9 @@ final class WorkspacePublishingService
             // A Change is publishable if the respective node has a closest ancestor that matches our
             // current ancestor scope (Document/Site)
             $actualAncestorNode = $subgraph->findClosestNode(
-                $change->nodeAggregateId,
+                $change->getLegacyRemovalAttachmentPoint() ?? $change->nodeAggregateId,
                 FindClosestNodeFilter::create(nodeTypes: $ancestorNodeTypeName->value)
             );
-
-            if ($actualAncestorNode === null && $change->deleted) {
-                // actual node deletions via (NodeAggregateWasRemoved) inside a non-live workspace are in Neos not desired
-                // as we cannot resolve the ancestor because the node itself is already deleted.
-                // if we publish a site we will include this change in the publish or discard operation to prevent it from
-                // being orphaned. Note that the site might not necessarily be the site where the change was made in multisite
-                // environments, but we cannot determine the hierarchy for removed nodes and edges.
-                if ($ancestorNodeTypeName->equals(NodeTypeNameFactory::forSite())) {
-                    return true;
-                }
-            }
 
             return $actualAncestorNode?->aggregateId->equals($ancestorId) ?? false;
         } else {

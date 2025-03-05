@@ -41,9 +41,26 @@ final class Change
         public bool $changed,
         public bool $moved,
         public bool $deleted,
+        private ?NodeAggregateId $removalAttachmentPoint = null
     ) {
     }
 
+    /**
+     * Before soft removals the removalAttachmentPoint was metadata reached through from command to the final event.
+     *
+     * It stored the document node id of the removed node, as that was needed later for the change display and publication.
+     *
+     * See also https://github.com/neos/neos-development-collection/issues/4487
+     *
+     * Only still in the code base by extracting the legacy "removalAttachmentPoint" from the raw legacy events,
+     * to allow publishing the legacy removals as in previous betas.
+     *
+     * @deprecated with Neos 9 Beta 19, obsolete via soft removals. Might be removed at any point.
+     */
+    public function getLegacyRemovalAttachmentPoint(): ?NodeAggregateId
+    {
+        return $this->removalAttachmentPoint;
+    }
 
     /**
      * @param Connection $databaseConnection
@@ -60,6 +77,7 @@ final class Change
                 'changed' => (int)$this->changed,
                 'moved' => (int)$this->moved,
                 'deleted' => (int)$this->deleted,
+                'removalAttachmentPoint' => $this->removalAttachmentPoint?->value
             ]);
         } catch (DbalException $e) {
             throw new \RuntimeException(sprintf('Failed to insert Change to database: %s', $e->getMessage()), 1727272723, $e);
@@ -76,6 +94,7 @@ final class Change
                     'changed' => (int)$this->changed,
                     'moved' => (int)$this->moved,
                     'deleted' => (int)$this->deleted,
+                    'removalAttachmentPoint' => $this->removalAttachmentPoint?->value
                 ],
                 [
                     'contentStreamId' => $this->contentStreamId->value,
@@ -103,7 +122,10 @@ final class Change
             (bool)$databaseRow['created'],
             (bool)$databaseRow['changed'],
             (bool)$databaseRow['moved'],
-            (bool)$databaseRow['deleted']
+            (bool)$databaseRow['deleted'],
+            isset($databaseRow['removalAttachmentPoint'])
+                ? NodeAggregateId::fromString($databaseRow['removalAttachmentPoint'])
+                : null
         );
     }
 }
