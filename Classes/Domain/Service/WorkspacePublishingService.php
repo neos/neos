@@ -386,25 +386,16 @@ final class WorkspacePublishingService
         NodeTypeName $ancestorNodeTypeName,
         NodeAggregateId $ancestorId
     ): bool {
-        // see method comment for `isChangeWithSelfReferencingRemovalAttachmentPoint`
-        // to get explanation for this condition
-        if ($this->isChangeWithSelfReferencingRemovalAttachmentPoint($change)) {
-            if ($ancestorNodeTypeName->equals(NodeTypeNameFactory::forSite())) {
-                return true;
-            }
-        }
-
         if ($change->originDimensionSpacePoint) {
             $subgraph = $contentRepository->getContentGraph($workspaceName)->getSubgraph(
                 $change->originDimensionSpacePoint->toDimensionSpacePoint(),
-                VisibilityConstraints::withoutRestrictions()
+                VisibilityConstraints::createEmpty()
             );
 
-            // A Change is publishable if the respective node (or the respective
-            // removal attachment point) has a closest ancestor that matches our
+            // A Change is publishable if the respective node has a closest ancestor that matches our
             // current ancestor scope (Document/Site)
             $actualAncestorNode = $subgraph->findClosestNode(
-                $change->removalAttachmentPoint ?? $change->nodeAggregateId,
+                $change->getLegacyRemovalAttachmentPoint() ?? $change->nodeAggregateId,
                 FindClosestNodeFilter::create(nodeTypes: $ancestorNodeTypeName->value)
             );
 
@@ -426,33 +417,5 @@ final class WorkspacePublishingService
         }
 
         return $nodeAggregateIds;
-    }
-
-    /**
-     * Before the introduction of the {@see WorkspacePublishingService}, the UI only ever
-     * referenced the closest document node as a removal attachment point.
-     *
-     * Removed document nodes therefore were referencing themselves.
-     *
-     * In order to enable publish/discard of removed documents, the removal
-     * attachment point of a document MUST refer to an ancestor. The UI now
-     * references the site node in those cases.
-     *
-     * Workspaces that were created before this change was introduced may
-     * contain removed documents, for which the site node can longer be
-     * located, because we have no reference to their respective site.
-     *
-     * Every document node that matches that description will be published
-     * or discarded by {@see WorkspacePublishingService::publishChangesInSite()}, regardless of what
-     * the current site is.
-     *
-     * @deprecated remove once we are sure this check is no longer needed due to
-     * * the UI sending proper commands
-     * * the ChangeFinder being refactored / rewritten
-     * (whatever happens first)
-     */
-    private function isChangeWithSelfReferencingRemovalAttachmentPoint(Change $change): bool
-    {
-        return $change->removalAttachmentPoint?->equals($change->nodeAggregateId) ?? false;
     }
 }

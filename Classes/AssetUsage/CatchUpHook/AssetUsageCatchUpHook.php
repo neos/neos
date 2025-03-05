@@ -100,7 +100,7 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
     private function updateNode(WorkspaceName $workspaceName, NodeAggregateId $nodeAggregateId, DimensionSpacePoint $dimensionSpacePoint): void
     {
         $contentGraph = $this->contentGraphReadModel->getContentGraph($workspaceName);
-        $node = $contentGraph->getSubgraph($dimensionSpacePoint, VisibilityConstraints::withoutRestrictions())->findNodeById($nodeAggregateId);
+        $node = $contentGraph->getSubgraph($dimensionSpacePoint, VisibilityConstraints::createEmpty())->findNodeById($nodeAggregateId);
 
         if ($node === null) {
             // Node not found, nothing to do here.
@@ -125,7 +125,7 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
                 $dimensionSpacePoint
             );
 
-            $subgraph = $contentGraph->getSubgraph($dimensionSpacePoint, VisibilityConstraints::withoutRestrictions());
+            $subgraph = $contentGraph->getSubgraph($dimensionSpacePoint, VisibilityConstraints::createEmpty());
             $descendants = $subgraph->findDescendantNodes($nodeAggregateId, FindDescendantNodesFilter::create());
 
             /** @var Node $descendant */
