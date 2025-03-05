@@ -9,15 +9,16 @@ use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTags;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentSubgraphInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
-use Neos\Neos\Domain\SoftRemoval\SoftRemovedTag;
 
 /**
+ * Neos specific content repository visibility constraints {@see VisibilityConstraints}
+ *
  * The visibility constraints define a context in which the content graph is accessed.
  *
  * By default, Neos provides two kinds of subtree tags:
  *
  * - `disabled` {@see SubtreeTag::disabled()} which is used when disabling a node via {@see DisableNodeAggregate}
- * - `removed` {@see SoftRemovedTag} which is used when soft removing a node
+ * - `removed` {@see NeosSubtreeTag::removed()} which is used when soft removing a node
  *
  * To control which nodes will be queried via the {@see ContentSubgraphInterface}, the visibility constraints can be used.
  *
@@ -46,7 +47,7 @@ final class NeosVisibilityConstraints
     {
         return VisibilityConstraints::fromTagConstraints(SubtreeTags::create(
             SubtreeTag::disabled(),
-            SoftRemovedTag::getSubtreeTag()
+            NeosSubtreeTag::removed()
         ));
     }
 
@@ -56,7 +57,7 @@ final class NeosVisibilityConstraints
     public static function withoutRemoved(): VisibilityConstraints
     {
         return VisibilityConstraints::fromTagConstraints(SubtreeTags::create(
-            SoftRemovedTag::getSubtreeTag()
+            NeosSubtreeTag::removed()
         ));
     }
 }

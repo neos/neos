@@ -44,7 +44,7 @@ use Neos\ContentRepository\Core\Projection\ProjectionStatus;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
 use Neos\EventStore\Model\EventEnvelope;
-use Neos\Neos\Domain\SoftRemoval\SoftRemovedTag;
+use Neos\Neos\Domain\Service\NeosSubtreeTag;
 
 /**
  * @internal Only for consumption inside Neos. Not public api because the implementation will be refactored sooner or later: https://github.com/neos/neos-development-collection/issues/5493
@@ -231,7 +231,7 @@ class ChangeProjection implements ProjectionInterface
             return;
         }
         foreach ($event->affectedDimensionSpacePoints as $dimensionSpacePoint) {
-            if (SoftRemovedTag::isRemovedSubtreeTag($event->tag)) {
+            if ($event->tag->equals(NeosSubtreeTag::removed())) {
                 $this->markAsDeleted($event->contentStreamId, $event->nodeAggregateId, OriginDimensionSpacePoint::fromDimensionSpacePoint($dimensionSpacePoint));
                 continue;
             }
