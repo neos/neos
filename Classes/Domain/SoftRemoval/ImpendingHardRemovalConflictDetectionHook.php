@@ -29,9 +29,6 @@ use Neos\ContentRepository\Core\Feature\NodeTypeChange\Event\NodeAggregateTypeWa
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeGeneralizationVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodePeerVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeSpecializationVariantWasCreated;
-use Neos\ContentRepository\Core\Feature\RootNodeCreation\Event\RootNodeAggregateDimensionsWereUpdated;
-use Neos\ContentRepository\Core\Feature\RootNodeCreation\Event\RootNodeAggregateWithNodeWasCreated;
-use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasTagged;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Event\SubtreeWasUntagged;
 use Neos\ContentRepository\Core\Feature\WorkspaceModification\Event\WorkspaceWasRemoved;
@@ -45,6 +42,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregate;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\Subscription\SubscriptionStatus;
 use Neos\EventStore\Model\EventEnvelope;
+use Neos\Neos\Domain\Service\NeosSubtreeTag;
 
 /** @internal */
 final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInterface
@@ -196,9 +194,9 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
         while ($stack !== []) {
             $nodeAggregate = array_shift($stack);
             // we must stop if the current node aggregate is not by inheritance tagged via removed as otherwise we end up always traversing the whole tree up
-            $isSoftRemovedInAnyDimension = !$nodeAggregate->getCoveredDimensionsTaggedBy(SubtreeTag::removed(), withoutInherited: false)->isEmpty();
+            $isSoftRemovedInAnyDimension = !$nodeAggregate->getCoveredDimensionsTaggedBy(NeosSubtreeTag::removed(), withoutInherited: false)->isEmpty();
             if ($isSoftRemovedInAnyDimension) {
-                $explicitlySoftRemovedDimensions = $nodeAggregate->getCoveredDimensionsTaggedBy(SubtreeTag::removed(), withoutInherited: true)->getIntersection($dimensionSpacePoints);
+                $explicitlySoftRemovedDimensions = $nodeAggregate->getCoveredDimensionsTaggedBy(NeosSubtreeTag::removed(), withoutInherited: true)->getIntersection($dimensionSpacePoints);
                 if (!$explicitlySoftRemovedDimensions->isEmpty()) {
                     $explicitlySoftRemovedAncestors = $explicitlySoftRemovedAncestors->with(ImpendingHardRemovalConflict::create(
                         $nodeAggregate->nodeAggregateId,

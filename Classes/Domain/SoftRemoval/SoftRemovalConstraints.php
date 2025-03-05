@@ -7,11 +7,11 @@ namespace Neos\Neos\Domain\SoftRemoval;
 use Neos\ContentRepository\Core\CommandHandler\CommandHookInterface;
 use Neos\ContentRepository\Core\CommandHandler\CommandInterface;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Command\TagSubtree;
-use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateIsRoot;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateIsTethered;
 use Neos\Flow\Annotations as Flow;
+use Neos\Neos\Domain\Service\NeosSubtreeTag;
 
 /**
  * Additional Neos' specific content repository constraints for subtree tagging
@@ -45,7 +45,7 @@ final readonly class SoftRemovalConstraints implements CommandHookInterface
 
     public function onBeforeHandle(CommandInterface $command): CommandInterface
     {
-        if (!$command instanceof TagSubtree || !$command->tag->equals(SubtreeTag::removed())) {
+        if (!$command instanceof TagSubtree || !$command->tag->equals(NeosSubtreeTag::removed())) {
             return $command;
         }
 

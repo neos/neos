@@ -16,7 +16,6 @@ namespace Neos\Neos\Domain\SoftRemoval;
 
 use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\Feature\NodeRemoval\Command\RemoveNodeAggregate;
-use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateCurrentlyDoesNotExist;
@@ -25,8 +24,9 @@ use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeVariantSelectionStrategy;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
-use Neos\Neos\Domain\Service\WorkspacePublishingService;
 use Neos\Flow\Security\Context as SecurityContext;
+use Neos\Neos\Domain\Service\NeosSubtreeTag;
+use Neos\Neos\Domain\Service\WorkspacePublishingService;
 
 /**
  * Service that detects which soft removals in a content repository can be safely transformed to hard removals
@@ -112,7 +112,7 @@ final readonly class SoftRemovalGarbageCollector
     private function findNodeAggregatesInWorkspaceByExplicitRemovedTag(ContentGraphInterface $contentGraph): SoftRemovedNodes
     {
         $softRemovedNodes = [];
-        foreach ($contentGraph->findNodeAggregatesTaggedBy(SubtreeTag::removed()) as $nodeAggregateTaggedRemoved) {
+        foreach ($contentGraph->findNodeAggregatesTaggedBy(NeosSubtreeTag::removed()) as $nodeAggregateTaggedRemoved) {
             if (
                 $nodeAggregateTaggedRemoved->classification->isRoot()
                 || $nodeAggregateTaggedRemoved->classification->isTethered()
@@ -123,7 +123,7 @@ final readonly class SoftRemovalGarbageCollector
             }
             $softRemovedNodes[] = SoftRemovedNode::create(
                 $nodeAggregateTaggedRemoved->nodeAggregateId,
-                $nodeAggregateTaggedRemoved->getCoveredDimensionsTaggedBy(SubtreeTag::removed(), withoutInherited: true)
+                $nodeAggregateTaggedRemoved->getCoveredDimensionsTaggedBy(NeosSubtreeTag::removed(), withoutInherited: true)
             );
         }
         return SoftRemovedNodes::fromArray($softRemovedNodes);
@@ -158,7 +158,7 @@ final readonly class SoftRemovalGarbageCollector
                 if ($nodeAggregateInWorkspace === null) {
                     continue;
                 }
-                $softDeletedDimensionsInWorkspace = $nodeAggregateInWorkspace->getCoveredDimensionsTaggedBy(SubtreeTag::removed(), withoutInherited: true);
+                $softDeletedDimensionsInWorkspace = $nodeAggregateInWorkspace->getCoveredDimensionsTaggedBy(NeosSubtreeTag::removed(), withoutInherited: true);
                 $notSoftDeletedDimensionsInWorkspace = $nodeAggregateInWorkspace->coveredDimensionSpacePoints->getDifference($softDeletedDimensionsInWorkspace);
 
                 $softRemovedNodes = $softRemovedNodes->with(
