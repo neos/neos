@@ -142,7 +142,7 @@ class ChangeProjection implements ProjectionInterface
             NodeAggregateWithNodeWasCreated::class => $this->whenNodeAggregateWithNodeWasCreated($event),
             SubtreeWasTagged::class => $this->whenSubtreeWasTagged($event),
             SubtreeWasUntagged::class => $this->whenSubtreeWasUntagged($event),
-            NodeAggregateWasRemoved::class => $this->whenNodeAggregateWasRemoved($event, $eventEnvelope),
+            NodeAggregateWasRemoved::class => $this->whenNodeAggregateWasRemoved($event),
             DimensionSpacePointWasMoved::class => $this->whenDimensionSpacePointWasMoved($event),
             NodeSpecializationVariantWasCreated::class => $this->whenNodeSpecializationVariantWasCreated($event),
             NodeGeneralizationVariantWasCreated::class => $this->whenNodeGeneralizationVariantWasCreated($event),
@@ -258,15 +258,12 @@ class ChangeProjection implements ProjectionInterface
         }
     }
 
-    private function whenNodeAggregateWasRemoved(NodeAggregateWasRemoved $event, EventEnvelope $eventEnvelope): void
+    private function whenNodeAggregateWasRemoved(NodeAggregateWasRemoved $event): void
     {
         if ($event->workspaceName->isLive()) {
             return;
         }
 
-        /** hack to extract legacy information that is not API anymore: {@see Change::getLegacyRemovalAttachmentPoint()} */
-        $rawEventPayload = json_decode($eventEnvelope->event->data->value, true) ?: [];
-        $legacyRemovalAttachmentPoint = $rawEventPayload['removalAttachmentPoint'] ?? null;
 
         $this->dbal->executeStatement(
             'DELETE FROM ' . $this->tableNamePrefix . '
@@ -308,7 +305,8 @@ class ChangeProjection implements ProjectionInterface
                     'nodeAggregateId' => $event->nodeAggregateId->value,
                     'originDimensionSpacePoint' => json_encode($occupiedDimensionSpacePoint),
                     'originDimensionSpacePointHash' => $occupiedDimensionSpacePoint->hash,
-                    'removalAttachmentPoint' => $legacyRemovalAttachmentPoint,
+                    /** legacy information: {@see Change::getLegacyRemovalAttachmentPoint()} */
+                    'removalAttachmentPoint' => $event->removalAttachmentPoint?->value,
                 ]
             );
         }

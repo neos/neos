@@ -18,6 +18,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception as DbalException;
 use Neos\ContentRepository\Core\DimensionSpace\OriginDimensionSpacePoint;
 use Neos\ContentRepository\Core\Feature\NodeRemoval\Command\RemoveNodeAggregate;
+use Neos\ContentRepository\Core\Feature\NodeRemoval\Event\NodeAggregateWasRemoved;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
 use Neos\Flow\Annotations as Flow;
@@ -52,8 +53,8 @@ final class Change
      *
      * See also https://github.com/neos/neos-development-collection/issues/4487
      *
-     * Only still in the code base by extracting the legacy "removalAttachmentPoint" from the raw legacy events,
-     * to allow publishing the legacy removals as in previous betas.
+     * We continue to have {@see RemoveNodeAggregate::$removalAttachmentPoint} and {@see NodeAggregateWasRemoved::$removalAttachmentPoint}
+     * in the core to allow publishing and rebasing the legacy removals as in previous betas.
      *
      * @deprecated with Neos 9 Beta 19, obsolete via soft removals. Might be removed at any point.
      */
