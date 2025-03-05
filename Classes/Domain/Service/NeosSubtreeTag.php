@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Domain\Service;
 
+use Neos\ContentRepository\Core\Feature\SubtreeTagging\Command\UntagSubtree;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 
 /**
@@ -13,18 +14,41 @@ use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
  *
  * By default, Neos provides two kinds of subtree tags:
  *
- * - `disabled` {@see SubtreeTag::disabled()} which is used when disabling a node
+ * - `disabled` {@see NeosSubtreeTag::disabled()} which is used when disabling a node
  * - `removed` {@see NeosSubtreeTag::removed()} which is used when soft removing a node
  *
  * The visibility constraints {@see NeosVisibilityConstraints} define which tagged nodes are queried.
  *
  * @api
  */
-final class NeosSubtreeTag
+final readonly class NeosSubtreeTag
 {
     private function __construct()
     {
         // no instances
+    }
+
+    /**
+     * Content repository subtree tag which is used to denote that a node is disabled
+     *
+     * By default, disabled nodes never show up in the fronend rendering of a document.
+     *
+     * Disabling a node / its subtree is done via {@see TagSubtree}.
+     * In reverse enabling a node {@see UntagSubtree} is to be used.
+     *
+     *     $contentRepository->handle(TagSubtree::create(
+     *         $node->workspaceName,
+     *         $node->aggregateId,
+     *         $node->dimensionSpacePoint,
+     *         NodeVariantSelectionStrategy::STRATEGY_ALL_SPECIALIZATIONS,
+     *         NeosSubtreeTag::disabled()
+     *     ));
+     *
+     * @api
+     */
+    public static function disabled(): SubtreeTag
+    {
+        return SubtreeTag::fromString('disabled');
     }
 
     /**
