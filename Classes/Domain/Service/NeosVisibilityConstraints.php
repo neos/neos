@@ -22,14 +22,13 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
  *
  * To control which nodes will be queried via the {@see ContentSubgraphInterface}, the visibility constraints can be used.
  *
- * This allows for the "frontend" rendering to have `disabled` and `removed` nodes excluded when traversing {@see NeosVisibilityConstraints::frontend()}.
- * While for the rendering in the backend `disabled` nodes are shown to the editor - though not `removed` nodes {@see NeosVisibilityConstraints::withoutRemoved()}.
+ * The definitional here allow to implement the "frontend" and "backend" rendering use cases.
  *
  * To access all nodes, including soft removed nodes, please use {@see VisibilityConstraints::createEmpty()}
  *
  * Specifying the visibility constraints manually is only necessary when breaking away from the by default provided
  * constraints via {@see ContentRepository::getContentSubgraph()}. Circumventing the neos auth provider leads to no ReadNodePrivilege's being evaluated.
- * All custom tagged nodes are visible at all times unless excluded via {@see VisibilityConstraints::withAddedSubtreeTag()}
+ * All custom tagged nodes are visible at all times unless excluded via {@see VisibilityConstraints::merge()}
  *
  * @api
  */
@@ -41,18 +40,24 @@ final class NeosVisibilityConstraints
     }
 
     /**
-     * Default constraints for frontend rendering, ensuring that neither disabled nor soft removed nodes are visible
+     * Used for frontend rendering in combination with the removed constraint, ensuring that neither disabled nor soft removed nodes are visible
+     *
+     *     NeosVisibilityConstraints::withoutRemoved()
+     *         ->merge(NeosVisibilityConstraints::withoutDisabled())
+     *
+     * @api
      */
-    public static function frontend(): VisibilityConstraints
+    public static function withoutDisabled(): VisibilityConstraints
     {
         return VisibilityConstraints::fromTagConstraints(SubtreeTags::create(
-            SubtreeTag::disabled(),
-            NeosSubtreeTag::removed()
+            SubtreeTag::disabled()
         ));
     }
 
     /**
-     * Default constraints for the backend and cli, ensuring that disabled are visible, but not soft removed nodes
+     * Default constraints for the backend and cli, ensuring that disabled nodes are visible, but not soft removed nodes
+     *
+     * @api
      */
     public static function withoutRemoved(): VisibilityConstraints
     {

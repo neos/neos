@@ -14,14 +14,12 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Controller\Frontend;
 
-use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentSubgraphInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindClosestNodeFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindSubtreeFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Nodes;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Subtree;
-use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAddress;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
@@ -36,7 +34,7 @@ use Neos\Flow\Security\Context as SecurityContext;
 use Neos\Flow\Session\SessionInterface;
 use Neos\Flow\Utility\Now;
 use Neos\Neos\Domain\Model\RenderingMode;
-use Neos\Neos\Domain\Model\User;
+use Neos\Neos\Domain\Service\NeosVisibilityConstraints;
 use Neos\Neos\Domain\Service\NodeTypeNameFactory;
 use Neos\Neos\Domain\Service\RenderingModeService;
 use Neos\Neos\FrontendRouting\Exception\InvalidShortcutException;
@@ -205,7 +203,7 @@ class NodeController extends ActionController
         // Neos backend users have access to the "disabled" SubtreeTag so that they can see/edit disabled nodes.
         // In this showAction (= "frontend") we have to explicitly remove those disabled nodes, even if the user was authenticated,
         // to ensure that disabled nodes are NEVER shown recursively.
-        $visibilityConstraints = $visibilityConstraints->withAddedSubtreeTag(SubtreeTag::disabled());
+        $visibilityConstraints = $visibilityConstraints->merge(NeosVisibilityConstraints::withoutDisabled());
         $uncachedSubgraph = $contentRepository->getContentGraph($nodeAddress->workspaceName)->getSubgraph($nodeAddress->dimensionSpacePoint, $visibilityConstraints);
 
         $subgraph = new ContentSubgraphWithRuntimeCaches($uncachedSubgraph, $this->subgraphCachePool);
