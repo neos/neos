@@ -6,6 +6,10 @@ Neos:
         authProvider:
           factoryObjectName: Neos\Neos\Security\ContentRepositoryAuthProvider\ContentRepositoryAuthProviderFactory
 
+        commandHooks:
+          'Neos.Neos:SoftRemovalConstraints':
+            factoryObjectName: Neos\Neos\Domain\SoftRemoval\SoftRemovalConstraintsCommandHookFactory
+
         contentGraphProjection:
           catchUpHooks:
             'Neos.Neos:FlushContentCache':
