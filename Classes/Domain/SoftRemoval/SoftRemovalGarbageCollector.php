@@ -68,6 +68,8 @@ use Neos\Flow\Security\Context as SecurityContext;
  * *Impediments*
  *
  * In a single user system the garbage collection will immediately turn the users workspace outdated after publishing a non-conflicting removal.
+ *
+ * @internal safe to run at any time, but manual runs should be unnecessary
  */
 final readonly class SoftRemovalGarbageCollector
 {

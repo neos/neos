@@ -21,6 +21,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInt
 
 /**
  * @implements CatchUpHookFactoryInterface<ContentGraphReadModelInterface>
+ * @internal
  */
 final readonly class ImpendingHardRemovalConflictDetectionHookFactory implements CatchUpHookFactoryInterface
 {

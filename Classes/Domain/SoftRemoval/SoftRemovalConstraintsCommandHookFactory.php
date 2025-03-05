@@ -10,6 +10,7 @@ use Neos\ContentRepository\Core\Factory\CommandHooksFactoryDependencies;
 use Neos\Flow\Annotations as Flow;
 
 #[Flow\Proxy(false)]
+/** @internal */
 final readonly class SoftRemovalConstraintsCommandHookFactory implements CommandHookFactoryInterface
 {
     public function build(CommandHooksFactoryDependencies $commandHooksFactoryDependencies): CommandHookInterface

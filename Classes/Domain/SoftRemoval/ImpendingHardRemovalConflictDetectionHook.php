@@ -42,12 +42,11 @@ use Neos\ContentRepository\Core\Projection\CatchUpHook\CatchUpHookInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregate;
-use Neos\Neos\Domain\SoftRemoval\ImpendingHardRemovalConflicts;
-use Neos\Neos\Domain\SoftRemoval\ImpendingHardRemovalConflict;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\Subscription\SubscriptionStatus;
 use Neos\EventStore\Model\EventEnvelope;
 
+/** @internal */
 final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInterface
 {
     public function __construct(

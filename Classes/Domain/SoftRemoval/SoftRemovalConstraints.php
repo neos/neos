@@ -27,6 +27,7 @@ use Neos\Flow\Annotations as Flow;
  * Because of this we prevent soft removals happening right from the beginning targeting such nodes.
  *
  * @Flow\Proxy(false)
+ * @internal
  */
 final readonly class SoftRemovalConstraints implements CommandHookInterface
 {
