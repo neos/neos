@@ -6,6 +6,10 @@ Neos:
         authProvider:
           factoryObjectName: Neos\Neos\Security\ContentRepositoryAuthProvider\ContentRepositoryAuthProviderFactory
 
+        commandHooks:
+          'Neos.Neos:SubtreeTaggingConstraints':
+            factoryObjectName: Neos\Neos\Domain\SubtreeTagging\NeosSubtreeTaggingConstraintChecksFactory
+
         contentGraphProjection:
           catchUpHooks:
             'Neos.Neos:FlushContentCache':
