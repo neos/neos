@@ -6,6 +6,8 @@ namespace Neos\Neos\Domain\SoftRemoval;
 
 use Neos\ContentRepository\Core\CommandHandler\CommandHookInterface;
 use Neos\ContentRepository\Core\CommandHandler\CommandInterface;
+use Neos\ContentRepository\Core\CommandHandler\Commands;
+use Neos\ContentRepository\Core\EventStore\PublishedEvents;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Command\TagSubtree;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateIsRoot;
@@ -64,5 +66,10 @@ final readonly class SoftRemovalConstraints implements CommandHookInterface
         }
 
         return $command;
+    }
+
+    public function onAfterHandle(CommandInterface $command, PublishedEvents $events): Commands
+    {
+        return Commands::createEmpty();
     }
 }

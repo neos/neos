@@ -97,17 +97,8 @@ final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInte
 
     public function onAfterEvent(EventInterface $eventInstance, EventEnvelope $eventEnvelope): void
     {
-        // todo WorkspaceWasPublished does not implement EmbedsWorkspaceName: https://github.com/neos/neos-development-collection/pull/5431
-        $flushWorkspace = match ($eventInstance::class) {
-            WorkspaceWasDiscarded::class => $eventInstance->workspaceName,
-            WorkspaceWasPublished::class => $eventInstance->sourceWorkspaceName,
-            WorkspaceWasRebased::class => $eventInstance->workspaceName,
-            WorkspaceWasRemoved::class => $eventInstance->workspaceName,
-            default => null
-        };
-
-        if ($flushWorkspace) {
-            $this->impendingConflictRepository->pruneConflictsForWorkspace($this->contentRepositoryId, $flushWorkspace);
+        if (in_array($eventInstance::class, [WorkspaceWasDiscarded::class, WorkspaceWasPublished::class, WorkspaceWasRebased::class, WorkspaceWasRemoved::class])) {
+            $this->impendingConflictRepository->pruneConflictsForWorkspace($this->contentRepositoryId, $eventInstance->getWorkspaceName());
             return;
         }
 
