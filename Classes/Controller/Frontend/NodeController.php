@@ -203,7 +203,7 @@ class NodeController extends ActionController
         // Neos backend users have access to the "disabled" SubtreeTag so that they can see/edit disabled nodes.
         // In this showAction (= "frontend") we have to explicitly remove those disabled nodes, even if the user was authenticated,
         // to ensure that disabled nodes are NEVER shown recursively.
-        $visibilityConstraints = $visibilityConstraints->merge(NeosVisibilityConstraints::withoutDisabled());
+        $visibilityConstraints = $visibilityConstraints->merge(NeosVisibilityConstraints::excludeDisabled());
         $uncachedSubgraph = $contentRepository->getContentGraph($nodeAddress->workspaceName)->getSubgraph($nodeAddress->dimensionSpacePoint, $visibilityConstraints);
 
         $subgraph = new ContentSubgraphWithRuntimeCaches($uncachedSubgraph, $this->subgraphCachePool);

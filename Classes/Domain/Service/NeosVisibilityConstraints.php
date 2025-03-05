@@ -42,12 +42,12 @@ final class NeosVisibilityConstraints
     /**
      * Used for frontend rendering in combination with the removed constraint, ensuring that neither disabled nor soft removed nodes are visible
      *
-     *     NeosVisibilityConstraints::withoutRemoved()
-     *         ->merge(NeosVisibilityConstraints::withoutDisabled())
+     *     NeosVisibilityConstraints::excludeRemoved()
+     *         ->merge(NeosVisibilityConstraints::excludeDisabled())
      *
      * @api
      */
-    public static function withoutDisabled(): VisibilityConstraints
+    public static function excludeDisabled(): VisibilityConstraints
     {
         return VisibilityConstraints::fromTagConstraints(SubtreeTags::create(
             SubtreeTag::disabled()
@@ -59,7 +59,7 @@ final class NeosVisibilityConstraints
      *
      * @api
      */
-    public static function withoutRemoved(): VisibilityConstraints
+    public static function excludeRemoved(): VisibilityConstraints
     {
         return VisibilityConstraints::fromTagConstraints(SubtreeTags::create(
             NeosSubtreeTag::removed()

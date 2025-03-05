@@ -86,7 +86,7 @@ final class NodeDuplicationService
     ): void {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
 
-        $subgraph = $contentRepository->getContentGraph($workspaceName)->getSubgraph($sourceDimensionSpacePoint, NeosVisibilityConstraints::withoutRemoved());
+        $subgraph = $contentRepository->getContentGraph($workspaceName)->getSubgraph($sourceDimensionSpacePoint, NeosVisibilityConstraints::excludeRemoved());
 
         $targetParentNode = $subgraph->findNodeById($targetParentNodeAggregateId);
         if ($targetParentNode === null) {
