@@ -49,7 +49,7 @@ final class NeosVisibilityConstraints
      */
     public static function excludeDisabled(): VisibilityConstraints
     {
-        return VisibilityConstraints::fromTagConstraints(SubtreeTags::create(
+        return VisibilityConstraints::excludeSubtreeTags(SubtreeTags::create(
             SubtreeTag::disabled()
         ));
     }
@@ -61,7 +61,7 @@ final class NeosVisibilityConstraints
      */
     public static function excludeRemoved(): VisibilityConstraints
     {
-        return VisibilityConstraints::fromTagConstraints(SubtreeTags::create(
+        return VisibilityConstraints::excludeSubtreeTags(SubtreeTags::create(
             NeosSubtreeTag::removed()
         ));
     }

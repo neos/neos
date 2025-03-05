@@ -104,13 +104,13 @@ final readonly class ContentRepositoryAuthorizationService
     public function getVisibilityConstraints(ContentRepositoryId $contentRepositoryId, array $roles): VisibilityConstraints
     {
         // soft removals are never visible by default
-        $restrictedSubtreeTags = NeosVisibilityConstraints::excludeRemoved()->tagConstraints;
+        $restrictedSubtreeTags = NeosVisibilityConstraints::excludeRemoved()->excludedSubtreeTags;
         /** @var ReadNodePrivilege $privilege */
         foreach ($this->policyService->getAllPrivilegesByType(ReadNodePrivilege::class) as $privilege) {
             if (!$this->privilegeManager->isGrantedForRoles($roles, ReadNodePrivilege::class, new SubtreeTagPrivilegeSubject($privilege->getSubtreeTags(), $contentRepositoryId))) {
                 $restrictedSubtreeTags = $restrictedSubtreeTags->merge($privilege->getSubtreeTags());
             }
         }
-        return VisibilityConstraints::fromTagConstraints($restrictedSubtreeTags);
+        return VisibilityConstraints::excludeSubtreeTags($restrictedSubtreeTags);
     }
 }
