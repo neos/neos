@@ -209,7 +209,7 @@ final readonly class WorkspaceService
             $contentRepositoryId,
             $workspaceName,
             WorkspaceTitle::fromString($user->getLabel()),
-            WorkspaceDescription::empty(),
+            WorkspaceDescription::createEmpty(),
             WorkspaceName::forLive(),
             $user->getId(),
         );
