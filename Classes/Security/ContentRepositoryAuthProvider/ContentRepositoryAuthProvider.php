@@ -103,7 +103,7 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
             }
             $node = $this->contentGraphReadModel
                 ->getContentGraph($nodeThatRequiresEditPrivilege->workspaceName)
-                ->getSubgraph($nodeThatRequiresEditPrivilege->dimensionSpacePoint, VisibilityConstraints::withoutRestrictions())
+                ->getSubgraph($nodeThatRequiresEditPrivilege->dimensionSpacePoint, VisibilityConstraints::createEmpty())
                 ->findNodeById($nodeThatRequiresEditPrivilege->aggregateId);
             if ($node === null) {
                 return Privilege::denied(sprintf('Failed to load node "%s" in workspace "%s"', $nodeThatRequiresEditPrivilege->aggregateId->value, $nodeThatRequiresEditPrivilege->workspaceName->value));
