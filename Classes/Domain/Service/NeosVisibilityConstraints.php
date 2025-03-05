@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Domain\Service;
 
-use Neos\ContentRepository\Core\Feature\NodeDisabling\Command\DisableNodeAggregate;
-use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTag;
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTags;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentSubgraphInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
@@ -17,7 +15,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
  *
  * By default, Neos provides two kinds of subtree tags:
  *
- * - `disabled` {@see SubtreeTag::disabled()} which is used when disabling a node via {@see DisableNodeAggregate}
+ * - `disabled` {@see NeosSubtreeTag::disabled()} which is used when disabling a node
  * - `removed` {@see NeosSubtreeTag::removed()} which is used when soft removing a node
  *
  * To control which nodes will be queried via the {@see ContentSubgraphInterface}, the visibility constraints can be used.
@@ -50,7 +48,7 @@ final class NeosVisibilityConstraints
     public static function excludeDisabled(): VisibilityConstraints
     {
         return VisibilityConstraints::excludeSubtreeTags(SubtreeTags::create(
-            SubtreeTag::disabled()
+            NeosSubtreeTag::disabled()
         ));
     }
 
