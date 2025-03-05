@@ -113,8 +113,12 @@ final readonly class SoftRemovalGarbageCollector
     {
         $softRemovedNodes = [];
         foreach ($contentGraph->findNodeAggregatesTaggedBy(SubtreeTag::removed()) as $nodeAggregateTaggedRemoved) {
-            if ($nodeAggregateTaggedRemoved->classification->isRoot()) {
-                // we don't handle the soft removal of root nodes because root nodes cannot be removed via `STRATEGY_ALL_SPECIALIZATIONS`
+            if (
+                $nodeAggregateTaggedRemoved->classification->isRoot()
+                || $nodeAggregateTaggedRemoved->classification->isTethered()
+            ) {
+                // root nodes and tethered nodes impose a speciality. For both kind of nodes Neos constraints the removal beforehand
+                // if they are soft removed after all, we avoid handling them.
                 continue;
             }
             $softRemovedNodes[] = SoftRemovedNode::create(

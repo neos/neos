@@ -50,7 +50,7 @@ Feature: Additional constraint checks for the soft "removed" tag
       | baseWorkspaceName  | "live"           |
       | newContentStreamId | "user-cs-id"     |
 
-  Scenario: Try to soft remove a tethered node aggregate
+  Scenario: Soft removing a tethered node aggregate is forbidden
     When the command TagSubtree is executed with payload and exceptions are caught:
       | Key                          | Value                      |
       | nodeAggregateId              | "nodingers-leashed-kitten" |
@@ -80,3 +80,13 @@ Feature: Additional constraint checks for the soft "removed" tag
       | nodeAggregateId              | "nodingers-leashed-kitten"                   |
       | affectedDimensionSpacePoints | [{"example":"source"},{"example":"special"}] |
       | tag                          | "removed"                                    |
+
+  Scenario: Soft removing a root node aggregate is forbidden
+    When the command TagSubtree is executed with payload and exceptions are caught:
+      | Key                          | Value                    |
+      | workspaceName                | "live"                   |
+      | nodeAggregateId              | "lady-eleonode-rootford" |
+      | coveredDimensionSpacePoint   | {"example": "source"}    |
+      | nodeVariantSelectionStrategy | "allSpecializations"     |
+      | tag                          | "removed"                |
+    Then the last command should have thrown an exception of type "NodeAggregateIsRoot"
