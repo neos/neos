@@ -12,7 +12,6 @@ use Neos\ContentRepository\Core\Feature\SubtreeTagging\Command\TagSubtree;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateIsTethered;
 use Neos\Flow\Annotations as Flow;
-use Neos\Neos\Domain\Service\NeosSubtreeTag;
 
 /**
  * Additional Neos' specific content repository constraints for subtree tagging

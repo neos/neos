@@ -20,7 +20,7 @@ use Neos\Neos\Domain\Model\WorkspaceRole;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubject;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubjects;
 use Neos\Neos\Domain\Repository\WorkspaceMetadataAndRoleRepository;
-use Neos\Neos\Domain\Service\NeosVisibilityConstraints;
+use Neos\Neos\Domain\SubtreeTagging\NeosVisibilityConstraints;
 use Neos\Neos\Security\Authorization\Privilege\EditNodePrivilege;
 use Neos\Neos\Security\Authorization\Privilege\ReadNodePrivilege;
 use Neos\Neos\Security\Authorization\Privilege\SubtreeTagPrivilegeSubject;

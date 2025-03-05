@@ -27,7 +27,7 @@ use Neos\Flow\Mvc\Controller\ControllerContext;
 use Neos\Media\Domain\Model\AssetInterface;
 use Neos\Neos\Domain\Model\Site;
 use Neos\Neos\Domain\Repository\SiteRepository;
-use Neos\Neos\Domain\Service\NeosSubtreeTag;
+use Neos\Neos\Domain\SubtreeTagging\NeosSubtreeTag;
 use Neos\Neos\Exception as NeosException;
 use Neos\Neos\FrontendRouting\NodeUriBuilder;
 use Neos\Neos\Fusion\Helper\LinkHelper;

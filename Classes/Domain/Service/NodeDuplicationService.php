@@ -31,6 +31,7 @@ use Neos\Flow\Annotations as Flow;
 use Neos\Neos\Domain\Exception\TetheredNodesCannotBePartiallyCopied;
 use Neos\Neos\Domain\Service\NodeDuplication\NodeAggregateIdMapping;
 use Neos\Neos\Domain\Service\NodeDuplication\TransientNodeCopy;
+use Neos\Neos\Domain\SubtreeTagging\NeosVisibilityConstraints;
 
 /**
  * Service to copy node recursively - as there is no equivalent content repository core command.
