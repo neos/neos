@@ -34,7 +34,7 @@ use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Node\PropertyName;
 use Neos\EventStore\Model\EventEnvelope;
 use Neos\Neos\Domain\Model\SiteNodeName;
-use Neos\Neos\Domain\Service\NeosSubtreeTag;
+use Neos\Neos\Domain\SubtreeTagging\NeosSubtreeTag;
 use Neos\Neos\FrontendRouting\Exception\NodeNotFoundException;
 
 /**
