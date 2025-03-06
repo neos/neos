@@ -133,13 +133,11 @@ Feature: Hard remove node aggregate with node
       | nody-mc-nodeface | 0       | 0       | 0     | 1       | {"language": "de"}        |
     And I expect to have no changes in workspace "live"
 
-    When I publish the 1 changes in site "site" from workspace "user-workspace" to "live"
-    Then I expect that the following node events have been published
-      | type                    | event payload                                                                                                        |
-      | NodeAggregateWasRemoved | {"nodeAggregateId":"nody-mc-nodeface","affectedCoveredDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]} |
-
-    Then I expect that the following node events are kept as remainder
-      | type | event payload |
+    Then I expect the publishing of site "site" from workspace "user-workspace" to fail
+    Then an exception of type "InvalidArgumentException" should be thrown with message:
+    """
+    The command "PublishIndividualNodesFromWorkspace" for workspace user-workspace must contain nodes to publish
+    """
 
   Scenario: Remove node aggregate in user workspace which was already modified with "allSpecializations"
     Given the command SetNodeProperties is executed with payload:
@@ -180,7 +178,46 @@ Feature: Hard remove node aggregate with node
     Then I expect that the following node events are kept as remainder
       | type | event payload |
 
-  Scenario: When publishing a site all hard removals are always included (also from other sites)
+  Scenario: Publishing a document ignores all hard removals on that document
+    # some change to allow publication at all
+    Given the command SetNodeProperties is executed with payload:
+      | Key                       | Value                    |
+      | workspaceName             | "user-workspace"         |
+      | nodeAggregateId           | "sir-david-nodenborough" |
+      | originDimensionSpacePoint | {"language": "de"}       |
+      | propertyValues            | {"title": "Other text"}  |
+
+    Given the command RemoveNodeAggregate is executed with payload:
+      | Key                          | Value                |
+      | workspaceName                | "user-workspace"     |
+      | nodeAggregateId              | "davids-child"       |
+      | coveredDimensionSpacePoint   | {"language": "de"}   |
+      | nodeVariantSelectionStrategy | "allSpecializations" |
+
+    Then I expect to have the following changes in workspace "user-workspace":
+      | nodeAggregateId        | created | changed | moved | deleted | originDimensionSpacePoint |
+      | davids-child           | 0       | 0       | 0     | 1       | {"language": "de"}        |
+      | sir-david-nodenborough | 0       | 1       | 0     | 0       | {"language": "de"}        |
+    And I expect to have no changes in workspace "live"
+
+    When I publish the 1 changes in document "sir-david-nodenborough" from workspace "user-workspace" to "live"
+    Then I expect that the following node events have been published
+      | type                  | event payload                                                                              |
+      | NodePropertiesWereSet | {"nodeAggregateId":"sir-david-nodenborough","originDimensionSpacePoint":{"language":"de"}} |
+
+    Then I expect that the following node events are kept as remainder
+      | type                    | event payload                                                                                                    |
+      | NodeAggregateWasRemoved | {"nodeAggregateId":"davids-child","affectedCoveredDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]} |
+
+  Scenario: Publishing a site ignores all hard removals on that site
+    # some change to allow publication at all
+    Given the command SetNodeProperties is executed with payload:
+      | Key                       | Value                  |
+      | workspaceName             | "user-workspace"       |
+      | nodeAggregateId           | "davids-child"         |
+      | originDimensionSpacePoint | {"language": "de"}     |
+      | propertyValues            | {"text": "Other text"} |
+
     Given the command RemoveNodeAggregate is executed with payload:
       | Key                          | Value                |
       | workspaceName                | "user-workspace"     |
@@ -197,15 +234,17 @@ Feature: Hard remove node aggregate with node
 
     Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId   | created | changed | moved | deleted | originDimensionSpacePoint |
+      | davids-child      | 0       | 1       | 0     | 0       | {"language": "de"}        |
       | site-two-document | 0       | 0       | 0     | 1       | {"language": "de"}        |
       | nody-mc-nodeface  | 0       | 0       | 0     | 1       | {"language": "de"}        |
     And I expect to have no changes in workspace "live"
 
-    When I publish the 2 changes in site "site" from workspace "user-workspace" to "live"
+    When I publish the 1 changes in site "site" from workspace "user-workspace" to "live"
     Then I expect that the following node events have been published
+      | type                  | event payload                                                                    |
+      | NodePropertiesWereSet | {"nodeAggregateId":"davids-child","originDimensionSpacePoint":{"language":"de"}} |
+
+    Then I expect that the following node events are kept as remainder
       | type                    | event payload                                                                                                         |
       | NodeAggregateWasRemoved | {"nodeAggregateId":"site-two-document","affectedCoveredDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]} |
       | NodeAggregateWasRemoved | {"nodeAggregateId":"nody-mc-nodeface","affectedCoveredDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]}  |
-
-    Then I expect that the following node events are kept as remainder
-      | type | event payload |

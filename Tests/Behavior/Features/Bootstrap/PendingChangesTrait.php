@@ -175,12 +175,16 @@ trait PendingChangesTrait
 
     /**
      * @Then I expect the publishing of document :documentNodeAggregateId from workspace :workspace to fail
+     * @Then I expect the publishing of site :siteNodeAggregateId from workspace :workspace to fail
      */
-    public function iExpectThePublicationOfTheDocumentFromWorkspaceToFail(string $workspace, string $documentNodeAggregateId): void
+    public function iExpectThePublicationOfTheDocumentFromWorkspaceToFail(string $workspace, ?string $documentNodeAggregateId = null, ?string $siteNodeAggregateId = null): void
     {
         $workspacePublishingService = $this->getObject(WorkspacePublishingService::class);
         $this->tryCatchingExceptions(fn () =>
-            $workspacePublishingService->publishChangesInDocument($this->currentContentRepository->id, WorkspaceName::fromString($workspace), NodeAggregateId::fromString($documentNodeAggregateId))
+            match(true) {
+                $siteNodeAggregateId !== null => $workspacePublishingService->publishChangesInSite($this->currentContentRepository->id, WorkspaceName::fromString($workspace), NodeAggregateId::fromString($siteNodeAggregateId)),
+                $documentNodeAggregateId !== null => $workspacePublishingService->publishChangesInDocument($this->currentContentRepository->id, WorkspaceName::fromString($workspace), NodeAggregateId::fromString($documentNodeAggregateId))
+            }
         );
         Assert::assertNotNull($this->lastCaughtException, 'Expected an exception but none was thrown');
     }
