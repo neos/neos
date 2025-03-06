@@ -1,5 +1,5 @@
 @flowEntities @contentrepository
-Feature: Routing behavior of removed, disabled and re-enabled nodes
+Feature: Routing behavior of soft removed nodes
 
   Background:
     Given using no content dimensions
@@ -36,14 +36,6 @@ Feature: Routing behavior of removed, disabled and re-enabled nodes
       | nodeAggregateId | "lady-eleonode-rootford" |
       | nodeTypeName    | "Neos.Neos:Sites"        |
 
-    # lady-eleonode-rootford
-    #   shernode-homes
-    #      sir-david-nodenborough
-    #        duke-of-contentshire (content node)
-    #        earl-o-documentbourgh
-    #          leaf-mc-node
-    #      nody-mc-nodeface
-    #
     And the following CreateNodeAggregateWithNode commands are executed:
       | nodeAggregateId        | parentNodeAggregateId  | nodeTypeName                   | initialPropertyValues                    | nodeName |
       | shernode-homes         | lady-eleonode-rootford | Neos.Neos:Test.Routing.Page    | {"uriPathSegment": "ignore-me"}          | node1    |
@@ -66,84 +58,112 @@ Feature: Routing behavior of removed, disabled and re-enabled nodes
                 factoryClassName: Neos\Neos\FrontendRouting\DimensionResolution\Resolver\NoopResolverFactory
     """
 
-  Scenario: Disable leaf node
-    When the command DisableNodeAggregate is executed with payload:
+  Scenario: Soft remove leaf node
+    When the command TagSubtree is executed with payload:
       | Key                          | Value          |
       | nodeAggregateId              | "leaf-mc-node" |
       | coveredDimensionSpacePoint   | {}             |
       | nodeVariantSelectionStrategy | "allVariants"  |
+      | tag                          | "removed"      |
     Then No node should match URL "/david-nodenborough/earl-document/leaf"
-    # contraire to matching, we DO allow resolving of disabled nodes https://github.com/neos/neos-development-collection/pull/4363
+    And The node "leaf-mc-node" in dimension "{}" should not resolve to an URL
+
+  Scenario: Soft remove leaf node and reinstate
+    When the command TagSubtree is executed with payload:
+      | Key                          | Value          |
+      | nodeAggregateId              | "leaf-mc-node" |
+      | coveredDimensionSpacePoint   | {}             |
+      | nodeVariantSelectionStrategy | "allVariants"  |
+      | tag                          | "removed"      |
+    Then No node should match URL "/david-nodenborough/earl-document/leaf"
+    And The node "leaf-mc-node" in dimension "{}" should not resolve to an URL
+
+    When the command UntagSubtree is executed with payload:
+      | Key                          | Value          |
+      | nodeAggregateId              | "leaf-mc-node" |
+      | coveredDimensionSpacePoint   | {}             |
+      | nodeVariantSelectionStrategy | "allVariants"  |
+      | tag                          | "removed"      |
+    When I am on URL "/david-nodenborough/earl-document/leaf"
+    Then the matched node should be "leaf-mc-node" in dimension "{}"
     And The node "leaf-mc-node" in dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
 
-  Scenario: Disable node with child nodes
-    When the command DisableNodeAggregate is executed with payload:
+  Scenario: Soft remove node with child nodes
+    When the command TagSubtree is executed with payload:
       | Key                          | Value                    |
       | nodeAggregateId              | "sir-david-nodenborough" |
       | coveredDimensionSpacePoint   | {}                       |
       | nodeVariantSelectionStrategy | "allVariants"            |
+      | tag                          | "removed"                |
     Then No node should match URL "/david-nodenborough"
     And No node should match URL "/david-nodenborough/earl-document"
-    And The node "sir-david-nodenborough" in dimension "{}" should resolve to URL "/david-nodenborough"
-    And The node "earl-o-documentbourgh" in dimension "{}" should resolve to URL "/david-nodenborough/earl-document"
+    And The node "sir-david-nodenborough" in dimension "{}" should not resolve to an URL
+    And The node "earl-o-documentbourgh" in dimension "{}" should not resolve to an URL
 
-  Scenario: Disable two nodes, re-enable the higher one
-    When the command DisableNodeAggregate is executed with payload:
+  Scenario: Soft remove two nodes, reinstate the higher one
+    When the command TagSubtree is executed with payload:
       | Key                          | Value                    |
       | nodeAggregateId              | "sir-david-nodenborough" |
       | coveredDimensionSpacePoint   | {}                       |
       | nodeVariantSelectionStrategy | "allVariants"            |
-    And the command DisableNodeAggregate is executed with payload:
+      | tag                          | "removed"                |
+    And the command TagSubtree is executed with payload:
       | Key                          | Value                   |
       | nodeAggregateId              | "earl-o-documentbourgh" |
       | coveredDimensionSpacePoint   | {}                      |
       | nodeVariantSelectionStrategy | "allVariants"           |
+      | tag                          | "removed"               |
     Then No node should match URL "/david-nodenborough"
     And No node should match URL "/david-nodenborough/earl-document"
-    And The node "sir-david-nodenborough" in dimension "{}" should resolve to URL "/david-nodenborough"
-    And The node "earl-o-documentbourgh" in dimension "{}" should resolve to URL "/david-nodenborough/earl-document"
-    When the command EnableNodeAggregate is executed with payload:
+    And The node "sir-david-nodenborough" in dimension "{}" should not resolve to an URL
+    And The node "earl-o-documentbourgh" in dimension "{}" should not resolve to an URL
+    When the command UntagSubtree is executed with payload:
       | Key                          | Value                    |
       | nodeAggregateId              | "sir-david-nodenborough" |
       | coveredDimensionSpacePoint   | {}                       |
       | nodeVariantSelectionStrategy | "allVariants"            |
+      | tag                          | "removed"                |
     When I am on URL "/david-nodenborough"
     Then the matched node should be "sir-david-nodenborough" in dimension "{}"
     And No node should match URL "/david-nodenborough/earl-document"
     And The node "sir-david-nodenborough" in dimension "{}" should resolve to URL "/david-nodenborough"
-    And The node "earl-o-documentbourgh" in dimension "{}" should resolve to URL "/david-nodenborough/earl-document"
+    And The node "earl-o-documentbourgh" in dimension "{}" should not resolve to an URL
 
-  Scenario: Disable two nodes, re-enable the lower one
-    When the command DisableNodeAggregate is executed with payload:
+  Scenario: Soft remove two nodes, reinstate the lower one
+    When the command TagSubtree is executed with payload:
       | Key                          | Value                    |
       | nodeAggregateId              | "sir-david-nodenborough" |
       | coveredDimensionSpacePoint   | {}                       |
       | nodeVariantSelectionStrategy | "allVariants"            |
-    And the command DisableNodeAggregate is executed with payload:
+      | tag                          | "removed"                |
+    And the command TagSubtree is executed with payload:
       | Key                          | Value                   |
       | nodeAggregateId              | "earl-o-documentbourgh" |
       | coveredDimensionSpacePoint   | {}                      |
       | nodeVariantSelectionStrategy | "allVariants"           |
+      | tag                          | "removed"               |
     Then No node should match URL "/david-nodenborough"
     And No node should match URL "/david-nodenborough/earl-document"
-    And The node "sir-david-nodenborough" in dimension "{}" should resolve to URL "/david-nodenborough"
-    And The node "earl-o-documentbourgh" in dimension "{}" should resolve to URL "/david-nodenborough/earl-document"
-    When the command EnableNodeAggregate is executed with payload:
+    And The node "sir-david-nodenborough" in dimension "{}" should not resolve to an URL
+    And The node "earl-o-documentbourgh" in dimension "{}" should not resolve to an URL
+    When the command UntagSubtree is executed with payload:
       | Key                          | Value                   |
       | nodeAggregateId              | "earl-o-documentbourgh" |
       | coveredDimensionSpacePoint   | {}                      |
       | nodeVariantSelectionStrategy | "allVariants"           |
+      | tag                          | "removed"               |
     Then No node should match URL "/david-nodenborough"
     And No node should match URL "/david-nodenborough/earl-document"
-    And The node "sir-david-nodenborough" in dimension "{}" should resolve to URL "/david-nodenborough"
-    And The node "earl-o-documentbourgh" in dimension "{}" should resolve to URL "/david-nodenborough/earl-document"
+    And The node "sir-david-nodenborough" in dimension "{}" should not resolve to an URL
+    And The node "earl-o-documentbourgh" in dimension "{}" should not resolve to an URL
 
-  Scenario: Move implicit disabled node
-    When the command DisableNodeAggregate is executed with payload:
+  Scenario: Move implicit soft removed node
+    When the command TagSubtree is executed with payload:
       | Key                          | Value                    |
       | nodeAggregateId              | "sir-david-nodenborough" |
       | coveredDimensionSpacePoint   | {}                       |
       | nodeVariantSelectionStrategy | "allVariants"            |
+      | tag                          | "removed"                |
     When the command MoveNodeAggregate is executed with payload:
       | Key                                 | Value                   |
       | nodeAggregateId                     | "earl-o-documentbourgh" |
@@ -153,12 +173,13 @@ Feature: Routing behavior of removed, disabled and re-enabled nodes
     When I am on URL "/nody/earl-document"
     Then the matched node should be "earl-o-documentbourgh" in dimension "{}"
 
-  Scenario: Move explicit disabled node
-    When the command DisableNodeAggregate is executed with payload:
+  Scenario: Move explicit soft removed node
+    When the command TagSubtree is executed with payload:
       | Key                          | Value                   |
       | nodeAggregateId              | "earl-o-documentbourgh" |
       | coveredDimensionSpacePoint   | {}                      |
       | nodeVariantSelectionStrategy | "allVariants"           |
+      | tag                          | "removed"               |
     When the command MoveNodeAggregate is executed with payload:
       | Key                                 | Value                   |
       | nodeAggregateId                     | "earl-o-documentbourgh" |
@@ -166,38 +187,40 @@ Feature: Routing behavior of removed, disabled and re-enabled nodes
       | newParentNodeAggregateId            | "nody-mc-nodeface"      |
       | newSucceedingSiblingNodeAggregateId | null                    |
     Then No node should match URL "/nody/earl-document"
-    And The node "leaf-mc-node" in dimension "{}" should resolve to URL "/nody/earl-document/leaf"
+    And The node "leaf-mc-node" in dimension "{}" should not resolve to an URL
 
-  Scenario: Add child node underneath disabled node and re-enable parent (see https://github.com/neos/neos-development-collection/issues/4639)
-    When the command DisableNodeAggregate is executed with payload:
+  Scenario: Add child node underneath soft remove node and reinstantiate parent (see https://github.com/neos/neos-development-collection/issues/4639)
+    When the command TagSubtree is executed with payload:
       | Key                          | Value              |
       | nodeAggregateId              | "nody-mc-nodeface" |
       | coveredDimensionSpacePoint   | {}                 |
       | nodeVariantSelectionStrategy | "allVariants"      |
+      | tag                          | "removed"          |
     When the following CreateNodeAggregateWithNode commands are executed:
       | nodeAggregateId        | parentNodeAggregateId | nodeTypeName                | initialPropertyValues            |
       | nody-mc-nodeface-child | nody-mc-nodeface      | Neos.Neos:Test.Routing.Page | {"uriPathSegment": "nody-child"} |
-    When the command EnableNodeAggregate is executed with payload:
+    When the command UntagSubtree is executed with payload:
       | Key                          | Value              |
       | nodeAggregateId              | "nody-mc-nodeface" |
       | coveredDimensionSpacePoint   | {}                 |
       | nodeVariantSelectionStrategy | "allVariants"      |
+      | tag                          | "removed"          |
     When I am on URL "/nody/nody-child"
     Then the matched node should be "nody-mc-nodeface-child" in dimension "{}"
 
-  Scenario: Disable leaf node and create sibling with same uri path segment
+  Scenario: Soft remove leaf node and create sibling with same uri path segment
     When I am on URL "/david-nodenborough/earl-document/leaf"
     Then the matched node should be "leaf-mc-node" in dimension "{}"
     And The node "leaf-mc-node" in dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
 
-    When the command DisableNodeAggregate is executed with payload:
-      | Key                          | Value              |
+    When the command TagSubtree is executed with payload:
+      | Key                          | Value          |
       | nodeAggregateId              | "leaf-mc-node" |
-      | coveredDimensionSpacePoint   | {}                 |
-      | nodeVariantSelectionStrategy | "allVariants"      |
+      | coveredDimensionSpacePoint   | {}             |
+      | nodeVariantSelectionStrategy | "allVariants"  |
+      | tag                          | "removed"      |
     Then No node should match URL "/david-nodenborough/earl-document/leaf"
-    # uri building is ambiguous but not matching!
-    And The node "leaf-mc-node" in dimension "{}" should resolve to URL "/david-nodenborough/earl-document/leaf"
+    And The node "leaf-mc-node" in dimension "{}" should not resolve to an URL
 
     # create sibling with the same path
     When the command CreateNodeAggregateWithNode is executed with payload:

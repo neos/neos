@@ -26,6 +26,7 @@ use Psr\Http\Message\UriInterface;
 
 /**
  * @Flow\Proxy(false)
+ * @internal implementation detail to manage document node uris. For resolving please use the NodeUriBuilder and for matching the Router.
  */
 final class DocumentNodeInfo
 {
@@ -158,9 +159,19 @@ final class DocumentNodeInfo
         return $this->getDisableLevel() > 0;
     }
 
+    public function isRemoved(): bool
+    {
+        return $this->getRemovedLevel() > 0;
+    }
+
     public function getDisableLevel(): int
     {
         return (int)$this->source['disabled'];
+    }
+
+    public function getRemovedLevel(): int
+    {
+        return (int)$this->source['removed'];
     }
 
     public function getShortcutMode(): string
