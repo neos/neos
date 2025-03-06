@@ -110,7 +110,7 @@ class ArrayHelper implements ProtectedContextAwareInterface
 
     /**
      * Converts an array into an HTML attributes string like 'class="foo" id="bar"'
-     * @param array $attributes
+     * @param array<string> $attributes
      * @return string
      */
     public function toHtmlAttributesString(array $attributes): string
