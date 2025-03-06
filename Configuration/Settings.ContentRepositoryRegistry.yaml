@@ -7,8 +7,8 @@ Neos:
           factoryObjectName: Neos\Neos\Security\ContentRepositoryAuthProvider\ContentRepositoryAuthProviderFactory
 
         commandHooks:
-          'Neos.Neos:SoftRemovalConstraints':
-            factoryObjectName: Neos\Neos\Domain\SoftRemoval\SoftRemovalConstraintsCommandHookFactory
+          'Neos.Neos:SubtreeTaggingConstraints':
+            factoryObjectName: Neos\Neos\Domain\SubtreeTagging\NeosSubtreeTaggingConstraintChecksFactory
 
         contentGraphProjection:
           catchUpHooks:

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Neos\Neos\Domain\Service;
+namespace Neos\Neos\Domain\SubtreeTagging;
 
 use Neos\ContentRepository\Core\Feature\SubtreeTagging\Dto\SubtreeTags;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentSubgraphInterface;
