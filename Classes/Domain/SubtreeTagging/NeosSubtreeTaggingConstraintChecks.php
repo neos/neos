@@ -41,7 +41,7 @@ final readonly class NeosSubtreeTaggingConstraintChecks implements CommandHookIn
         $nodeAggregate = $this->contentGraphReadModel->getContentGraph($command->workspaceName)->findNodeAggregateById($command->nodeAggregateId);
 
         if ($nodeAggregate) {
-            match($command->tag) {
+            match ($command->tag) {
                 NeosSubtreeTag::disabled() => $this->enforceDisabledConstraints($nodeAggregate),
                 NeosSubtreeTag::removed() => $this->enforceRemovedConstraints($nodeAggregate),
                 default => null
