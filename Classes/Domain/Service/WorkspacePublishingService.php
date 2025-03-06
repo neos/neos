@@ -44,7 +44,7 @@ use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Neos\Neos\Domain\Model\DiscardingResult;
 use Neos\Neos\Domain\Model\PublishingResult;
-use Neos\Neos\Domain\SoftRemoval\SoftRemovalGarbageCollector;
+use Neos\Neos\Domain\SubtreeTagging\SoftRemoval\SoftRemovalGarbageCollector;
 use Neos\Neos\PendingChangesProjection\Change;
 use Neos\Neos\PendingChangesProjection\ChangeFinder;
 use Neos\Neos\PendingChangesProjection\Changes;

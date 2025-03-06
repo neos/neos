@@ -12,24 +12,24 @@
 
 declare(strict_types=1);
 
-namespace Neos\Neos\Domain\SoftRemoval;
+namespace Neos\Neos\Domain\SubtreeTagging\SoftRemoval;
 
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateIds;
 
 /**
- * @implements \IteratorAggregate<SoftRemovedNode>
- * @internal
+ * @implements \IteratorAggregate<ImpendingHardRemovalConflict>
+ * @internal only to be used for hard removal conflict handling
  */
-final readonly class SoftRemovedNodes implements \IteratorAggregate, \Countable
+final readonly class ImpendingHardRemovalConflicts implements \IteratorAggregate, \Countable
 {
     private function __construct(
-        /** @var array<string,SoftRemovedNode> indexed by NodeAggregateId */
+        /** @var array<string,ImpendingHardRemovalConflict> indexed by NodeAggregateId */
         private array $items
     ) {
     }
 
-    public static function create(SoftRemovedNode ...$items): self
+    public static function create(ImpendingHardRemovalConflict ...$items): self
     {
         $indexedItems = [];
         foreach ($items as $item) {
@@ -38,18 +38,18 @@ final readonly class SoftRemovedNodes implements \IteratorAggregate, \Countable
         return new self($indexedItems);
     }
 
-    /** @param array<SoftRemovedNode> $items */
+    /** @param array<ImpendingHardRemovalConflict> $items */
     public static function fromArray(array $items): self
     {
         return self::create(...$items);
     }
 
-    public function get(NodeAggregateId $key): ?SoftRemovedNode
+    public function get(NodeAggregateId $key): ?ImpendingHardRemovalConflict
     {
         return $this->items[$key->value] ?? null;
     }
 
-    public function with(SoftRemovedNode $item): self
+    public function with(ImpendingHardRemovalConflict $item): self
     {
         $items = $this->items;
         $items[$item->nodeAggregateId->value] = $item;
@@ -64,7 +64,7 @@ final readonly class SoftRemovedNodes implements \IteratorAggregate, \Countable
     public function toNodeAggregateIds(): NodeAggregateIds
     {
         return NodeAggregateIds::fromArray(
-            array_map(fn (SoftRemovedNode $node) => $node->nodeAggregateId, $this->items)
+            array_map(fn (ImpendingHardRemovalConflict $node) => $node->nodeAggregateId, $this->items)
         );
     }
 

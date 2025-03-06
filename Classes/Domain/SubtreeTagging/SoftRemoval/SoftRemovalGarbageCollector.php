@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Neos\Neos\Domain\SoftRemoval;
+namespace Neos\Neos\Domain\SubtreeTagging\SoftRemoval;
 
 use Neos\ContentRepository\Core\ContentRepository;
 use Neos\ContentRepository\Core\Feature\NodeRemoval\Command\RemoveNodeAggregate;
@@ -25,8 +25,8 @@ use Neos\ContentRepository\Core\SharedModel\Node\NodeVariantSelectionStrategy;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Security\Context as SecurityContext;
-use Neos\Neos\Domain\Service\NeosSubtreeTag;
 use Neos\Neos\Domain\Service\WorkspacePublishingService;
+use Neos\Neos\Domain\SubtreeTagging\NeosSubtreeTag;
 
 /**
  * Service that detects which soft removals in a content repository can be safely transformed to hard removals

@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Neos\Neos\Domain\SoftRemoval;
+namespace Neos\Neos\Domain\SubtreeTagging\SoftRemoval;
 
 use Neos\ContentRepository\Core\Projection\CatchUpHook\CatchUpHookFactoryDependencies;
 use Neos\ContentRepository\Core\Projection\CatchUpHook\CatchUpHookFactoryInterface;

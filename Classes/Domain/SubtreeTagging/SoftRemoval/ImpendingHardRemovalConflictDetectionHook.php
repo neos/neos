@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Neos\Neos\Domain\SoftRemoval;
+namespace Neos\Neos\Domain\SubtreeTagging\SoftRemoval;
 
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
 use Neos\ContentRepository\Core\DimensionSpace\OriginDimensionSpacePoint;
@@ -42,7 +42,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\NodeAggregate;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
 use Neos\ContentRepository\Core\Subscription\SubscriptionStatus;
 use Neos\EventStore\Model\EventEnvelope;
-use Neos\Neos\Domain\Service\NeosSubtreeTag;
+use Neos\Neos\Domain\SubtreeTagging\NeosSubtreeTag;
 
 /** @internal */
 final class ImpendingHardRemovalConflictDetectionHook implements CatchUpHookInterface

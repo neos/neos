@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Neos\Neos\Domain\SoftRemoval;
+namespace Neos\Neos\Domain\SubtreeTagging\SoftRemoval;
 
 use Neos\ContentRepository\Core\CommandHandler\CommandHookInterface;
 use Neos\ContentRepository\Core\CommandHandler\CommandInterface;
@@ -13,7 +13,7 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInt
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateIsRoot;
 use Neos\ContentRepository\Core\SharedModel\Exception\NodeAggregateIsTethered;
 use Neos\Flow\Annotations as Flow;
-use Neos\Neos\Domain\Service\NeosSubtreeTag;
+use Neos\Neos\Domain\SubtreeTagging\NeosSubtreeTag;
 
 /**
  * Additional Neos' specific content repository constraints for subtree tagging

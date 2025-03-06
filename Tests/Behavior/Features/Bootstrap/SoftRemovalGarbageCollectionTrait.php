@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 use Behat\Gherkin\Node\TableNode;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
-use Neos\Neos\Domain\SoftRemoval\ImpendingHardRemovalConflict;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
-use Neos\Neos\Domain\SoftRemoval\SoftRemovalGarbageCollector;
-use Neos\Neos\Domain\SoftRemoval\ImpendingHardRemovalConflictRepository;
+use Neos\Neos\Domain\SubtreeTagging\SoftRemoval\ImpendingHardRemovalConflict;
+use Neos\Neos\Domain\SubtreeTagging\SoftRemoval\ImpendingHardRemovalConflictRepository;
+use Neos\Neos\Domain\SubtreeTagging\SoftRemoval\SoftRemovalGarbageCollector;
 use PHPUnit\Framework\Assert;
 
 /**

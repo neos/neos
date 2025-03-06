@@ -38,7 +38,7 @@ use Neos\Neos\Domain\Model\WorkspaceRoleAssignments;
 use Neos\Neos\Domain\Model\WorkspaceRoleSubject;
 use Neos\Neos\Domain\Model\WorkspaceTitle;
 use Neos\Neos\Domain\Repository\WorkspaceMetadataAndRoleRepository;
-use Neos\Neos\Domain\SoftRemoval\SoftRemovalGarbageCollector;
+use Neos\Neos\Domain\SubtreeTagging\SoftRemoval\SoftRemovalGarbageCollector;
 use Neos\Neos\Security\Authorization\ContentRepositoryAuthorizationService;
 
 /**
