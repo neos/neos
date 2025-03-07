@@ -48,15 +48,6 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
 
     public function onBeforeEvent(EventInterface $eventInstance, EventEnvelope $eventEnvelope): void
     {
-        if ($eventInstance instanceof EmbedsWorkspaceName) {
-            try {
-                // Skip if the workspace does not exist: "The source workspace missing does not exist" https://github.com/neos/neos-development-collection/pull/5270
-                $this->contentGraphReadModel->getContentGraph($eventInstance->getWorkspaceName());
-            } catch (WorkspaceDoesNotExist) {
-                return;
-            }
-        }
-
         match ($eventInstance::class) {
             NodeAggregateWasRemoved::class => $this->removeNodes($eventInstance->getWorkspaceName(), $eventInstance->nodeAggregateId, $eventInstance->affectedCoveredDimensionSpacePoints),
             default => null
@@ -65,15 +56,6 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
 
     public function onAfterEvent(EventInterface $eventInstance, EventEnvelope $eventEnvelope): void
     {
-        if ($eventInstance instanceof EmbedsWorkspaceName) {
-            try {
-                // Skip if the workspace does not exist: "The source workspace missing does not exist" https://github.com/neos/neos-development-collection/pull/5270
-                $this->contentGraphReadModel->getContentGraph($eventInstance->getWorkspaceName());
-            } catch (WorkspaceDoesNotExist) {
-                return;
-            }
-        }
-
         // Note that we don't need to update the index for WorkspaceWasPublished, as updateNode will be invoked already with the published node and then clean up its previous usages in nested workspaces
         match ($eventInstance::class) {
             NodeAggregateWithNodeWasCreated::class => $this->updateNode($eventInstance->getWorkspaceName(), $eventInstance->nodeAggregateId, $eventInstance->originDimensionSpacePoint->toDimensionSpacePoint()),
