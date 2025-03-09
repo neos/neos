@@ -13,7 +13,7 @@ use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\Neos\AssetUsage\Service\AssetUsageIndexingService;
 
-readonly class AssetUsageIndexingProcessor
+final readonly class AssetUsageIndexingProcessor
 {
     public function __construct(
         private AssetUsageIndexingService $assetUsageIndexingService
@@ -65,7 +65,7 @@ readonly class AssetUsageIndexingProcessor
                     if (!$childNode->originDimensionSpacePoint->equals($childNode->dimensionSpacePoint)) {
                         continue;
                     }
-                    $this->assetUsageIndexingService->updateIndex($contentRepository->id, $childNode);
+                    $this->assetUsageIndexingService->updateIndex($contentRepository->id, $childNode, $allWorkspaces);
                     array_push($childNodes, ...iterator_to_array($subgraph->findChildNodes($childNode->aggregateId, FindChildNodesFilter::create())));
                 }
             }

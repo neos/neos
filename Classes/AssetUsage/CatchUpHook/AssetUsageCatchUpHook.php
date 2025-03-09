@@ -7,7 +7,6 @@ namespace Neos\Neos\AssetUsage\CatchUpHook;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
 use Neos\ContentRepository\Core\EventStore\EventInterface;
-use Neos\ContentRepository\Core\Feature\Common\EmbedsWorkspaceName;
 use Neos\ContentRepository\Core\Feature\DimensionSpaceAdjustment\Event\DimensionSpacePointWasMoved;
 use Neos\ContentRepository\Core\Feature\NodeCreation\Event\NodeAggregateWithNodeWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeModification\Event\NodePropertiesWereSet;
@@ -23,7 +22,6 @@ use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindDescendantNod
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
-use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Core\Subscription\SubscriptionStatus;
@@ -33,7 +31,7 @@ use Neos\Neos\AssetUsage\Service\AssetUsageIndexingService;
 /**
  * @internal
  */
-class AssetUsageCatchUpHook implements CatchUpHookInterface
+final class AssetUsageCatchUpHook implements CatchUpHookInterface
 {
     public function __construct(
         private readonly ContentRepositoryId $contentRepositoryId,
@@ -91,7 +89,8 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
 
         $this->assetUsageIndexingService->updateIndex(
             $this->contentRepositoryId,
-            $node
+            $node,
+            $this->contentGraphReadModel->findWorkspaces()
         );
     }
 
