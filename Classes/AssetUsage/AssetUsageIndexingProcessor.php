@@ -28,19 +28,17 @@ readonly class AssetUsageIndexingProcessor
         $variationGraph = $contentRepository->getVariationGraph();
 
         $allWorkspaces = $contentRepository->findWorkspaces();
-        $liveWorkspace = $contentRepository->findWorkspaceByName(WorkspaceName::forLive());
+        $liveWorkspace = $allWorkspaces->get(WorkspaceName::forLive());
         if ($liveWorkspace === null) {
             throw WorkspaceDoesNotExist::butWasSupposedTo(WorkspaceName::forLive());
         }
 
         $this->assetUsageIndexingService->pruneIndex($contentRepository->id);
 
-        $workspaces = [$liveWorkspace];
+        $workspacesDependingOnLive = $allWorkspaces->getDependantWorkspacesRecursively(WorkspaceName::forLive());
 
         $this->dispatchMessage($callback, sprintf('ContentRepository "%s"', $contentRepository->id->value));
-        while ($workspaces !== []) {
-            $workspace = array_shift($workspaces);
-
+        foreach ($workspacesDependingOnLive as $workspace) {
             $contentGraph = $contentRepository->getContentGraph($workspace->workspaceName);
             $this->dispatchMessage($callback, sprintf('  Workspace: %s', $contentGraph->getWorkspaceName()->value));
 
@@ -71,8 +69,6 @@ readonly class AssetUsageIndexingProcessor
                     array_push($childNodes, ...iterator_to_array($subgraph->findChildNodes($childNode->aggregateId, FindChildNodesFilter::create())));
                 }
             }
-
-            array_push($workspaces, ...iterator_to_array($allWorkspaces->getDependantWorkspaces($workspace->workspaceName)));
         }
     }
 
