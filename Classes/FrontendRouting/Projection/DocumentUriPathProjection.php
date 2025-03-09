@@ -47,7 +47,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         'shortcutTarget' => Types::JSON,
     ];
 
-    private ?DocumentUriPathFinder $stateAccessor = null;
+    private DocumentUriPathFinder $stateAccessor;
 
     /**
      * @var array<string, DocumentTypeClassification>
@@ -59,6 +59,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         private readonly Connection $dbal,
         private readonly string $tableNamePrefix,
     ) {
+        $this->stateAccessor = new DocumentUriPathFinder($this->dbal, $this->tableNamePrefix);
     }
 
     public function setUp(): void
@@ -101,7 +102,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
     public function resetState(): void
     {
         $this->truncateDatabaseTables();
-        $this->stateAccessor = null;
+        $this->stateAccessor->disableCache();
     }
 
     private function truncateDatabaseTables(): void
@@ -136,12 +137,6 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
 
     public function getState(): DocumentUriPathFinder
     {
-        if (!$this->stateAccessor) {
-            $this->stateAccessor = new DocumentUriPathFinder($this->dbal, $this->tableNamePrefix);
-
-            // !!! Bugfix #4253: during projection replay/update, it is crucial to have caches disabled.
-            $this->stateAccessor->disableCache();
-        }
         return $this->stateAccessor;
     }
 
