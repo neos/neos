@@ -231,11 +231,6 @@ class ChangeProjection implements ProjectionInterface
             return;
         }
         foreach ($event->affectedDimensionSpacePoints as $dimensionSpacePoint) {
-            if ($event->tag->equals(NeosSubtreeTag::removed())) {
-                $this->markAsDeleted($event->contentStreamId, $event->nodeAggregateId, OriginDimensionSpacePoint::fromDimensionSpacePoint($dimensionSpacePoint));
-                continue;
-            }
-
             $this->markAsChanged(
                 $event->contentStreamId,
                 $event->nodeAggregateId,
@@ -454,16 +449,6 @@ class ChangeProjection implements ProjectionInterface
                 $change->moved = true;
             }
         );
-    }
-
-    private function markAsDeleted(
-        ContentStreamId $contentStreamId,
-        NodeAggregateId $nodeAggregateId,
-        OriginDimensionSpacePoint $originDimensionSpacePoint,
-    ): void {
-        $this->modifyChange($contentStreamId, $nodeAggregateId, $originDimensionSpacePoint, static function (Change $change) {
-            $change->deleted = true;
-        });
     }
 
     private function modifyChange(

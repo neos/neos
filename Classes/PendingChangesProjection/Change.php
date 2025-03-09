@@ -41,6 +41,7 @@ final class Change
         public bool $created,
         public bool $changed,
         public bool $moved,
+        /** @deprecated only for hard removals inside a workspace */
         public bool $deleted,
         private ?NodeAggregateId $removalAttachmentPoint = null
     ) {
