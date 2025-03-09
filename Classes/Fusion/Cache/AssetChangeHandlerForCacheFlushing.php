@@ -50,7 +50,12 @@ final readonly class AssetChangeHandlerForCacheFlushing
 
                 foreach ($usages as $usage) {
                     $allWorkspaces = $allWorkspaces ??= $contentRepository->findWorkspaces();
-                    foreach ($allWorkspaces->getDependantWorkspacesRecursively($usage->workspaceName) as $workspace) {
+                    $usageWorkspace = $allWorkspaces->get($usage->workspaceName);
+                    if ($usageWorkspace === null) {
+                        continue;
+                    }
+                    $dependantWorkspaces = $allWorkspaces->getDependantWorkspacesRecursively($usage->workspaceName);
+                    foreach ([$usageWorkspace, ...$dependantWorkspaces] as $workspace) {
                         $contentGraph = $contentRepository->getContentGraph($workspace->workspaceName);
                         $nodeAggregate = $contentGraph->findNodeAggregateById($usage->nodeAggregateId);
                         if ($nodeAggregate === null) {
