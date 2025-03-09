@@ -38,7 +38,7 @@ final readonly class AssetUsageIndexingProcessor
         $workspacesDependingOnLive = $allWorkspaces->getDependantWorkspacesRecursively(WorkspaceName::forLive());
 
         $this->dispatchMessage($callback, sprintf('ContentRepository "%s"', $contentRepository->id->value));
-        foreach ($workspacesDependingOnLive as $workspace) {
+        foreach ([$liveWorkspace, ...$workspacesDependingOnLive] as $workspace) {
             $contentGraph = $contentRepository->getContentGraph($workspace->workspaceName);
             $this->dispatchMessage($callback, sprintf('  Workspace: %s', $contentGraph->getWorkspaceName()->value));
 
