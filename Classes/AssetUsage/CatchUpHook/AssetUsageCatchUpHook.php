@@ -16,6 +16,7 @@ use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodePeerVariantWasCr
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeSpecializationVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Event\WorkspaceWasDiscarded;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Event\WorkspaceWasRebased;
+use Neos\ContentRepository\Core\NodeType\NodeTypeManager;
 use Neos\ContentRepository\Core\Projection\CatchUpHook\CatchUpHookInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindDescendantNodesFilter;
@@ -36,6 +37,7 @@ final class AssetUsageCatchUpHook implements CatchUpHookInterface
     public function __construct(
         private readonly ContentRepositoryId $contentRepositoryId,
         private readonly ContentGraphReadModelInterface $contentGraphReadModel,
+        private readonly NodeTypeManager $nodeTypeManager,
         private readonly AssetUsageIndexingService $assetUsageIndexingService
     ) {
     }
@@ -87,9 +89,15 @@ final class AssetUsageCatchUpHook implements CatchUpHookInterface
             return;
         }
 
+        $nodeType = $this->nodeTypeManager->getNodeType($node->nodeTypeName);
+        if ($nodeType === null) {
+            return;
+        }
+
         $this->assetUsageIndexingService->updateIndex(
             $this->contentRepositoryId,
             $node,
+            $nodeType,
             $this->contentGraphReadModel->findWorkspaces()
         );
     }

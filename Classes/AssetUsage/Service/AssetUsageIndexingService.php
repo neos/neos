@@ -15,7 +15,6 @@ use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\Workspace;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Core\SharedModel\Workspace\Workspaces;
-use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Persistence\Doctrine\PersistenceManager;
 use Neos\Media\Domain\Model\AssetInterface;
 use Neos\Media\Domain\Model\AssetVariantInterface;
@@ -41,14 +40,13 @@ final class AssetUsageIndexingService
     private array $originalAssetIdMappingRuntimeCache = [];
 
     public function __construct(
-        private readonly ContentRepositoryRegistry $contentRepositoryRegistry,
         private readonly AssetUsageRepository $assetUsageRepository,
         private readonly AssetRepository $assetRepository,
         private readonly PersistenceManager $persistenceManager,
     ) {
     }
 
-    public function updateIndex(ContentRepositoryId $contentRepositoryId, Node $node, Workspaces $allWorkspaces): void
+    public function updateIndex(ContentRepositoryId $contentRepositoryId, Node $node, NodeType $nodeType, Workspaces $allWorkspaces): void
     {
         if ($allWorkspaces->get($node->workspaceName) === null) {
             throw WorkspaceDoesNotExist::butWasSupposedTo($node->workspaceName);
@@ -56,12 +54,6 @@ final class AssetUsageIndexingService
 
         $workspaceBases = $allWorkspaces->getBaseWorkspaces($node->workspaceName)->map(fn (Workspace $workspace) => $workspace->workspaceName);
         $workspaceDependents = $allWorkspaces->getDependantWorkspacesRecursively($node->workspaceName)->map(fn (Workspace $workspace) => $workspace->workspaceName);
-
-        $nodeType = $this->contentRepositoryRegistry->get($contentRepositoryId)->getNodeTypeManager()->getNodeType($node->nodeTypeName);
-
-        if ($nodeType === null) {
-            return;
-        }
 
         // 1. Get all asset usages of given node.
         $assetIdsByPropertyOfNode = $this->getAssetIdsByProperty($nodeType, $node->properties);

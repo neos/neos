@@ -65,7 +65,12 @@ final readonly class AssetUsageIndexingProcessor
                     if (!$childNode->originDimensionSpacePoint->equals($childNode->dimensionSpacePoint)) {
                         continue;
                     }
-                    $this->assetUsageIndexingService->updateIndex($contentRepository->id, $childNode, $allWorkspaces);
+
+                    $nodeType = $contentRepository->getNodeTypeManager()->getNodeType($childNode->nodeTypeName);
+                    if ($nodeType === null) {
+                        return;
+                    }
+                    $this->assetUsageIndexingService->updateIndex($contentRepository->id, $childNode, $nodeType, $allWorkspaces);
                     array_push($childNodes, ...iterator_to_array($subgraph->findChildNodes($childNode->aggregateId, FindChildNodesFilter::create())));
                 }
             }
