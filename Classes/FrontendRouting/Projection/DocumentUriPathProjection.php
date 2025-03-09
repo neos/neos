@@ -101,7 +101,6 @@ final class DocumentUriPathProjection implements ProjectionInterface
     public function resetState(): void
     {
         $this->truncateDatabaseTables();
-        $this->documentUriPathFinder->resetRuntimeCaches();
     }
 
     private function truncateDatabaseTables(): void
@@ -115,7 +114,6 @@ final class DocumentUriPathProjection implements ProjectionInterface
 
     public function apply(EventInterface $event, EventEnvelope $eventEnvelope): void
     {
-        $this->documentUriPathFinder->resetRuntimeCaches(disable: true);
         match ($event::class) {
             RootNodeAggregateWithNodeWasCreated::class => $this->whenRootNodeAggregateWithNodeWasCreated($event),
             RootNodeAggregateDimensionsWereUpdated::class => $this->whenRootNodeAggregateDimensionsWereUpdated($event),
@@ -133,7 +131,6 @@ final class DocumentUriPathProjection implements ProjectionInterface
             DimensionShineThroughWasAdded::class => $this->whenDimensionShineThroughWasAdded($event),
             default => null,
         };
-        $this->documentUriPathFinder->resetRuntimeCaches();
     }
 
     public function getState(): DocumentUriPathFinder
