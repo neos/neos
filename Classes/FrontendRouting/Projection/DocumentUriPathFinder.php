@@ -279,17 +279,9 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
         return $nodeAggregateId->value . '#' . $dimensionSpacePointHash;
     }
 
-    public function purgeCacheFor(DocumentNodeInfo $nodeInfo): void
+    public function resetRuntimeCaches(bool $disable = false): void
     {
-        if ($this->cacheEnabled) {
-            $cacheKey = $this->calculateCacheKey($nodeInfo->getNodeAggregateId(), $nodeInfo->getDimensionSpacePointHash());
-            unset($this->getByIdAndDimensionSpacePointHashCache[$cacheKey]);
-        }
-    }
-
-    public function disableCache(): void
-    {
-        $this->cacheEnabled = false;
+        $this->cacheEnabled = !$disable;
         $this->getByIdAndDimensionSpacePointHashCache = [];
     }
 

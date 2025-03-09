@@ -29,7 +29,6 @@ use Neos\ContentRepository\Core\NodeType\NodeTypeManager;
 use Neos\ContentRepository\Core\NodeType\NodeTypeName;
 use Neos\ContentRepository\Core\Projection\ProjectionInterface;
 use Neos\ContentRepository\Core\Projection\ProjectionStatus;
-use Neos\ContentRepository\Core\Projection\WithMarkStaleInterface;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Node\PropertyName;
 use Neos\EventStore\Model\EventEnvelope;
@@ -41,7 +40,7 @@ use Neos\Neos\FrontendRouting\Exception\NodeNotFoundException;
  * @implements ProjectionInterface<DocumentUriPathFinder>
  * @internal implementation detail to manage document node uris. For resolving please use the NodeUriBuilder and for matching the Router.
  */
-final class DocumentUriPathProjection implements ProjectionInterface, WithMarkStaleInterface
+final class DocumentUriPathProjection implements ProjectionInterface
 {
     public const COLUMN_TYPES_DOCUMENT_URIS = [
         'shortcutTarget' => Types::JSON,
@@ -102,7 +101,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
     public function resetState(): void
     {
         $this->truncateDatabaseTables();
-        $this->documentUriPathFinder->disableCache();
+        $this->documentUriPathFinder->resetRuntimeCaches();
     }
 
     private function truncateDatabaseTables(): void
@@ -116,6 +115,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
 
     public function apply(EventInterface $event, EventEnvelope $eventEnvelope): void
     {
+        $this->documentUriPathFinder->resetRuntimeCaches(disable: true);
         match ($event::class) {
             RootNodeAggregateWithNodeWasCreated::class => $this->whenRootNodeAggregateWithNodeWasCreated($event),
             RootNodeAggregateDimensionsWereUpdated::class => $this->whenRootNodeAggregateDimensionsWereUpdated($event),
@@ -133,6 +133,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
             DimensionShineThroughWasAdded::class => $this->whenDimensionShineThroughWasAdded($event),
             default => null,
         };
+        $this->documentUriPathFinder->resetRuntimeCaches();
     }
 
     public function getState(): DocumentUriPathFinder
@@ -494,7 +495,6 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 'nodeAggregateId' => $node->getNodeAggregateId()->value,
                 'childNodeAggregateIdPathPrefix' => $node->getNodeAggregateIdPath() . '/%',
             ]);
-            $this->documentUriPathFinder->purgeCacheFor($node);
         }
     }
 
@@ -565,7 +565,6 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                     'childNodeAggregateIdPathPrefix' => $node->getNodeAggregateIdPath() . '/%',
                 ]
             );
-            $this->documentUriPathFinder->purgeCacheFor($node);
         }
     }
 
@@ -590,8 +589,6 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 $event->newParentNodeAggregateId,
                 $succeedingSiblingForCoverage->nodeAggregateId
             );
-
-            $this->documentUriPathFinder->purgeCacheFor($node);
         }
     }
 
@@ -979,10 +976,5 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 ), 1599646608, $e);
             }
         }
-    }
-
-    public function markStale(): void
-    {
-        $this->documentUriPathFinder->disableCache();
     }
 }
