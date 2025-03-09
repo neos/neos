@@ -52,16 +52,13 @@ use Neos\Neos\Domain\SubtreeTagging\NeosSubtreeTag;
  */
 class ChangeProjection implements ProjectionInterface
 {
-    /**
-     * @var ChangeFinder|null Cache for the ChangeFinder returned by {@see getState()},
-     * so that always the same instance is returned
-     */
-    private ?ChangeFinder $changeFinder = null;
+    private ChangeFinder $changeFinder;
 
     public function __construct(
         private readonly Connection $dbal,
         private readonly string $tableNamePrefix,
     ) {
+        $this->changeFinder = new ChangeFinder($this->dbal, $this->tableNamePrefix);
     }
 
     /**
@@ -156,12 +153,6 @@ class ChangeProjection implements ProjectionInterface
 
     public function getState(): ChangeFinder
     {
-        if (!$this->changeFinder) {
-            $this->changeFinder = new ChangeFinder(
-                $this->dbal,
-                $this->tableNamePrefix
-            );
-        }
         return $this->changeFinder;
     }
 
