@@ -347,12 +347,13 @@ final class WorkspacePublishingService
         NodeAggregateId $ancestorId,
         NodeTypeName $ancestorNodeTypeName
     ): NodeAggregateIds {
+        $contentGraph = $contentRepository->getContentGraph($workspaceName);
+
         $nodeIdsToPublishOrDiscard = [];
         foreach ($this->pendingWorkspaceChangesInternal($contentRepository, $workspaceName) as $change) {
             if (
                 !$this->isChangePublishableWithinAncestorScope(
-                    $contentRepository,
-                    $workspaceName,
+                    $contentGraph,
                     $change,
                     $ancestorNodeTypeName,
                     $ancestorId
@@ -380,14 +381,13 @@ final class WorkspacePublishingService
     }
 
     private function isChangePublishableWithinAncestorScope(
-        ContentRepository $contentRepository,
-        WorkspaceName $workspaceName,
+        ContentGraphInterface $contentGraph,
         Change $change,
         NodeTypeName $ancestorNodeTypeName,
         NodeAggregateId $ancestorId
     ): bool {
         if ($change->originDimensionSpacePoint) {
-            $subgraph = $contentRepository->getContentGraph($workspaceName)->getSubgraph(
+            $subgraph = $contentGraph->getSubgraph(
                 $change->originDimensionSpacePoint->toDimensionSpacePoint(),
                 VisibilityConstraints::createEmpty()
             );
@@ -402,7 +402,7 @@ final class WorkspacePublishingService
             return $actualAncestorNode?->aggregateId->equals($ancestorId) ?? false;
         } else {
             return $this->findAncestorAggregateIds(
-                $contentRepository->getContentGraph($workspaceName),
+                $contentGraph,
                 $change->nodeAggregateId
             )->contain($ancestorId);
         }

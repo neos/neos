@@ -77,6 +77,29 @@ Feature: Soft remove node aggregate with node without dimensions
       | nody-mc-nodeface | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
     And I expect the ChangeProjection to have no changes in "cs-identifier"
 
+  Scenario: Soft remove and un-remove node aggregate in user-workspace
+    Given the command TagSubtree is executed with payload:
+      | Key                          | Value                |
+      | workspaceName                | "user-workspace"     |
+      | nodeAggregateId              | "nody-mc-nodeface"   |
+      | coveredDimensionSpacePoint   | {"language": "de"}   |
+      | nodeVariantSelectionStrategy | "allSpecializations" |
+      | tag                          | "removed"            |
+
+    Given the command UntagSubtree is executed with payload:
+      | Key                          | Value                |
+      | workspaceName                | "user-workspace"     |
+      | nodeAggregateId              | "nody-mc-nodeface"   |
+      | coveredDimensionSpacePoint   | {"language": "de"}   |
+      | nodeVariantSelectionStrategy | "allSpecializations" |
+      | tag                          | "removed"            |
+
+    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+      | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
+      | nody-mc-nodeface | 0       | 1       | 0     | 0       | {"language": "de"}        |
+      | nody-mc-nodeface | 0       | 1       | 0     | 0       | {"language": "gsw"}       |
+    And I expect the ChangeProjection to have no changes in "cs-identifier"
+
   Scenario: Soft remove node aggregate in live workspace
     Given the command TagSubtree is executed with payload:
       | Key                          | Value                |
