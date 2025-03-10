@@ -138,18 +138,10 @@ final readonly class SoftRemovalGarbageCollector
      */
     private function withVisibleInDependingWorkspacesConflicts(SoftRemovedNodes $softRemovedNodes, ContentRepository $contentRepository): SoftRemovedNodes
     {
-        $allWorkspace = $contentRepository->findWorkspaces();
+        $workspacesDependingOnLive = $contentRepository->findWorkspaces()->getDependantWorkspacesRecursively(WorkspaceName::forLive());
 
-        $namesOfWorkspacesDependingOnLive = [];
-        $stack = iterator_to_array($allWorkspace->getDependantWorkspaces(WorkspaceName::forLive()));
-        while ($stack !== []) {
-            $workspace = array_shift($stack);
-            $namesOfWorkspacesDependingOnLive[] = $workspace->workspaceName;
-            $stack = [...$stack, ...iterator_to_array($allWorkspace->getDependantWorkspaces($workspace->workspaceName))];
-        }
-
-        foreach ($namesOfWorkspacesDependingOnLive as $workspaceName) {
-            $contentGraph = $contentRepository->getContentGraph($workspaceName);
+        foreach ($workspacesDependingOnLive as $workspace) {
+            $contentGraph = $contentRepository->getContentGraph($workspace->workspaceName);
 
             $nodeAggregatesInWorkspace = $contentGraph->findNodeAggregatesByIds($softRemovedNodes->toNodeAggregateIds());
 

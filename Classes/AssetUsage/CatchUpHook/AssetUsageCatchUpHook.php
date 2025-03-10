@@ -7,7 +7,6 @@ namespace Neos\Neos\AssetUsage\CatchUpHook;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePoint;
 use Neos\ContentRepository\Core\DimensionSpace\DimensionSpacePointSet;
 use Neos\ContentRepository\Core\EventStore\EventInterface;
-use Neos\ContentRepository\Core\Feature\Common\EmbedsWorkspaceName;
 use Neos\ContentRepository\Core\Feature\DimensionSpaceAdjustment\Event\DimensionSpacePointWasMoved;
 use Neos\ContentRepository\Core\Feature\NodeCreation\Event\NodeAggregateWithNodeWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeModification\Event\NodePropertiesWereSet;
@@ -17,13 +16,13 @@ use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodePeerVariantWasCr
 use Neos\ContentRepository\Core\Feature\NodeVariation\Event\NodeSpecializationVariantWasCreated;
 use Neos\ContentRepository\Core\Feature\WorkspacePublication\Event\WorkspaceWasDiscarded;
 use Neos\ContentRepository\Core\Feature\WorkspaceRebase\Event\WorkspaceWasRebased;
+use Neos\ContentRepository\Core\NodeType\NodeTypeManager;
 use Neos\ContentRepository\Core\Projection\CatchUpHook\CatchUpHookInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\ContentGraphReadModelInterface;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindDescendantNodesFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepository\Core\Projection\ContentGraph\VisibilityConstraints;
 use Neos\ContentRepository\Core\SharedModel\ContentRepository\ContentRepositoryId;
-use Neos\ContentRepository\Core\SharedModel\Exception\WorkspaceDoesNotExist;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Core\Subscription\SubscriptionStatus;
@@ -33,11 +32,12 @@ use Neos\Neos\AssetUsage\Service\AssetUsageIndexingService;
 /**
  * @internal
  */
-class AssetUsageCatchUpHook implements CatchUpHookInterface
+final class AssetUsageCatchUpHook implements CatchUpHookInterface
 {
     public function __construct(
         private readonly ContentRepositoryId $contentRepositoryId,
         private readonly ContentGraphReadModelInterface $contentGraphReadModel,
+        private readonly NodeTypeManager $nodeTypeManager,
         private readonly AssetUsageIndexingService $assetUsageIndexingService
     ) {
     }
@@ -89,9 +89,16 @@ class AssetUsageCatchUpHook implements CatchUpHookInterface
             return;
         }
 
+        $nodeType = $this->nodeTypeManager->getNodeType($node->nodeTypeName);
+        if ($nodeType === null) {
+            return;
+        }
+
         $this->assetUsageIndexingService->updateIndex(
             $this->contentRepositoryId,
-            $node
+            $node,
+            $nodeType,
+            $this->contentGraphReadModel->findWorkspaces()
         );
     }
 
