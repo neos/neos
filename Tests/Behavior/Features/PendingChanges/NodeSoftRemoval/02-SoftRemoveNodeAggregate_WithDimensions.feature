@@ -120,6 +120,8 @@ Feature: Soft remove node aggregate with node
       | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
       | nody-mc-nodeface | 0       | 1       | 0     | 0       | {"language": "de"}        |
       | nody-mc-nodeface | 0       | 1       | 0     | 0       | {"language": "gsw"}       |
+      | other-removal    | 0       | 0       | 0     | 1       | {"language": "de"}        |
+      | other-removal    | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
     Then I expect to have no changes in workspace "live"
 
   Scenario: Soft remove nodes in live workspace

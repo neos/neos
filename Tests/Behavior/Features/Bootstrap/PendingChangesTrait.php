@@ -154,10 +154,17 @@ trait PendingChangesTrait
 
         $targetWorkspace = $this->currentContentRepository->findWorkspaceByName($sourceWorkspace->baseWorkspaceName);
 
+        $publishCorrelationId = null;
+
         // refetch workspace with new cs id
         $sourceWorkspace = $this->currentContentRepository->findWorkspaceByName(WorkspaceName::fromString($workspace));
         $remainingEvents = [];
         foreach ($this->getEventStore()->load(ContentStreamEventStreamName::fromContentStreamId($sourceWorkspace->currentContentStreamId)->getEventStreamName())->withMinimumSequenceNumber($nextSequenceNumber) as $eventEnvelope) {
+            assert($eventEnvelope->event->correlationId !== null);
+            $publishCorrelationId ??= $eventEnvelope->event->correlationId;
+            if ($eventEnvelope->event->correlationId->value !== $publishCorrelationId->value) {
+                break;
+            }
             if (in_array(EmbedsNodeAggregateId::class, class_implements($eventNormaliser->getEventClassName($eventEnvelope->event)))) {
                 $remainingEvents[] = $eventEnvelope->event;
             }
@@ -166,6 +173,11 @@ trait PendingChangesTrait
 
         $publishedEvents = [];
         foreach ($this->getEventStore()->load(ContentStreamEventStreamName::fromContentStreamId($targetWorkspace->currentContentStreamId)->getEventStreamName())->withMinimumSequenceNumber($nextSequenceNumber) as $eventEnvelope) {
+            assert($eventEnvelope->event->correlationId !== null);
+            $publishCorrelationId ??= $eventEnvelope->event->correlationId;
+            if ($eventEnvelope->event->correlationId->value !== $publishCorrelationId->value) {
+                break;
+            }
             if (in_array(EmbedsNodeAggregateId::class, class_implements($eventNormaliser->getEventClassName($eventEnvelope->event)))) {
                 $publishedEvents[] = $eventEnvelope->event;
             }
