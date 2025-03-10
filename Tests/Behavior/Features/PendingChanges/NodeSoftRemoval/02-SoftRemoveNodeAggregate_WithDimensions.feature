@@ -77,7 +77,7 @@ Feature: Soft remove node aggregate with node without dimensions
       | nody-mc-nodeface | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
     And I expect the ChangeProjection to have no changes in "cs-identifier"
 
-  Scenario: Soft remove node aggregate in user-workspace
+  Scenario: Soft remove and un-remove node aggregate in user-workspace
     Given the command TagSubtree is executed with payload:
       | Key                          | Value                |
       | workspaceName                | "user-workspace"     |
