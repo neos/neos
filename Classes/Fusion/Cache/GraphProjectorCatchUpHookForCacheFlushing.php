@@ -157,11 +157,7 @@ class GraphProjectorCatchUpHookForCacheFlushing implements CatchUpHookInterface
             // cleared, leading to presumably duplicate nodes in the UI.
             || $eventInstance instanceof NodeAggregateWasMoved
         ) {
-            try {
-                $contentGraph = $this->contentGraphReadModel->getContentGraph($eventInstance->workspaceName);
-            } catch (WorkspaceDoesNotExist) {
-                return;
-            }
+            $contentGraph = $this->contentGraphReadModel->getContentGraph($eventInstance->workspaceName);
             $nodeAggregate = $contentGraph->findNodeAggregateById(
                 $eventInstance->getNodeAggregateId()
             );
@@ -197,11 +193,7 @@ class GraphProjectorCatchUpHookForCacheFlushing implements CatchUpHookInterface
             && $eventInstance instanceof EmbedsNodeAggregateId
             && $eventInstance instanceof EmbedsWorkspaceName
         ) {
-            try {
-                $contentGraph = $this->contentGraphReadModel->getContentGraph($eventInstance->getWorkspaceName());
-            } catch (WorkspaceDoesNotExist) {
-                return;
-            }
+            $contentGraph = $this->contentGraphReadModel->getContentGraph($eventInstance->getWorkspaceName());
             $nodeAggregate = $contentGraph->findNodeAggregateById(
                 $eventInstance->getNodeAggregateId()
             );

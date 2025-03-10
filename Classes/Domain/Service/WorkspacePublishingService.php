@@ -44,6 +44,7 @@ use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Annotations as Flow;
 use Neos\Neos\Domain\Model\DiscardingResult;
 use Neos\Neos\Domain\Model\PublishingResult;
+use Neos\Neos\Domain\SubtreeTagging\SoftRemoval\SoftRemovalGarbageCollector;
 use Neos\Neos\PendingChangesProjection\Change;
 use Neos\Neos\PendingChangesProjection\ChangeFinder;
 use Neos\Neos\PendingChangesProjection\Changes;
@@ -58,6 +59,7 @@ final class WorkspacePublishingService
 {
     public function __construct(
         private readonly ContentRepositoryRegistry $contentRepositoryRegistry,
+        private readonly SoftRemovalGarbageCollector $softRemovalGarbageCollector
     ) {
     }
 
@@ -86,6 +88,7 @@ final class WorkspacePublishingService
     {
         $rebaseCommand = RebaseWorkspace::create($workspaceName)->withErrorHandlingStrategy($rebaseErrorHandlingStrategy);
         $this->contentRepositoryRegistry->get($contentRepositoryId)->handle($rebaseCommand);
+        $this->softRemovalGarbageCollector->run($contentRepositoryId);
     }
 
     /**
@@ -100,6 +103,7 @@ final class WorkspacePublishingService
         }
         $numberOfPendingChanges = $this->countPendingWorkspaceChangesInternal($contentRepository, $workspaceName);
         $this->contentRepositoryRegistry->get($contentRepositoryId)->handle(PublishWorkspace::create($workspaceName));
+        $this->softRemovalGarbageCollector->run($contentRepositoryId);
         return new PublishingResult($numberOfPendingChanges, $crWorkspace->baseWorkspaceName);
     }
 
@@ -129,6 +133,7 @@ final class WorkspacePublishingService
         );
 
         $this->publishNodes($contentRepository, $workspaceName, $nodeIdsToPublish);
+        $this->softRemovalGarbageCollector->run($contentRepositoryId);
 
         return new PublishingResult(
             count($nodeIdsToPublish),
@@ -162,6 +167,7 @@ final class WorkspacePublishingService
         );
 
         $this->publishNodes($contentRepository, $workspaceName, $nodeIdsToPublish);
+        $this->softRemovalGarbageCollector->run($contentRepositoryId);
 
         return new PublishingResult(
             count($nodeIdsToPublish),
@@ -180,6 +186,7 @@ final class WorkspacePublishingService
         $numberOfChangesToBeDiscarded = $this->countPendingWorkspaceChangesInternal($contentRepository, $workspaceName);
 
         $contentRepository->handle(DiscardWorkspace::create($workspaceName));
+        $this->softRemovalGarbageCollector->run($contentRepositoryId);
 
         return new DiscardingResult($numberOfChangesToBeDiscarded);
     }
@@ -207,6 +214,7 @@ final class WorkspacePublishingService
         );
 
         $this->discardNodes($contentRepository, $workspaceName, $nodeIdsToDiscard);
+        $this->softRemovalGarbageCollector->run($contentRepositoryId);
 
         return new DiscardingResult(
             count($nodeIdsToDiscard)
@@ -236,6 +244,7 @@ final class WorkspacePublishingService
         );
 
         $this->discardNodes($contentRepository, $workspaceName, $nodeIdsToDiscard);
+        $this->softRemovalGarbageCollector->run($contentRepositoryId);
 
         return new DiscardingResult(
             count($nodeIdsToDiscard)
@@ -338,12 +347,13 @@ final class WorkspacePublishingService
         NodeAggregateId $ancestorId,
         NodeTypeName $ancestorNodeTypeName
     ): NodeAggregateIds {
+        $contentGraph = $contentRepository->getContentGraph($workspaceName);
+
         $nodeIdsToPublishOrDiscard = [];
         foreach ($this->pendingWorkspaceChangesInternal($contentRepository, $workspaceName) as $change) {
             if (
                 !$this->isChangePublishableWithinAncestorScope(
-                    $contentRepository,
-                    $workspaceName,
+                    $contentGraph,
                     $change,
                     $ancestorNodeTypeName,
                     $ancestorId
@@ -371,14 +381,13 @@ final class WorkspacePublishingService
     }
 
     private function isChangePublishableWithinAncestorScope(
-        ContentRepository $contentRepository,
-        WorkspaceName $workspaceName,
+        ContentGraphInterface $contentGraph,
         Change $change,
         NodeTypeName $ancestorNodeTypeName,
         NodeAggregateId $ancestorId
     ): bool {
         if ($change->originDimensionSpacePoint) {
-            $subgraph = $contentRepository->getContentGraph($workspaceName)->getSubgraph(
+            $subgraph = $contentGraph->getSubgraph(
                 $change->originDimensionSpacePoint->toDimensionSpacePoint(),
                 VisibilityConstraints::createEmpty()
             );
@@ -393,7 +402,7 @@ final class WorkspacePublishingService
             return $actualAncestorNode?->aggregateId->equals($ancestorId) ?? false;
         } else {
             return $this->findAncestorAggregateIds(
-                $contentRepository->getContentGraph($workspaceName),
+                $contentGraph,
                 $change->nodeAggregateId
             )->contain($ancestorId);
         }

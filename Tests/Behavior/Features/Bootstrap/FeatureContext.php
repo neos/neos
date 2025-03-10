@@ -53,6 +53,8 @@ class FeatureContext implements BehatContext
 
     use NodeDuplicationTrait;
 
+    use SoftRemovalGarbageCollectionTrait;
+
     protected Environment $environment;
 
     protected ContentRepositoryRegistry $contentRepositoryRegistry;

@@ -99,6 +99,29 @@ Feature: Soft remove node aggregate with node
       | nodeVariantSelectionStrategy | "allSpecializations" |
       | tag                          | "removed"            |
 
+  Scenario: Soft remove and un-remove node aggregate in user-workspace
+    Given the command TagSubtree is executed with payload:
+      | Key                          | Value                |
+      | workspaceName                | "user-workspace"     |
+      | nodeAggregateId              | "nody-mc-nodeface"   |
+      | coveredDimensionSpacePoint   | {"language": "de"}   |
+      | nodeVariantSelectionStrategy | "allSpecializations" |
+      | tag                          | "removed"            |
+
+    Given the command UntagSubtree is executed with payload:
+      | Key                          | Value                |
+      | workspaceName                | "user-workspace"     |
+      | nodeAggregateId              | "nody-mc-nodeface"   |
+      | coveredDimensionSpacePoint   | {"language": "de"}   |
+      | nodeVariantSelectionStrategy | "allSpecializations" |
+      | tag                          | "removed"            |
+
+    Then I expect to have the following changes in workspace "user-workspace":
+      | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
+      | nody-mc-nodeface | 0       | 1       | 0     | 0       | {"language": "de"}        |
+      | nody-mc-nodeface | 0       | 1       | 0     | 0       | {"language": "gsw"}       |
+    Then I expect to have no changes in workspace "live"
+
   Scenario: Soft remove nodes in live workspace
     Given the command TagSubtree is executed with payload:
       | Key                          | Value                    |

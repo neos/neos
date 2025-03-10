@@ -34,10 +34,12 @@ use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Node\PropertyName;
 use Neos\EventStore\Model\EventEnvelope;
 use Neos\Neos\Domain\Model\SiteNodeName;
+use Neos\Neos\Domain\SubtreeTagging\NeosSubtreeTag;
 use Neos\Neos\FrontendRouting\Exception\NodeNotFoundException;
 
 /**
  * @implements ProjectionInterface<DocumentUriPathFinder>
+ * @internal implementation detail to manage document node uris. For resolving please use the NodeUriBuilder and for matching the Router.
  */
 final class DocumentUriPathProjection implements ProjectionInterface, WithMarkStaleInterface
 {
@@ -289,6 +291,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 'shortcutTarget' => $shortcutTarget,
                 'nodeTypeName' => $event->nodeTypeName->value,
                 'disabled' => $parentNode->getDisableLevel(),
+                'removed' => $parentNode->getRemovedLevel(),
                 'isPlaceholder' => (int)($documentTypeClassification === DocumentTypeClassification::CLASSIFICATION_UNKNOWN)
             ]);
         }
@@ -415,7 +418,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
 
     private function whenSubtreeWasTagged(SubtreeWasTagged $event): void
     {
-        if ($event->tag->value !== 'disabled' || !$event->workspaceName->isLive()) {
+        if (!$event->workspaceName->isLive() || !($event->tag === NeosSubtreeTag::disabled() || $event->tag === NeosSubtreeTag::removed())) {
             return;
         }
         foreach ($event->affectedDimensionSpacePoints as $dimensionSpacePoint) {
@@ -427,11 +430,8 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 // Probably not a document node
                 continue;
             }
-            # node is already explicitly disabled
-            if ($this->isNodeExplicitlyDisabled($node)) {
-                return;
-            }
-            $this->updateNodeQuery('SET disabled = disabled + 1
+            $tagColumn = $event->tag->value;
+            $this->updateNodeQuery('SET ' . $tagColumn . ' = ' . $tagColumn . ' + 1
                     WHERE dimensionSpacePointHash = :dimensionSpacePointHash
                         AND (
                             nodeAggregateId = :nodeAggregateId
@@ -446,9 +446,10 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
 
     private function whenSubtreeWasUntagged(SubtreeWasUntagged $event): void
     {
-        if ($event->tag->value !== 'disabled' || !$event->workspaceName->isLive()) {
+        if (!$event->workspaceName->isLive() || !($event->tag === NeosSubtreeTag::disabled() || $event->tag === NeosSubtreeTag::removed())) {
             return;
         }
+
         foreach ($event->affectedDimensionSpacePoints as $dimensionSpacePoint) {
             $node = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
                 $event->nodeAggregateId,
@@ -458,11 +459,8 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 // Probably not a document node
                 continue;
             }
-            # node is not explicitly disabled, so we must not re-enable it
-            if (!$this->isNodeExplicitlyDisabled($node)) {
-                return;
-            }
-            $this->updateNodeQuery('SET disabled = disabled - 1
+            $tagColumn = $event->tag->value;
+            $this->updateNodeQuery('SET ' . $tagColumn . ' = ' . $tagColumn . ' - 1
                 WHERE dimensionSpacePointHash = :dimensionSpacePointHash
                     AND (
                         nodeAggregateId = :nodeAggregateId
@@ -624,9 +622,19 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
             return;
         }
 
+        $oldParentNode = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
+            $node->getParentNodeAggregateId(),
+            $node->getDimensionSpacePointHash()
+        ));
+
         $disabledDelta = $newParentNode->getDisableLevel() - $node->getDisableLevel();
-        if ($this->isNodeExplicitlyDisabled($node)) {
+        if ($this->isNodeExplicitlyDisabled($node, $oldParentNode)) {
             $disabledDelta++;
+        }
+
+        $removedDelta = $newParentNode->getRemovedLevel() - $node->getRemovedLevel();
+        if ($this->isNodeExplicitlyRemoved($node, $oldParentNode)) {
+            $removedDelta++;
         }
 
         $this->updateNodeQuery(
@@ -634,7 +642,8 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
             'SET
                 nodeAggregateIdPath = TRIM(TRAILING "/" FROM CONCAT(:newParentNodeAggregateIdPath, "/", TRIM(LEADING "/" FROM SUBSTRING(nodeAggregateIdPath, :sourceNodeAggregateIdPathOffset)))),
                 uriPath = TRIM("/" FROM CONCAT(:newParentUriPath, "/", TRIM(LEADING "/" FROM SUBSTRING(uriPath, :sourceUriPathOffset)))),
-                disabled = disabled + ' . $disabledDelta . '
+                disabled = disabled + ' . $disabledDelta . ',
+                removed = removed + ' . $removedDelta . '
             WHERE
                 dimensionSpacePointHash = :dimensionSpacePointHash
                     AND (nodeAggregateId = :nodeAggregateId
@@ -673,17 +682,26 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         );
     }
 
-    private function isNodeExplicitlyDisabled(DocumentNodeInfo $node): bool
+    private function isNodeExplicitlyDisabled(DocumentNodeInfo $node, DocumentNodeInfo|null $parentNode): bool
     {
-        if (!$node->isDisabled()) {
+        if ($node->getDisableLevel() === 0) {
             return false;
         }
-        $parentNode = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
-            $node->getParentNodeAggregateId(),
-            $node->getDimensionSpacePointHash()
-        ));
-        $parentDisabledLevel = $parentNode !== null ? $parentNode->getDisableLevel() : 0;
-        return $node->getDisableLevel() - $parentDisabledLevel !== 0;
+        if ($parentNode === null) {
+            return $node->getDisableLevel() !== 0;
+        }
+        return $node->getDisableLevel() - $parentNode->getDisableLevel() !== 0;
+    }
+
+    private function isNodeExplicitlyRemoved(DocumentNodeInfo $node, DocumentNodeInfo|null $parentNode): bool
+    {
+        if ($node->getRemovedLevel() === 0) {
+            return false;
+        }
+        if ($parentNode === null) {
+            return $node->getRemovedLevel() !== 0;
+        }
+        return $node->getRemovedLevel() - $parentNode->getRemovedLevel() !== 0;
     }
 
     private function getDocumentTypeClassification(NodeTypeName $nodeTypeName): DocumentTypeClassification
@@ -926,6 +944,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                     nodeaggregateidpath,
                     sitenodename,
                     disabled,
+                    removed,
                     dimensionspacepointhash,
                     origindimensionspacepointhash,
                     parentnodeaggregateid,
@@ -941,6 +960,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                     nodeaggregateidpath,
                     sitenodename,
                     disabled,
+                    removed,
                     :newDimensionSpacePointHash AS dimensionspacepointhash,
                     origindimensionspacepointhash,
                     parentnodeaggregateid,

@@ -44,7 +44,7 @@ use Neos\ContentRepository\Core\Projection\ProjectionStatus;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\ContentStreamId;
 use Neos\EventStore\Model\EventEnvelope;
-use Neos\Neos\Domain\Service\NeosSubtreeTag;
+use Neos\Neos\Domain\SubtreeTagging\NeosSubtreeTag;
 
 /**
  * @internal Only for consumption inside Neos. Not public api because the implementation will be refactored sooner or later: https://github.com/neos/neos-development-collection/issues/5493
@@ -232,7 +232,9 @@ class ChangeProjection implements ProjectionInterface
         }
         foreach ($event->affectedDimensionSpacePoints as $dimensionSpacePoint) {
             if ($event->tag->equals(NeosSubtreeTag::removed())) {
-                $this->markAsDeleted($event->contentStreamId, $event->nodeAggregateId, OriginDimensionSpacePoint::fromDimensionSpacePoint($dimensionSpacePoint));
+                $this->modifyChange($event->contentStreamId, $event->nodeAggregateId, OriginDimensionSpacePoint::fromDimensionSpacePoint($dimensionSpacePoint), static function (Change $change) {
+                    $change->deleted = true;
+                });
                 continue;
             }
 
@@ -250,6 +252,14 @@ class ChangeProjection implements ProjectionInterface
             return;
         }
         foreach ($event->affectedDimensionSpacePoints as $dimensionSpacePoint) {
+            if ($event->tag->equals(NeosSubtreeTag::removed())) {
+                $this->modifyChange($event->contentStreamId, $event->nodeAggregateId, OriginDimensionSpacePoint::fromDimensionSpacePoint($dimensionSpacePoint), static function (Change $change) {
+                    $change->deleted = false;
+                    $change->changed = true;
+                });
+                continue;
+            }
+
             $this->markAsChanged(
                 $event->contentStreamId,
                 $event->nodeAggregateId,
@@ -454,16 +464,6 @@ class ChangeProjection implements ProjectionInterface
                 $change->moved = true;
             }
         );
-    }
-
-    private function markAsDeleted(
-        ContentStreamId $contentStreamId,
-        NodeAggregateId $nodeAggregateId,
-        OriginDimensionSpacePoint $originDimensionSpacePoint,
-    ): void {
-        $this->modifyChange($contentStreamId, $nodeAggregateId, $originDimensionSpacePoint, static function (Change $change) {
-            $change->deleted = true;
-        });
     }
 
     private function modifyChange(
