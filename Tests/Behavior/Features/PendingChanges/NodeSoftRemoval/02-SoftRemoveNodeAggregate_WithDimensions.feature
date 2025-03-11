@@ -99,31 +99,6 @@ Feature: Soft remove node aggregate with node
       | nodeVariantSelectionStrategy | "allSpecializations" |
       | tag                          | "removed"            |
 
-  Scenario: Soft remove and un-remove node aggregate in user-workspace
-    Given the command TagSubtree is executed with payload:
-      | Key                          | Value                |
-      | workspaceName                | "user-workspace"     |
-      | nodeAggregateId              | "nody-mc-nodeface"   |
-      | coveredDimensionSpacePoint   | {"language": "de"}   |
-      | nodeVariantSelectionStrategy | "allSpecializations" |
-      | tag                          | "removed"            |
-
-    Given the command UntagSubtree is executed with payload:
-      | Key                          | Value                |
-      | workspaceName                | "user-workspace"     |
-      | nodeAggregateId              | "nody-mc-nodeface"   |
-      | coveredDimensionSpacePoint   | {"language": "de"}   |
-      | nodeVariantSelectionStrategy | "allSpecializations" |
-      | tag                          | "removed"            |
-
-    Then I expect to have the following changes in workspace "user-workspace":
-      | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
-      | nody-mc-nodeface | 0       | 1       | 0     | 0       | {"language": "de"}        |
-      | nody-mc-nodeface | 0       | 1       | 0     | 0       | {"language": "gsw"}       |
-      | other-removal    | 0       | 0       | 0     | 1       | {"language": "de"}        |
-      | other-removal    | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
-    Then I expect to have no changes in workspace "live"
-
   Scenario: Soft remove nodes in live workspace
     Given the command TagSubtree is executed with payload:
       | Key                          | Value                    |
@@ -150,8 +125,8 @@ Feature: Soft remove node aggregate with node
 
     Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
+      # we mark the deletion across all affected dimensions https://github.com/neos/neos-development-collection/issues/5507
       | nody-mc-nodeface | 0       | 0       | 0     | 1       | {"language": "de"}        |
-      # different to the actual NodeAggregateWasRemoved event, we dont have the $affectedOccupiedDimensionSpacePoints and mark all dimensions as removed, also fallbacks
       | nody-mc-nodeface | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
       | other-removal    | 0       | 0       | 0     | 1       | {"language": "de"}        |
       | other-removal    | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
@@ -161,6 +136,40 @@ Feature: Soft remove node aggregate with node
     Then I expect that the following node events have been published
       | type             | event payload                                                                                                 |
       | SubtreeWasTagged | {"nodeAggregateId":"nody-mc-nodeface","affectedDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]} |
+    Then I expect that the following node events are kept as remainder
+      | type             | event payload                                                                                              |
+      | SubtreeWasTagged | {"nodeAggregateId":"other-removal","affectedDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]} |
+
+  Scenario: Soft remove and un-remove node aggregate in user-workspace
+    Given the command TagSubtree is executed with payload:
+      | Key                          | Value                |
+      | workspaceName                | "user-workspace"     |
+      | nodeAggregateId              | "nody-mc-nodeface"   |
+      | coveredDimensionSpacePoint   | {"language": "de"}   |
+      | nodeVariantSelectionStrategy | "allSpecializations" |
+      | tag                          | "removed"            |
+
+    Given the command UntagSubtree is executed with payload:
+      | Key                          | Value                |
+      | workspaceName                | "user-workspace"     |
+      | nodeAggregateId              | "nody-mc-nodeface"   |
+      | coveredDimensionSpacePoint   | {"language": "de"}   |
+      | nodeVariantSelectionStrategy | "allSpecializations" |
+      | tag                          | "removed"            |
+
+    Then I expect to have the following changes in workspace "user-workspace":
+      | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
+      | nody-mc-nodeface | 0       | 1       | 0     | 0       | {"language": "de"}        |
+      | nody-mc-nodeface | 0       | 1       | 0     | 0       | {"language": "gsw"}       |
+      | other-removal    | 0       | 0       | 0     | 1       | {"language": "de"}        |
+      | other-removal    | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
+    Then I expect to have no changes in workspace "live"
+
+    When I publish the 1 changes in document "nody-mc-nodeface" from workspace "user-workspace" to "live"
+    Then I expect that the following node events have been published
+      | type               | event payload                                                                                                 |
+      | SubtreeWasTagged   | {"nodeAggregateId":"nody-mc-nodeface","affectedDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]} |
+      | SubtreeWasUntagged | {"nodeAggregateId":"nody-mc-nodeface","affectedDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]} |
     Then I expect that the following node events are kept as remainder
       | type             | event payload                                                                                              |
       | SubtreeWasTagged | {"nodeAggregateId":"other-removal","affectedDimensionSpacePoints":[{"language":"de"}, {"language":"gsw"}]} |
@@ -441,7 +450,7 @@ Feature: Soft remove node aggregate with node
     Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId | created | changed | moved | deleted | originDimensionSpacePoint |
       | david-datter    | 1       | 1       | 0     | 1       | {"language": "de"}        |
-      # lol, this row makes no sense:
+      # we mark the deletion across all affected dimensions, but not the creation! https://github.com/neos/neos-development-collection/issues/5507
       | david-datter    | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
       | other-removal   | 0       | 0       | 0     | 1       | {"language": "de"}        |
       | other-removal   | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
