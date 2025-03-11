@@ -29,7 +29,6 @@ use Neos\ContentRepository\Core\NodeType\NodeTypeManager;
 use Neos\ContentRepository\Core\NodeType\NodeTypeName;
 use Neos\ContentRepository\Core\Projection\ProjectionInterface;
 use Neos\ContentRepository\Core\Projection\ProjectionStatus;
-use Neos\ContentRepository\Core\Projection\WithMarkStaleInterface;
 use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Node\PropertyName;
 use Neos\EventStore\Model\EventEnvelope;
@@ -41,13 +40,13 @@ use Neos\Neos\FrontendRouting\Exception\NodeNotFoundException;
  * @implements ProjectionInterface<DocumentUriPathFinder>
  * @internal implementation detail to manage document node uris. For resolving please use the NodeUriBuilder and for matching the Router.
  */
-final class DocumentUriPathProjection implements ProjectionInterface, WithMarkStaleInterface
+final class DocumentUriPathProjection implements ProjectionInterface
 {
     public const COLUMN_TYPES_DOCUMENT_URIS = [
         'shortcutTarget' => Types::JSON,
     ];
 
-    private ?DocumentUriPathFinder $stateAccessor = null;
+    private DocumentUriPathFinder $documentUriPathFinder;
 
     /**
      * @var array<string, DocumentTypeClassification>
@@ -59,6 +58,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         private readonly Connection $dbal,
         private readonly string $tableNamePrefix,
     ) {
+        $this->documentUriPathFinder = new DocumentUriPathFinder($this->dbal, $this->tableNamePrefix);
     }
 
     public function setUp(): void
@@ -101,7 +101,6 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
     public function resetState(): void
     {
         $this->truncateDatabaseTables();
-        $this->stateAccessor = null;
     }
 
     private function truncateDatabaseTables(): void
@@ -136,13 +135,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
 
     public function getState(): DocumentUriPathFinder
     {
-        if (!$this->stateAccessor) {
-            $this->stateAccessor = new DocumentUriPathFinder($this->dbal, $this->tableNamePrefix);
-
-            // !!! Bugfix #4253: during projection replay/update, it is crucial to have caches disabled.
-            $this->stateAccessor->disableCache();
-        }
-        return $this->stateAccessor;
+        return $this->documentUriPathFinder;
     }
 
     private function whenRootNodeAggregateWithNodeWasCreated(RootNodeAggregateWithNodeWasCreated $event): void
@@ -174,7 +167,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         // Zero-dimensional means DimensionSpacePoint::fromArray([])->hash
         assert(is_string($anyPointHash));
 
-        $nodeInSomeDimension = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
+        $nodeInSomeDimension = $this->tryGetNode(fn () => $this->documentUriPathFinder->getByIdAndDimensionSpacePointHash(
             $event->nodeAggregateId,
             $anyPointHash
         ));
@@ -223,7 +216,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         }
 
         foreach ($event->succeedingSiblingsForCoverage->toDimensionSpacePointSet() as $dimensionSpacePoint) {
-            $parentNode = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
+            $parentNode = $this->tryGetNode(fn () => $this->documentUriPathFinder->getByIdAndDimensionSpacePointHash(
                 $event->parentNodeAggregateId,
                 $dimensionSpacePoint->hash
             ));
@@ -236,7 +229,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
 
             $succeedingSiblingNodeAggregateId = $event->succeedingSiblingsForCoverage->getSucceedingSiblingIdForDimensionSpacePoint($dimensionSpacePoint);
             if ($succeedingSiblingNodeAggregateId === null) {
-                $precedingNode = $this->tryGetNode(fn () => $this->getState()->getLastChildNode(
+                $precedingNode = $this->tryGetNode(fn () => $this->documentUriPathFinder->getLastChildNode(
                     $parentNode->getNodeAggregateId(),
                     $dimensionSpacePoint->hash
                 ));
@@ -248,7 +241,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                     ]);
                 }
             } else {
-                $precedingNode = $this->tryGetNode(fn () => $this->getState()->getPrecedingNode(
+                $precedingNode = $this->tryGetNode(fn () => $this->documentUriPathFinder->getPrecedingNode(
                     $succeedingSiblingNodeAggregateId,
                     $parentNode->getNodeAggregateId(),
                     $dimensionSpacePoint->hash
@@ -377,7 +370,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         OriginDimensionSpacePoint $targetOrigin,
         InterdimensionalSiblings $interdimensionalSiblings,
     ): void {
-        $sourceNode = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
+        $sourceNode = $this->tryGetNode(fn () => $this->documentUriPathFinder->getByIdAndDimensionSpacePointHash(
             $nodeAggregateId,
             $sourceOrigin->hash
         ));
@@ -397,7 +390,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
 
             // check the parent in the "target" dimensionSpacePoint for the "URI prefix",
             // may be different, see neos/neos-development-collection#5090
-            $parentNode = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
+            $parentNode = $this->tryGetNode(fn () => $this->documentUriPathFinder->getByIdAndDimensionSpacePointHash(
                 $sourceNode->getParentNodeAggregateId(),
                 $interdimensionalSibling->dimensionSpacePoint->hash
             ));
@@ -422,7 +415,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
             return;
         }
         foreach ($event->affectedDimensionSpacePoints as $dimensionSpacePoint) {
-            $node = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
+            $node = $this->tryGetNode(fn () => $this->documentUriPathFinder->getByIdAndDimensionSpacePointHash(
                 $event->nodeAggregateId,
                 $dimensionSpacePoint->hash
             ));
@@ -451,7 +444,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         }
 
         foreach ($event->affectedDimensionSpacePoints as $dimensionSpacePoint) {
-            $node = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
+            $node = $this->tryGetNode(fn () => $this->documentUriPathFinder->getByIdAndDimensionSpacePointHash(
                 $event->nodeAggregateId,
                 $dimensionSpacePoint->hash
             ));
@@ -479,7 +472,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
             return;
         }
         foreach ($event->affectedCoveredDimensionSpacePoints as $dimensionSpacePoint) {
-            $node = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
+            $node = $this->tryGetNode(fn () => $this->documentUriPathFinder->getByIdAndDimensionSpacePointHash(
                 $event->nodeAggregateId,
                 $dimensionSpacePoint->hash
             ));
@@ -499,7 +492,6 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 'nodeAggregateId' => $node->getNodeAggregateId()->value,
                 'childNodeAggregateIdPathPrefix' => $node->getNodeAggregateIdPath() . '/%',
             ]);
-            $this->getState()->purgeCacheFor($node);
         }
     }
 
@@ -520,7 +512,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         }
 
         foreach ($event->affectedDimensionSpacePoints as $affectedDimensionSpacePoint) {
-            $node = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
+            $node = $this->tryGetNode(fn () => $this->documentUriPathFinder->getByIdAndDimensionSpacePointHash(
                 $event->nodeAggregateId,
                 $affectedDimensionSpacePoint->hash
             ));
@@ -570,7 +562,6 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                     'childNodeAggregateIdPathPrefix' => $node->getNodeAggregateIdPath() . '/%',
                 ]
             );
-            $this->getState()->purgeCacheFor($node);
         }
     }
 
@@ -581,7 +572,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         }
 
         foreach ($event->succeedingSiblingsForCoverage as $succeedingSiblingForCoverage) {
-            $node = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
+            $node = $this->tryGetNode(fn () => $this->documentUriPathFinder->getByIdAndDimensionSpacePointHash(
                 $event->nodeAggregateId,
                 $succeedingSiblingForCoverage->dimensionSpacePoint->hash
             ));
@@ -595,8 +586,6 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 $event->newParentNodeAggregateId,
                 $succeedingSiblingForCoverage->nodeAggregateId
             );
-
-            $this->getState()->purgeCacheFor($node);
         }
     }
 
@@ -612,7 +601,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         if (!$newParentNodeAggregateId || $newParentNodeAggregateId->equals($node->getParentNodeAggregateId())) {
             return;
         }
-        $newParentNode = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
+        $newParentNode = $this->tryGetNode(fn () => $this->documentUriPathFinder->getByIdAndDimensionSpacePointHash(
             $newParentNodeAggregateId,
             $node->getDimensionSpacePointHash()
         ));
@@ -622,7 +611,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
             return;
         }
 
-        $oldParentNode = $this->tryGetNode(fn () => $this->getState()->getByIdAndDimensionSpacePointHash(
+        $oldParentNode = $this->tryGetNode(fn () => $this->documentUriPathFinder->getByIdAndDimensionSpacePointHash(
             $node->getParentNodeAggregateId(),
             $node->getDimensionSpacePointHash()
         ));
@@ -868,7 +857,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
         ?NodeAggregateId $newSucceedingNodeAggregateId,
     ): void {
         if ($newSucceedingNodeAggregateId !== null) {
-            $newPrecedingNode = $this->tryGetNode(fn () => $this->getState()->getPrecedingNode(
+            $newPrecedingNode = $this->tryGetNode(fn () => $this->documentUriPathFinder->getPrecedingNode(
                 $newSucceedingNodeAggregateId,
                 $parentNodeAggregateId,
                 $node->getDimensionSpacePointHash()
@@ -881,7 +870,7 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 ['precedingNodeAggregateId' => $node->getNodeAggregateId()->value]
             );
         } else {
-            $newPrecedingNode = $this->tryGetNode(fn () => $this->getState()->getLastChildNodeNotBeing(
+            $newPrecedingNode = $this->tryGetNode(fn () => $this->documentUriPathFinder->getLastChildNodeNotBeing(
                 $parentNodeAggregateId,
                 $node->getDimensionSpacePointHash(),
                 $node->getNodeAggregateId()
@@ -984,10 +973,5 @@ final class DocumentUriPathProjection implements ProjectionInterface, WithMarkSt
                 ), 1599646608, $e);
             }
         }
-    }
-
-    public function markStale(): void
-    {
-        $this->getState()->disableCache();
     }
 }

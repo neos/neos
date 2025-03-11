@@ -18,13 +18,6 @@ use Neos\Neos\FrontendRouting\Exception\NodeNotFoundException;
  */
 final class DocumentUriPathFinder implements ProjectionStateInterface
 {
-    private bool $cacheEnabled = true;
-
-    /**
-     * @var array<string,DocumentNodeInfo>
-     */
-    private array $getByIdAndDimensionSpacePointHashCache = [];
-
     public function __construct(
         private readonly Connection $dbal,
         private readonly string $tableNamePrefix
@@ -76,10 +69,6 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
         NodeAggregateId $nodeAggregateId,
         string $dimensionSpacePointHash
     ): DocumentNodeInfo {
-        $cacheKey = $this->calculateCacheKey($nodeAggregateId, $dimensionSpacePointHash);
-        if ($this->cacheEnabled && isset($this->getByIdAndDimensionSpacePointHashCache[$cacheKey])) {
-            return $this->getByIdAndDimensionSpacePointHashCache[$cacheKey];
-        }
         $result = $this->fetchSingle(
             'nodeAggregateId = :nodeAggregateId
                 AND dimensionSpacePointHash = :dimensionSpacePointHash',
@@ -88,9 +77,6 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
                 'dimensionSpacePointHash' => $dimensionSpacePointHash,
             ]
         );
-        if ($this->cacheEnabled) {
-            $this->getByIdAndDimensionSpacePointHashCache[$cacheKey] = $result;
-        }
         return $result;
     }
 
@@ -272,25 +258,6 @@ final class DocumentUriPathFinder implements ProjectionStateInterface
         return DocumentNodeInfos::create(
             array_map(DocumentNodeInfo::fromDatabaseRow(...), $rows)
         );
-    }
-
-    private function calculateCacheKey(NodeAggregateId $nodeAggregateId, string $dimensionSpacePointHash): string
-    {
-        return $nodeAggregateId->value . '#' . $dimensionSpacePointHash;
-    }
-
-    public function purgeCacheFor(DocumentNodeInfo $nodeInfo): void
-    {
-        if ($this->cacheEnabled) {
-            $cacheKey = $this->calculateCacheKey($nodeInfo->getNodeAggregateId(), $nodeInfo->getDimensionSpacePointHash());
-            unset($this->getByIdAndDimensionSpacePointHashCache[$cacheKey]);
-        }
-    }
-
-    public function disableCache(): void
-    {
-        $this->cacheEnabled = false;
-        $this->getByIdAndDimensionSpacePointHashCache = [];
     }
 
     /**

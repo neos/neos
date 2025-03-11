@@ -95,6 +95,25 @@ Feature: Basic routing functionality (match & resolve document nodes in one dime
     Then the node "sir-david-nodenborough" in dimension "{}" should resolve to URL "/david-nodenborough-updated"
     And the node "earl-o-documentbourgh" in dimension "{}" should resolve to URL "/david-nodenborough-updated/earl-document"
 
+  Scenario: Change uri path segment disables caches
+    Note that its relatively hard to test that the cache is invalidated correctly,
+    because one might implement it by disabling of caches only via `resetState()` which is invoked BEFORE every test essentially disabling testing for everything
+    Only a new php runtime with an already setup'd cr can guarantee that the caches are flushed correctly, or your brain!
+
+    # before changing assert previous values and have cache triggerd.
+    And I am on URL "/"
+    Then the node "sir-david-nodenborough" in dimension "{}" should resolve to URL "/david-nodenborough"
+    And the node "earl-o-documentbourgh" in dimension "{}" should resolve to URL "/david-nodenborough/earl-document"
+
+    When the command SetNodeProperties is executed with payload:
+      | Key                       | Value                                            |
+      | nodeAggregateId           | "sir-david-nodenborough"                         |
+      | originDimensionSpacePoint | {}                                               |
+      | propertyValues            | {"uriPathSegment": "david-nodenborough-updated"} |
+    And I am on URL "/"
+    Then the node "sir-david-nodenborough" in dimension "{}" should resolve to URL "/david-nodenborough-updated"
+    And the node "earl-o-documentbourgh" in dimension "{}" should resolve to URL "/david-nodenborough-updated/earl-document"
+
   Scenario: Change uri path segment works multiple times (bug #4253)
     When the command SetNodeProperties is executed with payload:
       | Key                       | Value                                              |
