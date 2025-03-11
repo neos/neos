@@ -65,11 +65,11 @@ Feature: Move DimensionSpacePoints
       | propertyValues            | {"text": "Some french text"} |
 
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+    Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId           | created | changed | moved | deleted | originDimensionSpacePoint |
       | sir-david-nodenborough    | 0       | 1       | 0     | 0       | {"language":"de"}         |
       | sir-nodeward-nodington-iv | 0       | 1       | 0     | 0       | {"language":"fr"}         |
-    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    And I expect to have no changes in workspace "live"
 
     And I am in workspace "live"
 
@@ -90,11 +90,11 @@ Feature: Move DimensionSpacePoints
               to: {"language":"de_DE"}
     """
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+    Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId           | created | changed | moved | deleted | originDimensionSpacePoint |
       | sir-david-nodenborough    | 0       | 1       | 0     | 0       | {"language":"de"}         |
       | sir-nodeward-nodington-iv | 0       | 1       | 0     | 0       | {"language":"fr"}         |
-    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    And I expect to have no changes in workspace "live"
     And I expect the ChangeProjection to have no changes in "migration-cs-id"
 
 
@@ -115,11 +115,11 @@ Feature: Move DimensionSpacePoints
               to: {"language":"de_DE"}
     """
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+    Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId           | created | changed | moved | deleted | originDimensionSpacePoint |
       | sir-david-nodenborough    | 0       | 1       | 0     | 0       | {"language":"de_DE"}      |
       | sir-nodeward-nodington-iv | 0       | 1       | 0     | 0       | {"language":"fr"}         |
-    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    And I expect to have no changes in workspace "live"
     And I expect the ChangeProjection to have no changes in "migration-cs-id"
 
 
@@ -146,11 +146,11 @@ Feature: Move DimensionSpacePoints
               to: {"language":"fr", "market": "FR"}
     """
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+    Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId           | created | changed | moved | deleted | originDimensionSpacePoint |
       | sir-david-nodenborough    | 0       | 1       | 0     | 0       | {"language":"de"}         |
       | sir-nodeward-nodington-iv | 0       | 1       | 0     | 0       | {"language":"fr"}         |
-    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    And I expect to have no changes in workspace "live"
     And I expect the ChangeProjection to have no changes in "migration-cs-id"
 
 
@@ -177,9 +177,9 @@ Feature: Move DimensionSpacePoints
               to: {"language":"fr", "market": "FR"}
     """
 
-    Then I expect the ChangeProjection to have the following changes in "user-cs-id":
+    Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId           | created | changed | moved | deleted | originDimensionSpacePoint         |
       | sir-david-nodenborough    | 0       | 1       | 0     | 0       | {"language":"de", "market": "DE"} |
       | sir-nodeward-nodington-iv | 0       | 1       | 0     | 0       | {"language":"fr", "market": "FR"} |
-    And I expect the ChangeProjection to have no changes in "cs-identifier"
+    And I expect to have no changes in workspace "live"
     And I expect the ChangeProjection to have no changes in "migration-cs-id"
