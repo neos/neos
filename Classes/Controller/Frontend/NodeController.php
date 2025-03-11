@@ -202,9 +202,7 @@ class NodeController extends ActionController
         // In this showAction (= "frontend") we have to explicitly remove those disabled nodes, even if the user was authenticated,
         // to ensure that disabled nodes are NEVER shown recursively.
         $visibilityConstraints = $visibilityConstraints->merge(NeosVisibilityConstraints::excludeDisabled());
-        $uncachedSubgraph = $contentRepository->getContentGraph($nodeAddress->workspaceName)->getSubgraph($nodeAddress->dimensionSpacePoint, $visibilityConstraints);
-
-        $subgraph = ContentSubgraphWithRuntimeCaches::decorate($uncachedSubgraph, $this->subgraphCachePool);
+        $subgraph = $this->subgraphCachePool->getContentSubgraph($contentRepository, $nodeAddress->workspaceName, $nodeAddress->dimensionSpacePoint, $visibilityConstraints);
 
         $nodeInstance = $subgraph->findNodeById($nodeAddress->aggregateId);
         if ($nodeInstance === null) {
