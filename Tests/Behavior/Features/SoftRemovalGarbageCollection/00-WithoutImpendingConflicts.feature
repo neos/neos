@@ -85,7 +85,6 @@ Feature: Tests for soft removal garbage collection without impending conflicts
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
       | nodeAggregateId                      | "nonly-lively"                                  |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
   Scenario: Garbage collection will transform a soft removal of a node which is published to live from the only other workspace
@@ -109,7 +108,6 @@ Feature: Tests for soft removal garbage collection without impending conflicts
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
       | nodeAggregateId                      | "nodingers-cat"                                 |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
     When the command RebaseWorkspace is executed with payload:
@@ -146,14 +144,12 @@ Feature: Tests for soft removal garbage collection without impending conflicts
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
       | nodeAggregateId                      | "nodingers-kittens-plaything"                   |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
     And event at index 9 is of type "NodeAggregateWasRemoved" with payload:
       | Key                                  | Expected                                        |
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
       | nodeAggregateId                      | "nodingers-kitten"                              |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
     When the command RebaseWorkspace is executed with payload:
@@ -201,7 +197,6 @@ Feature: Tests for soft removal garbage collection without impending conflicts
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
       | nodeAggregateId                      | "nodingers-kitten"                              |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
     # the event for the nested removal is never explicitly emitted; the corresponding command fails and gets caught for now
@@ -239,7 +234,6 @@ Feature: Tests for soft removal garbage collection without impending conflicts
       | workspaceName                        | "live"                  |
       | contentStreamId                      | "cs-identifier"         |
       | nodeAggregateId                      | "nodingers-cat"         |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}] |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}] |
 
     When the command RebaseWorkspace is executed with payload:

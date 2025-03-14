@@ -89,7 +89,6 @@ Feature: Tests that impending conflicts are cleaned up in workspaces
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
       | nodeAggregateId                      | "nodingers-cat"                                 |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
   Scenario: Discard flushes impending conflicts
@@ -129,7 +128,6 @@ Feature: Tests that impending conflicts are cleaned up in workspaces
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
       | nodeAggregateId                      | "nodingers-cat"                                 |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
     When the command RebaseWorkspace is executed with payload:
@@ -177,7 +175,6 @@ Feature: Tests that impending conflicts are cleaned up in workspaces
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
       | nodeAggregateId                      | "nodingers-cat"                                 |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
     When the command RebaseWorkspace is executed with payload:

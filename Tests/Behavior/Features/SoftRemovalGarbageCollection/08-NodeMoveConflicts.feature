@@ -152,7 +152,6 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | workspaceName                        | "live"                   |
       | contentStreamId                      | "cs-identifier"          |
       | nodeAggregateId                      | "nodingers-cat"          |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]  |
       | affectedCoveredDimensionSpacePoints  | [{"example": "special"}] |
 
     When the command PublishWorkspace is executed with payload:
@@ -168,7 +167,6 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | workspaceName                        | "live"                  |
       | contentStreamId                      | "cs-identifier"         |
       | nodeAggregateId                      | "nodingers-cat"         |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}] |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}] |
 
   Scenario: Garbage collection will ignore a soft removal if the node affects an unpublished inbound move in another workspace
@@ -266,7 +264,6 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
       | nodeAggregateId                      | "nodingers-cat"                                 |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
     When the command RebaseWorkspace is executed with payload:
@@ -336,7 +333,6 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
       | nodeAggregateId                      | "nodingers-cat"                                 |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
     When the command RebaseWorkspace is executed with payload:
