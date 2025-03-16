@@ -210,13 +210,13 @@ Feature: Workspace permission related features
       | nodeVariantSelectionStrategy | "allSpecializations" |
       | tag                          | "subtree_a"          |
     And the command DisableNodeAggregate is executed with payload:
-      | Key                          | Value             |
-      | nodeAggregateId              | "a1a1a"           |
-      | nodeVariantSelectionStrategy | "allVariants"     |
-    # The following step was added in order to make the `AddDimensionShineThrough` command viable
+      | Key                          | Value         |
+      | nodeAggregateId              | "a1a1a"       |
+      | nodeVariantSelectionStrategy | "allVariants" |
+    # The following step was added in order to make the `AddDimensionShineThrough` and `MoveDimensionSpacePoint` command viable
     And I change the content dimensions in content repository "default" to:
-      | Identifier | Values      | Generalizations |
-      | language   | mul, de, ch | ch->de->mul     |
+      | Identifier | Values                        | Generalizations                                      |
+      | language   | mul, de, en_new, ch, gsw, ltz | ltz->de->mul, ch->de->mul, gsw->de->mul, en_new->mul |
     And the command RebaseWorkspace is executed with payload:
       | Key           | Value       |
       | workspaceName | "workspace" |
@@ -259,13 +259,14 @@ Feature: Workspace permission related features
       | SetNodeProperties                   | {"nodeAggregateId":"a1","propertyValues":{"foo":"bar"}}                                                |
       | SetNodeReferences                   | {"sourceNodeAggregateId":"a1","references":[{"referenceName": "ref", "references": [{"target":"b"}]}]} |
 
-      | AddDimensionShineThrough            | {"nodeAggregateId":"a1","source":{"language":"de"},"target":{"language":"ch"}}                         |
-      | ChangeNodeAggregateName             | {"nodeAggregateId":"a1","newNodeName":"changed"}                                                       |
-      | ChangeNodeAggregateType             | {"nodeAggregateId":"a1","newNodeTypeName":"Neos.Neos:Document2","strategy":"happypath"}                |
-      | CreateRootNodeAggregateWithNode     | {"nodeAggregateId":"c","nodeTypeName":"Neos.Neos:CustomRoot"}                                          |
-      | MoveDimensionSpacePoint             | {"source":{"language":"de"},"target":{"language":"ch"}}                                                |
-      | UpdateRootNodeAggregateDimensions   | {"nodeAggregateId":"root"}                                                                             |
-      | RebaseWorkspace                     | {"rebaseErrorHandlingStrategy": "force"}                                                               |
+      | ChangeNodeAggregateName           | {"nodeAggregateId":"a1","newNodeName":"changed"}                                                       |
+      | ChangeNodeAggregateType           | {"nodeAggregateId":"a1","newNodeTypeName":"Neos.Neos:Document2","strategy":"happypath"}                |
+      | CreateRootNodeAggregateWithNode   | {"nodeAggregateId":"c","nodeTypeName":"Neos.Neos:CustomRoot"}                                          |
+      # todo add separate test cases for dimensions adjustment commands, they cannot be run like this
+      | AddDimensionShineThrough          | {"nodeAggregateId":"a1","source":{"language":"de"},"target":{"language":"ch"}}                         |
+      | MoveDimensionSpacePoint           | {"source":{"language":"en"},"target":{"language":"en_new"}}                                            |
+      # | UpdateRootNodeAggregateDimensions | {"nodeAggregateId":"root"}                                                                             |
+      | RebaseWorkspace                   | {"rebaseErrorHandlingStrategy": "force"}                                                               |
       # note, creating a core workspace will not grant permissions to it to the current user: Missing "read" permissions for base workspace "new-workspace"
       | CreateWorkspace                     | {"workspaceName":"new-workspace","baseWorkspaceName":"workspace","newContentStreamId":"any"}           |
 
