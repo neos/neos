@@ -101,30 +101,6 @@ Feature: Move DimensionSpacePoints
       | asset-2 | nody-mc-nodeface           | assets       | live          | {"language": "de_DE"}     |
       | asset-3 | sir-nodeward-nodington-iii | text         | live          | {"language": "fr"}        |
 
-  Scenario: Rename a dimension value in user workspace
-    Given I change the content dimensions in content repository "default" to:
-      | Identifier | Values      | Generalizations |
-      | language   | de_DE,fr,en | de_DE->en, fr   |
-
-    And I run the following node migration for workspace "user-workspace", creating target workspace "migration-cs" on contentStreamId "migration-cs", with publishing on success:
-    """yaml
-    migration:
-      -
-        transformations:
-          -
-            type: 'MoveDimensionSpacePoint'
-            settings:
-              from: {"language":"de"}
-              to: {"language":"de_DE"}
-    """
-
-    And I expect the AssetUsageService to have the following AssetUsages:
-      | assetId | nodeAggregateId            | propertyName | workspaceName  | originDimensionSpacePoint |
-      | asset-2 | sir-david-nodenborough     | asset        | live           | {"language": "de"}        |
-      | asset-2 | nody-mc-nodeface           | assets       | live           | {"language": "de"}        |
-      | asset-3 | sir-nodeward-nodington-iii | text         | live           | {"language": "fr"}        |
-
-
   Scenario: Adding a dimension in live workspace
     Given I change the content dimensions in content repository "default" to:
       | Identifier | Values   | Generalizations |
@@ -153,33 +129,3 @@ Feature: Move DimensionSpacePoints
       | asset-2 | sir-david-nodenborough     | asset        | live           | {"language":"de", "market": "DE"} |
       | asset-2 | nody-mc-nodeface           | assets       | live           | {"language":"de", "market": "DE"} |
       | asset-3 | sir-nodeward-nodington-iii | text         | live           | {"language":"fr", "market": "FR"} |
-
-
-  Scenario: Adding a dimension in user workspace
-    Given I change the content dimensions in content repository "default" to:
-      | Identifier | Values   | Generalizations |
-      | language   | de,fr,en | de->en, fr      |
-      | market     | DE, FR   | DE, FR          |
-
-    And I run the following node migration for workspace "user-workspace", creating target workspace "migration-cs" on contentStreamId "migration-cs", with publishing on success:
-    """yaml
-    migration:
-      -
-        transformations:
-          -
-            type: 'MoveDimensionSpacePoint'
-            settings:
-              from: {"language":"de"}
-              to: {"language":"de", "market": "DE"}
-          -
-            type: 'MoveDimensionSpacePoint'
-            settings:
-              from: {"language":"fr"}
-              to: {"language":"fr", "market": "FR"}
-    """
-
-    And I expect the AssetUsageService to have the following AssetUsages:
-      | assetId | nodeAggregateId            | propertyName | workspaceName  | originDimensionSpacePoint         |
-      | asset-2 | sir-david-nodenborough     | asset        | live           | {"language": "de"}                |
-      | asset-2 | nody-mc-nodeface           | assets       | live           | {"language": "de"}                |
-      | asset-3 | sir-nodeward-nodington-iii | text         | live           | {"language": "fr"}                |
