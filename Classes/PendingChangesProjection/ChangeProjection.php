@@ -24,7 +24,6 @@ use Doctrine\DBAL\Types\Types;
 use Neos\ContentRepository\Core\DimensionSpace\OriginDimensionSpacePoint;
 use Neos\ContentRepository\Core\EventStore\EventInterface;
 use Neos\ContentRepository\Core\Feature\ContentStreamRemoval\Event\ContentStreamWasRemoved;
-use Neos\ContentRepository\Core\Feature\DimensionSpaceAdjustment\Event\DimensionSpacePointWasMoved;
 use Neos\ContentRepository\Core\Feature\NodeCreation\Event\NodeAggregateWithNodeWasCreated;
 use Neos\ContentRepository\Core\Feature\NodeModification\Event\NodePropertiesWereSet;
 use Neos\ContentRepository\Core\Feature\NodeMove\Event\NodeAggregateWasMoved;
@@ -140,13 +139,14 @@ class ChangeProjection implements ProjectionInterface
             SubtreeWasTagged::class => $this->whenSubtreeWasTagged($event),
             SubtreeWasUntagged::class => $this->whenSubtreeWasUntagged($event),
             NodeAggregateWasRemoved::class => $this->whenNodeAggregateWasRemoved($event),
-            DimensionSpacePointWasMoved::class => $this->whenDimensionSpacePointWasMoved($event),
             NodeSpecializationVariantWasCreated::class => $this->whenNodeSpecializationVariantWasCreated($event),
             NodeGeneralizationVariantWasCreated::class => $this->whenNodeGeneralizationVariantWasCreated($event),
             NodePeerVariantWasCreated::class => $this->whenNodePeerVariantWasCreated($event),
             NodeAggregateTypeWasChanged::class => $this->whenNodeAggregateTypeWasChanged($event),
             NodeAggregateNameWasChanged::class => $this->whenNodeAggregateNameWasChanged($event),
             ContentStreamWasRemoved::class => $this->whenContentStreamWasRemoved($event),
+            // we don't need to handle all events,
+            // DimensionSpacePointWasMoved is unhandled, because other workspaces MUST NOT contain changes i.e. nothing needs to be adjusted
             default => null,
         };
     }
@@ -312,28 +312,6 @@ class ChangeProjection implements ProjectionInterface
             );
         }
     }
-
-    private function whenDimensionSpacePointWasMoved(DimensionSpacePointWasMoved $event): void
-    {
-        $this->dbal->executeStatement(
-            '
-            UPDATE ' . $this->tableNamePrefix . ' c
-                SET
-                    c.originDimensionSpacePoint = :newDimensionSpacePoint,
-                    c.originDimensionSpacePointHash = :newDimensionSpacePointHash
-                WHERE
-                  c.originDimensionSpacePointHash = :originalDimensionSpacePointHash
-                  AND c.contentStreamId = :contentStreamId
-                  ',
-            [
-                'originalDimensionSpacePointHash' => $event->source->hash,
-                'newDimensionSpacePointHash' => $event->target->hash,
-                'newDimensionSpacePoint' => $event->target->toJson(),
-                'contentStreamId' => $event->contentStreamId->value
-            ]
-        );
-    }
-
 
     private function whenNodeSpecializationVariantWasCreated(NodeSpecializationVariantWasCreated $event): void
     {
