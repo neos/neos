@@ -191,13 +191,13 @@ Feature: Routing functionality with multiple content dimensions
           -
             type: 'MoveDimensionSpacePoint'
             settings:
-              from: {"market":"DE", "language":"de"}
-              to: {"market":"DE", "language":"de_DE"}
+              from: {"market":"CH", "language":"de"}
+              to: {"market":"CH", "language":"de_DE"}
           -
             type: 'MoveDimensionSpacePoint'
             settings:
-              from: {"market":"CH", "language":"de"}
-              to: {"market":"CH", "language":"de_DE"}
+              from: {"market":"DE", "language":"de"}
+              to: {"market":"DE", "language":"de_DE"}
     """
     When the command PublishWorkspace is executed with payload:
       | Key           | Value          |
