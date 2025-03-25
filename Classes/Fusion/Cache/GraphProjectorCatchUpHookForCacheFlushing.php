@@ -124,11 +124,7 @@ class GraphProjectorCatchUpHookForCacheFlushing implements CatchUpHookInterface
 
     public function onBeforeCatchUp(SubscriptionStatus $subscriptionStatus): void
     {
-        if ($subscriptionStatus == SubscriptionStatus::BOOTING) {
-            $this->isBooting = true;
-            return;
-        }
-        $this->isBooting = false;
+        $this->isBooting = $subscriptionStatus == SubscriptionStatus::BOOTING;
     }
 
     public function onBeforeEvent(EventInterface $eventInstance, EventEnvelope $eventEnvelope): void
@@ -206,7 +202,6 @@ class GraphProjectorCatchUpHookForCacheFlushing implements CatchUpHookInterface
 
         $key = $nodeAggregate->workspaceName->value . '__' . $nodeAggregate->nodeAggregateId->value . '__' . $nodeAggregate->nodeTypeName->value;
         if (!isset($this->flushWorkspaceRequestsOnAfterCatchUp[$key])) {
-            // we store this in an associative array deduplicate.
             $this->flushNodeAggregateRequestsOnAfterCatchUp[$key] = FlushNodeAggregateRequest::create(
                 $this->contentRepositoryId,
                 $nodeAggregate->workspaceName,
@@ -221,7 +216,6 @@ class GraphProjectorCatchUpHookForCacheFlushing implements CatchUpHookInterface
         WorkspaceName $workspaceName
     ): void {
         if (!isset($this->flushWorkspaceRequestsOnAfterCatchUp[$workspaceName->value])) {
-            // we store this in an associative array deduplicate.
             $this->flushWorkspaceRequestsOnAfterCatchUp[$workspaceName->value] = FlushWorkspaceRequest::create(
                 $this->contentRepositoryId,
                 $workspaceName,
