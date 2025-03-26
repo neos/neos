@@ -44,6 +44,9 @@ final class AssetUsageCatchUpHook implements CatchUpHookInterface
 
     public function onBeforeCatchUp(SubscriptionStatus $subscriptionStatus): void
     {
+        if ($subscriptionStatus === SubscriptionStatus::BOOTING) {
+            $this->assetUsageIndexingService->pruneIndex($this->contentRepositoryId);
+        }
     }
 
     public function onBeforeEvent(EventInterface $eventInstance, EventEnvelope $eventEnvelope): void
