@@ -129,3 +129,11 @@ Feature: Move DimensionSpacePoints
       | asset-2 | sir-david-nodenborough     | asset        | live           | {"language":"de", "market": "DE"} |
       | asset-2 | nody-mc-nodeface           | assets       | live           | {"language":"de", "market": "DE"} |
       | asset-3 | sir-nodeward-nodington-iii | text         | live           | {"language":"fr", "market": "FR"} |
+
+    # Ensure after replay no asset usages are duplicated: https://github.com/neos/neos-development-collection/pull/5511
+    And I replay the contentGraph projection
+    And I expect the AssetUsageService to have the following AssetUsages:
+      | assetId | nodeAggregateId            | propertyName | workspaceName  | originDimensionSpacePoint         |
+      | asset-2 | sir-david-nodenborough     | asset        | live           | {"language":"de", "market": "DE"} |
+      | asset-2 | nody-mc-nodeface           | assets       | live           | {"language":"de", "market": "DE"} |
+      | asset-3 | sir-nodeward-nodington-iii | text         | live           | {"language":"fr", "market": "FR"} |
