@@ -211,7 +211,6 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
       | nodeAggregateId                      | "nodingers-kitten"                              |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
     When the command RebaseWorkspace is executed with payload:
@@ -262,7 +261,6 @@ Feature: Tests for soft removal garbage collection with impending conflicts caus
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
       | nodeAggregateId                      | "nodingers-kitten"                              |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |
 
     When the command RebaseWorkspace is executed with payload:

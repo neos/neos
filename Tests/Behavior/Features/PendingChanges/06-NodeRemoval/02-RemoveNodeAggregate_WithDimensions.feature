@@ -115,6 +115,7 @@ Feature: Hard remove node aggregate with node
     Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
       | nody-mc-nodeface | 0       | 0       | 0     | 1       | {"language": "de"}        |
+      | nody-mc-nodeface | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
     And I expect to have no changes in workspace "live"
 
     Then I expect the publishing of document "nody-mc-nodeface" from workspace "user-workspace" to fail
@@ -131,6 +132,8 @@ Feature: Hard remove node aggregate with node
     Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId  | created | changed | moved | deleted | originDimensionSpacePoint |
       | nody-mc-nodeface | 0       | 0       | 0     | 1       | {"language": "de"}        |
+      | nody-mc-nodeface | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
+
     And I expect to have no changes in workspace "live"
 
     Then I expect the publishing of site "site" from workspace "user-workspace" to fail
@@ -165,6 +168,7 @@ Feature: Hard remove node aggregate with node
       | nodeAggregateId | created | changed | moved | deleted | originDimensionSpacePoint |
       # changed 1 disappears which is not okay
       | davids-child    | 0       | 0       | 0     | 1       | {"language": "de"}        |
+      | davids-child    | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
       | davids-child    | 0       | 1       | 0     | 0       | {"language": "fr"}        |
     And I expect to have no changes in workspace "live"
 
@@ -197,6 +201,7 @@ Feature: Hard remove node aggregate with node
     Then I expect to have the following changes in workspace "user-workspace":
       | nodeAggregateId        | created | changed | moved | deleted | originDimensionSpacePoint |
       | davids-child           | 0       | 0       | 0     | 1       | {"language": "de"}        |
+      | davids-child           | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
       | sir-david-nodenborough | 0       | 1       | 0     | 0       | {"language": "de"}        |
     And I expect to have no changes in workspace "live"
 
@@ -236,7 +241,9 @@ Feature: Hard remove node aggregate with node
       | nodeAggregateId   | created | changed | moved | deleted | originDimensionSpacePoint |
       | davids-child      | 0       | 1       | 0     | 0       | {"language": "de"}        |
       | site-two-document | 0       | 0       | 0     | 1       | {"language": "de"}        |
+      | site-two-document | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
       | nody-mc-nodeface  | 0       | 0       | 0     | 1       | {"language": "de"}        |
+      | nody-mc-nodeface  | 0       | 0       | 0     | 1       | {"language": "gsw"}       |
     And I expect to have no changes in workspace "live"
 
     When I publish the 1 changes in site "site" from workspace "user-workspace" to "live"

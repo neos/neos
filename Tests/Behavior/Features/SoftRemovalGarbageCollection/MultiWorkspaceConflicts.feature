@@ -188,5 +188,4 @@ Feature: Tests for soft removal garbage collection with conflicts across workspa
       | workspaceName                        | "live"                                          |
       | contentStreamId                      | "cs-identifier"                                 |
       | nodeAggregateId                      | "nodingers-cat"                                 |
-      | affectedOccupiedDimensionSpacePoints | [{"example": "source"}]                         |
       | affectedCoveredDimensionSpacePoints  | [{"example": "source"}, {"example": "special"}] |

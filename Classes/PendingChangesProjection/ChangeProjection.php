@@ -284,32 +284,18 @@ class ChangeProjection implements ProjectionInterface
             ]
         );
 
-        foreach ($event->affectedOccupiedDimensionSpacePoints as $occupiedDimensionSpacePoint) {
-            $this->dbal->executeStatement(
-                'INSERT INTO ' . $this->tableNamePrefix . '
-                        (contentStreamId, nodeAggregateId, originDimensionSpacePoint,
-                         originDimensionSpacePointHash, created, deleted, changed, moved, removalAttachmentPoint)
-                    VALUES (
-                        :contentStreamId,
-                        :nodeAggregateId,
-                        :originDimensionSpacePoint,
-                        :originDimensionSpacePointHash,
-                        0,
-                        1,
-                        0,
-                        0,
-                        :removalAttachmentPoint
-                    )
-                ',
-                [
-                    'contentStreamId' => $event->contentStreamId->value,
-                    'nodeAggregateId' => $event->nodeAggregateId->value,
-                    'originDimensionSpacePoint' => json_encode($occupiedDimensionSpacePoint),
-                    'originDimensionSpacePointHash' => $occupiedDimensionSpacePoint->hash,
-                    /** legacy information: {@see Change::getLegacyRemovalAttachmentPoint()} */
-                    'removalAttachmentPoint' => $event->removalAttachmentPoint?->value,
-                ]
+        foreach ($event->affectedCoveredDimensionSpacePoints as $coveredDimensionSpacePoint) {
+            $removalChange = new Change(
+                $event->contentStreamId,
+                $event->nodeAggregateId,
+                OriginDimensionSpacePoint::fromDimensionSpacePoint($coveredDimensionSpacePoint),
+                created: false,
+                changed: false,
+                moved: false,
+                deleted: true,
+                removalAttachmentPoint: $event->removalAttachmentPoint
             );
+            $removalChange->addToDatabase($this->dbal, $this->tableNamePrefix);
         }
     }
 
