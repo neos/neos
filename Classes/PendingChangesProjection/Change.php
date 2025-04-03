@@ -100,7 +100,6 @@ final class Change
                 [
                     'contentStreamId' => $this->contentStreamId->value,
                     'nodeAggregateId' => $this->nodeAggregateId->value,
-                    'originDimensionSpacePoint' => $this->originDimensionSpacePoint?->toJson(),
                     'originDimensionSpacePointHash' => $this->originDimensionSpacePoint?->hash ?: self::AGGREGATE_DIMENSIONSPACEPOINT_HASH_PLACEHOLDER,
                 ]
             );
