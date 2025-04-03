@@ -60,7 +60,9 @@ prototype(Neos.Neos:View.Login) < prototype(Neos.Fusion:Component) {
           </main>
           <footer class="neos-login-footer">
             <p>
-              <strong>{private.backgroundImageAttribution}</strong><br/>
+              <strong @if={private.backgroundImageSource && private.backgroundImageAttribution}>
+                {private.backgroundImageAttribution}
+              </strong><br/>
               <a href="http://neos.io" target="_blank">Neos</a> –&nbsp;
               © 2006-{Date.format('now', 'Y')} This is free software, licensed under GPL3 or higher, and you are welcome to redistribute it under certain conditions;&nbsp;
               Neos comes with ABSOLUTELY NO WARRANTY;&nbsp;
