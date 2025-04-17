@@ -406,8 +406,11 @@ class WorkspacesController extends AbstractModuleController
         }
         switch ($action) {
             case 'publish':
+                if (($targetWorkspace = $selectedWorkspace->getBaseWorkspace()) === null) {
+                    $targetWorkspace = $this->workspaceRepository->findOneByName('live');
+                }
                 foreach ($nodes as $node) {
-                    $this->publishingService->publishNode($node);
+                    $this->publishingService->publishNode($node, $targetWorkspace);
                 }
                 $this->addFlashMessage(
                     $this->translator->translateById('workspaces.selectedChangesHaveBeenPublished', [], null, null, 'Modules', 'Neos.Neos')
