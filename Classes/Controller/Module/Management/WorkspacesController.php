@@ -406,8 +406,11 @@ class WorkspacesController extends AbstractModuleController
         }
         switch ($action) {
             case 'publish':
+                if (($targetWorkspace = $selectedWorkspace->getBaseWorkspace()) === null) {
+                    $targetWorkspace = $this->workspaceRepository->findOneByName('live');
+                }
                 foreach ($nodes as $node) {
-                    $this->publishingService->publishNode($node);
+                    $this->publishingService->publishNode($node, $targetWorkspace);
                 }
                 $this->addFlashMessage(
                     $this->translator->translateById('workspaces.selectedChangesHaveBeenPublished', [], null, null, 'Modules', 'Neos.Neos')
@@ -616,8 +619,8 @@ class WorkspacesController extends AbstractModuleController
                         'diff' => $diffArray
                     ];
                 }
-            // The && in belows condition is on purpose as creating a thumbnail for comparison only works if actually
-            // BOTH are ImageInterface (or NULL).
+                // The && in belows condition is on purpose as creating a thumbnail for comparison only works if actually
+                // BOTH are ImageInterface (or NULL).
             } elseif (
                 ($originalPropertyValue instanceof ImageInterface || $originalPropertyValue === null)
                 && ($changedPropertyValue instanceof ImageInterface || $changedPropertyValue === null)
