@@ -141,8 +141,6 @@ use Psr\Http\Message\UriInterface;
  * if needed.
  *
  * Then, the {@see DimensionResolverInterface} of the target site is called for adjusting the URL.
- *
- * @Flow\Scope("singleton")
  */
 final class EventSourcedFrontendNodeRoutePartHandler extends AbstractRoutePart implements
     DynamicRoutePartInterface,
