@@ -425,19 +425,27 @@ final class EventSourcedFrontendNodeRoutePartHandler extends AbstractRoutePart i
     }
 
     /**
-     * Whether the given node is allowed according to the "nodeType" option
+     * Whether the given node is allowed according to the "nodeType" option and the "onlyMatchSiteNodes" option.
      */
     private function nodeTypeIsAllowed(
         DocumentNodeInfo $nodeInfo,
         ContentRepository $contentRepository,
     ): bool
     {
-        if (isset($this->options['nodeType'])) {
-            $nodeTypeName = $this->options['nodeType'];
-            $nodeTypeManager = $contentRepository->getNodeTypeManager();
-            return (bool)$nodeTypeManager
+        $nodeTypeManager = $contentRepository->getNodeTypeManager();
+
+        $allowedNodeTypeName = $this->options['nodeType'] ?? null;
+        if ($allowedNodeTypeName && !$nodeTypeManager
+            ->getNodeType($nodeInfo->getNodeTypeName())
+            ?->isOfType($allowedNodeTypeName)) {
+            return false;
+        }
+
+        $onlyMatchSiteNodes = $this->options['onlyMatchSiteNodes'] ?? false;
+        if ($onlyMatchSiteNodes && !$nodeTypeManager
                 ->getNodeType($nodeInfo->getNodeTypeName())
-                ?->isOfType($nodeTypeName);
+                ?->isOfType('Neos.Neos:Site')) {
+            return false;
         }
         return true;
     }
