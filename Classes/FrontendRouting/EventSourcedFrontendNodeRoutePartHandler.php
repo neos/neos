@@ -300,7 +300,7 @@ final class EventSourcedFrontendNodeRoutePartHandler extends AbstractRoutePart i
             if ($resolveResult === false) {
                 return false;
             }
-        } catch (NodeNotFoundException|TargetSiteNotFoundException|InvalidShortcutException $exception) {
+        } catch (NodeNotFoundException | TargetSiteNotFoundException | InvalidShortcutException $exception) {
             // TODO log exception ... yes todo
             return false;
         }
@@ -433,21 +433,24 @@ final class EventSourcedFrontendNodeRoutePartHandler extends AbstractRoutePart i
     private function nodeTypeIsAllowed(
         DocumentNodeInfo $nodeInfo,
         ContentRepository $contentRepository,
-    ): bool
-    {
+    ): bool {
         $nodeTypeManager = $contentRepository->getNodeTypeManager();
 
         $allowedNodeTypeName = $this->options['nodeType'] ?? null;
-        if ($allowedNodeTypeName && !$nodeTypeManager
+        if (
+            $allowedNodeTypeName && !$nodeTypeManager
             ->getNodeType($nodeInfo->getNodeTypeName())
-            ?->isOfType($allowedNodeTypeName)) {
+            ?->isOfType($allowedNodeTypeName)
+        ) {
             return false;
         }
 
         $onlyMatchSiteNodes = $this->options['onlyMatchSiteNodes'] ?? false;
-        if ($onlyMatchSiteNodes && !$nodeTypeManager
+        if (
+            $onlyMatchSiteNodes && !$nodeTypeManager
                 ->getNodeType($nodeInfo->getNodeTypeName())
-                ?->isOfType('Neos.Neos:Site')) {
+                ?->isOfType('Neos.Neos:Site')
+        ) {
             return false;
         }
         return true;
