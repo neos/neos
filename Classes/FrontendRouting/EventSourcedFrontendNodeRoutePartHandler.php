@@ -238,7 +238,7 @@ final class EventSourcedFrontendNodeRoutePartHandler extends AbstractRoutePart i
     /**
      * @param string $uriPath
      * @param DimensionSpacePoint $dimensionSpacePoint
-     * @return MatchResult|false
+     * @return MatchResult|false returns the MatchResult that represents the node that matched the given $uriPath – or false if the found node does not match the constraints
      * @throws NodeNotFoundException
      */
     private function matchUriPath(
@@ -378,6 +378,9 @@ final class EventSourcedFrontendNodeRoutePartHandler extends AbstractRoutePart i
     }
 
 
+    /**
+     * @return string|false the remaining request path or false if the splitString was not found in the $requestPath
+     */
     private function truncateRequestPathAndReturnRemainder(string &$requestPath, string $uriPathSuffix): false|string
     {
         if ($uriPathSuffix !== '') {
