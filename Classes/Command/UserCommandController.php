@@ -421,7 +421,7 @@ class UserCommandController extends CommandController
         }
         return [
             $user->getName()->getFullName(),
-            $user->getPrimaryElectronicAddress() ?: 'none',
+            $user->getPrimaryElectronicAddress() ?: '-',
             implode(', ', $accountIdentifiers),
             implode(', ', $roleNames),
             ($user->isActive() ? 'yes' : 'no'),
