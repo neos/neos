@@ -88,7 +88,7 @@ class UserCommandController extends CommandController
 
         $this->outputLine('<b>First name:</b> %s', [$user->getName()->getFirstName()]);
         $this->outputLine('<b>Last name:</b> %s', [$user->getName()->getLastName()]);
-        $this->outputLine('<b>Backend language:</b> %s', [$user->getPreferences()->getInterfaceLanguage() ?? 'Use system default']);
+        $this->outputLine('<b>Backend language:</b> %s', [$user->getPreferences()->getInterfaceLanguage() ?: 'Use system default']);
 
         $this->outputLine();
         $this->outputLine('<b>Electronic address(es):</b>');
