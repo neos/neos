@@ -54,7 +54,7 @@ class UserCommandController extends CommandController
         $users = $this->userService->getUsers();
 
         $tableRows = [];
-        $headerRow = ['Name', 'Primary Electronic Address', 'Account(s)', 'Role(s)', 'Active', 'Created at', 'Expires at'];
+        $headerRow = ['Name', 'Primary Electronic Address', 'Account Identifier(s)', 'Role(s)', 'Active'];
 
         foreach ($users as $user) {
             $tableRows[] = $this->getTableRowForUser($user);
@@ -82,13 +82,13 @@ class UserCommandController extends CommandController
     {
         $user = $this->userService->getUser($username, $authenticationProvider);
         if (!$user instanceof User) {
-            $this->outputLine('The username "%s" does not exist', [$username]);
+            $this->outputLine('No user with the username "%s" exists', [$username]);
             $this->quit(1);
         }
 
         $this->outputLine('<b>First name:</b> %s', [$user->getName()->getFirstName()]);
         $this->outputLine('<b>Last name:</b> %s', [$user->getName()->getLastName()]);
-        $this->outputLine('<b>Backend Language:</b> %s', [$user->getPreferences()->getInterfaceLanguage() ?? 'Use system default']);
+        $this->outputLine('<b>Backend language:</b> %s', [$user->getPreferences()->getInterfaceLanguage() ?? 'Use system default']);
 
         $this->outputLine();
         $this->outputLine('<b>Electronic address(es):</b>');
@@ -102,7 +102,7 @@ class UserCommandController extends CommandController
             ['Type', 'Identifier', 'Usage', 'Primary?'],
         );
         $this->outputLine();
-        $this->outputLine('<b>Account:</b>');
+        $this->outputLine('<b>Accounts:</b>');
         $this->output->outputTable(
             array_map(static fn (Account $account) => [
                 $account->getAccountIdentifier(),
@@ -413,13 +413,7 @@ class UserCommandController extends CommandController
         $accountIdentifiers = [];
         foreach ($user->getAccounts() as $account) {
             /** @var Account $account */
-            $authenticationProviderName = $account->getAuthenticationProviderName();
-            if ($authenticationProviderName !== $this->userService->getDefaultAuthenticationProviderName()) {
-                $authenticationProviderLabel = ' (' . (isset($this->authenticationProviderSettings[$authenticationProviderName]['label']) ? $this->authenticationProviderSettings[$authenticationProviderName]['label'] : $authenticationProviderName) . ')';
-            } else {
-                $authenticationProviderLabel = '';
-            }
-            $accountIdentifiers[] = $account->getAccountIdentifier() . $authenticationProviderLabel;
+            $accountIdentifiers[] = $account->getAccountIdentifier();
             foreach ($account->getRoles() as $role) {
                 /** @var Role $role */
                 $roleNames[] = $role->getIdentifier();
@@ -427,12 +421,10 @@ class UserCommandController extends CommandController
         }
         return [
             $user->getName()->getFullName(),
-            $user->getPrimaryElectronicAddress() ?? 'No Primary Electronic Address set',
+            $user->getPrimaryElectronicAddress() ?: 'none',
             implode(', ', $accountIdentifiers),
             implode(', ', $roleNames),
             ($user->isActive() ? 'yes' : 'no'),
-            $account->getCreationDate()->format('Y-m-d'),
-            $account->getExpirationDate() !== null ? $account->getExpirationDate()->format('Y-m-d') : 'never',
         ];
     }
 }
