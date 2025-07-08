@@ -3,11 +3,13 @@
   <file original="" product-name="Neos.Neos" source-language="en" datatype="plaintext" target-language="pt-BR">
     <body>
       <trans-unit id="properties._hiddenBeforeDateTime" xml:space="preserve">
-				<source>Hide before</source>
-			<target state="translated">Esconder antes</target></trans-unit>
+        <source>Hide before</source>
+        <target state="translated">Ocultar antes</target>
+      </trans-unit>
       <trans-unit id="properties._hiddenAfterDateTime" xml:space="preserve">
-				<source>Hide after</source>
-			<target state="translated">Esconder depois</target></trans-unit>
+        <source>Hide after</source>
+        <target state="translated">Esconder depois</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>

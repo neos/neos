@@ -3,8 +3,9 @@
   <file original="" product-name="Neos.Neos" source-language="en" datatype="plaintext" target-language="pt-BR">
     <body>
       <trans-unit id="properties._hidden" xml:space="preserve">
-				<source>Hide</source>
-			<target state="translated">Esconder</target></trans-unit>
+        <source>Hide</source>
+        <target state="translated">Ocultar</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>
