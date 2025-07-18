@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Neos\Neos\View;
 
+use Neos\ContentRepository\Core\NodeType\NodeTypeManager;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindClosestNodeFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
@@ -55,6 +56,8 @@ class FusionView extends AbstractView
     #[Flow\Inject]
     protected RenderingModeService $renderingModeService;
 
+    protected NodeTypeManager $nodeTypeManager;
+
     /**
      * Via {@see assign} request using the "request" key,
      * will be available also as Fusion global in the runtime.
@@ -82,6 +85,8 @@ class FusionView extends AbstractView
         $fusionRuntime = $this->getFusionRuntime($currentSiteNode);
 
         $this->setFallbackRuleFromDimension($currentNode->dimensionSpacePoint);
+
+        $this->nodeTypeManager = $this->contentRepositoryRegistry->get($subgraph->getContentRepositoryId())->getNodeTypeManager();
 
         return $fusionRuntime->renderEntryPathWithContext($this->fusionPath, [
             'node' => $currentNode,
@@ -165,6 +170,10 @@ class FusionView extends AbstractView
 
     protected function getClosestDocumentNode(Node $node): ?Node
     {
+        // Skip expensive subgraph lookup if the node is already a document node
+        if ($this->nodeTypeManager->getNodeType($node->nodeTypeName)?->isOfType(NodeTypeNameFactory::NAME_DOCUMENT)) {
+            return $node;
+        }
         return $this->contentRepositoryRegistry->subgraphForNode($node)
             ->findClosestNode($node->aggregateId, FindClosestNodeFilter::create(nodeTypes: NodeTypeNameFactory::NAME_DOCUMENT));
     }
