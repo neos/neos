@@ -14,7 +14,6 @@ declare(strict_types=1);
 
 namespace Neos\Neos\View;
 
-use Neos\ContentRepository\Core\NodeType\NodeTypeManager;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Filter\FindClosestNodeFilter;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
@@ -56,8 +55,6 @@ class FusionView extends AbstractView
     #[Flow\Inject]
     protected RenderingModeService $renderingModeService;
 
-    protected NodeTypeManager $nodeTypeManager;
-
     /**
      * Via {@see assign} request using the "request" key,
      * will be available also as Fusion global in the runtime.
@@ -75,18 +72,10 @@ class FusionView extends AbstractView
     {
         $currentNode = $this->getCurrentNode();
 
-        $subgraph = $this->contentRepositoryRegistry->subgraphForNode($currentNode);
-        $currentSiteNode = $subgraph->findClosestNode($currentNode->aggregateId, FindClosestNodeFilter::create(nodeTypes: NodeTypeNameFactory::NAME_SITE));
-
-        if (!$currentSiteNode) {
-            throw new \RuntimeException('No site node found!', 1697053346);
-        }
-
+        $currentSiteNode = $this->getCurrentSiteNode();
         $fusionRuntime = $this->getFusionRuntime($currentSiteNode);
 
         $this->setFallbackRuleFromDimension($currentNode->dimensionSpacePoint);
-
-        $this->nodeTypeManager = $this->contentRepositoryRegistry->get($subgraph->getContentRepositoryId())->getNodeTypeManager();
 
         return $fusionRuntime->renderEntryPathWithContext($this->fusionPath, [
             'node' => $currentNode,
@@ -170,8 +159,10 @@ class FusionView extends AbstractView
 
     protected function getClosestDocumentNode(Node $node): ?Node
     {
+        $nodeTypeManager = $this->contentRepositoryRegistry->get($node->contentRepositoryId)->getNodeTypeManager();
+
         // Skip expensive subgraph lookup if the node is already a document node
-        if ($this->nodeTypeManager->getNodeType($node->nodeTypeName)?->isOfType(NodeTypeNameFactory::NAME_DOCUMENT)) {
+        if ($nodeTypeManager->getNodeType($node->nodeTypeName)?->isOfType(NodeTypeNameFactory::NAME_DOCUMENT)) {
             return $node;
         }
         return $this->contentRepositoryRegistry->subgraphForNode($node)
@@ -184,11 +175,20 @@ class FusionView extends AbstractView
      */
     protected function getCurrentSiteNode(): Node
     {
-        $currentNode = $this->variables['site'] ?? null;
-        if (!$currentNode instanceof Node) {
-            throw new Exception('FusionView needs a variable \'site\' set with a Node object.', 1538996432);
+        $currentSiteNode = $this->variables['site'] ?? null;
+        if (!$currentSiteNode instanceof Node) {
+            $currentNode = $this->getCurrentNode();
+            $subgraph = $this->contentRepositoryRegistry->subgraphForNode($currentNode);
+            $currentSiteNode = $subgraph->findClosestNode(
+                $currentNode->aggregateId,
+                FindClosestNodeFilter::create(nodeTypes: NodeTypeNameFactory::NAME_SITE)
+            );
+            $this->assign('site', $currentSiteNode);
         }
-        return $currentNode;
+        if (!$currentSiteNode) {
+            throw new \RuntimeException('No site node found!', 1697053346);
+        }
+        return $currentSiteNode;
     }
 
     /**
