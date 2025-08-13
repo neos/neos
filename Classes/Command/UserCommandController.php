@@ -464,11 +464,10 @@ class UserCommandController extends CommandController
         }
         return [
             $user->getName()->getFullName(),
-            $user->getPrimaryElectronicAddress()?: '-',
+            $user->getPrimaryElectronicAddress() ?: '-',
             implode(', ', $accountIdentifiers),
             implode(', ', $roleNames),
-            ($user->isActive() ? 'yes' : 'no')
-        ,
+            ($user->isActive() ? 'yes' : 'no'),
         ];
     }
 }
