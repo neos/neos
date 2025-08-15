@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Neos\Neos\Command;
 
+use Doctrine\Common\Collections\Collection;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
 use Neos\Flow\Cli\Exception\StopCommandException;
@@ -92,7 +93,7 @@ class UserCommandController extends CommandController
         }
         /** @var User $user */
 
-        /** @var Collection<int,Account> $accounts */
+        /** @var Collection<int,Account> $userAccounts */
         $userAccounts = $user->getAccounts();
 
         $this->outputLine('<b>First name:</b> %s', [$user->getName()->getFirstName()]);
