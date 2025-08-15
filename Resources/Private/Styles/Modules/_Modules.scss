@@ -35,11 +35,11 @@
   }
 
   a {
-    color: $blue;
+    color: #fff;
 
-    &,
+    &:active,
     &:hover {
-      color: #fff;
+      color: $blue;
       text-decoration: none;
     }
   }
@@ -113,11 +113,11 @@
       line-height: $unit;
       text-shadow: none;
 
+			&:hover,
       &.active {
         color: $blue;
       }
 
-      &:hover,
       &:active,
       &:focus {
         color: #fff;
