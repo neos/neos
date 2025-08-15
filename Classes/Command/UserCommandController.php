@@ -92,6 +92,9 @@ class UserCommandController extends CommandController
         }
         /** @var User $user */
 
+        /** @var Collection<int,Account> $accounts */
+        $userAccounts = $user->getAccounts();
+
         $this->outputLine('<b>First name:</b> %s', [$user->getName()->getFirstName()]);
         $this->outputLine('<b>Last name:</b> %s', [$user->getName()->getLastName()]);
         $this->outputLine('<b>Backend language:</b> %s', [$user->getPreferences()->getInterfaceLanguage() ?: 'Use system default']);
@@ -117,7 +120,7 @@ class UserCommandController extends CommandController
                 $account->isActive() ? 'yes' : 'no',
                 $account->getCreationDate()->format('Y-m-d'),
                 $account->getExpirationDate() !== null ? $account->getExpirationDate()->format('Y-m-d') : 'never',
-            ], $user->getAccounts()->toArray()),
+            ], $userAccounts->toArray()),
             ['Identifier', 'Role', 'Provider', 'Active', 'Created at', 'Expires at'],
         );
     }
@@ -464,6 +467,7 @@ class UserCommandController extends CommandController
         }
         return [
             $user->getName()->getFullName(),
+            /** @phpstan-ignore-next-line */
             $user->getPrimaryElectronicAddress() ?: '-',
             implode(', ', $accountIdentifiers),
             implode(', ', $roleNames),
