@@ -14,7 +14,6 @@
       type: boolean
       ui:
         label: i18n
-        reloadIfChanged: true
         inspector:
           group: 'visibility'
           position: 30
