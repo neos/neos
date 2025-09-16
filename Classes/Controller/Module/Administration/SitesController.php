@@ -397,7 +397,7 @@ class SitesController extends AbstractModuleController
         $this->persistenceManager->persistAll();
         $sitesNode = $rootNode->getNode(SiteService::SITES_ROOT_PATH);
         if ($sitesNode === null) {
-            $sitesNode = $rootNode->createNode(NodePaths::getNodeNameFromPath(SiteService::SITES_ROOT_PATH));
+            $sitesNode = $rootNode->createNode(NodePaths::getNodeNameFromPath(SiteService::SITES_ROOT_PATH), $this->nodeTypeManager->getNodeType('Neos.Neos:Sites'));
         }
         $siteNode = $sitesNode->createNode($nodeName, $siteNodeType);
         $siteNode->setProperty('title', $siteName);
