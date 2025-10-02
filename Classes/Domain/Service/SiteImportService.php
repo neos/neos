@@ -11,6 +11,7 @@ namespace Neos\Neos\Domain\Service;
  * source code.
  */
 
+use Neos\ContentRepository\Domain\Service\NodeTypeManager;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\ObjectManagement\ObjectManagerInterface;
 use Neos\Flow\Package\Exception\InvalidPackageStateException;
@@ -61,6 +62,12 @@ class SiteImportService
      * @var NodeImportService
      */
     protected $nodeImportService;
+
+    /**
+     * @Flow\Inject
+     * @var NodeTypeManager
+     */
+    protected $nodeTypeManager;
 
     /**
      * @Flow\Inject
@@ -206,7 +213,7 @@ class SiteImportService
 
             $sitesNode = $rootNode->getNode(SiteService::SITES_ROOT_PATH);
             if ($sitesNode === null) {
-                $sitesNode = $rootNode->createNode(NodePaths::getNodeNameFromPath(SiteService::SITES_ROOT_PATH));
+                $sitesNode = $rootNode->createNode(NodePaths::getNodeNameFromPath(SiteService::SITES_ROOT_PATH), $this->nodeTypeManager->getNodeType('Neos.Neos:Sites'));
             }
 
             $this->nodeImportService->import($xmlReader, $sitesNode->getPath(), dirname($pathAndFilename) . '/Resources');

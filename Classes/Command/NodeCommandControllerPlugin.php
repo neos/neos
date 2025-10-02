@@ -12,6 +12,7 @@ namespace Neos\Neos\Command;
  */
 
 use Neos\ContentRepository\Command\EventDispatchingNodeCommandControllerPluginInterface;
+use Neos\ContentRepository\Domain\Service\NodeTypeManager;
 use Neos\ContentRepository\Exception\NodeException;
 use Neos\Eel\Exception as EelException;
 use Neos\Eel\FlowQuery\FlowQuery;
@@ -65,6 +66,12 @@ class NodeCommandControllerPlugin implements EventDispatchingNodeCommandControll
      * @var NodeDataRepository
      */
     protected $nodeDataRepository;
+
+    /**
+     * @Flow\Inject
+     * @var NodeTypeManager
+     */
+    protected $nodeTypeManager;
 
     /**
      * @Flow\Inject
@@ -207,7 +214,7 @@ HELPTEXT;
         if ($sitesNode === null) {
             $taskDescription = sprintf('Create missing site node "<i>%s</i>"', SiteService::SITES_ROOT_PATH);
             $taskClosure = function () use ($rootNode) {
-                $rootNode->createNode(NodePaths::getNodeNameFromPath(SiteService::SITES_ROOT_PATH));
+                $rootNode->createNode(NodePaths::getNodeNameFromPath(SiteService::SITES_ROOT_PATH), $this->nodeTypeManager->getNodeType('Neos.Neos:Sites'));
                 $this->persistenceManager->persistAll();
             };
             $this->dispatch(self::EVENT_TASK, $taskDescription, $taskClosure);
