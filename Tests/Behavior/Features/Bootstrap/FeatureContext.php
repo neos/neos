@@ -13,9 +13,9 @@
 use Behat\Behat\Definition\Call\Then;
 use Behat\Behat\Tester\Exception\PendingException;
 use Behat\Gherkin\Node\TableNode;
+use Behat\Hook\BeforeScenario;
 use Behat\Mink\Element\ElementInterface;
 use Behat\Mink\Exception\ElementNotFoundException;
-use Behat\MinkExtension\Context\MinkContext;
 use Neos\Behat\Tests\Behat\FlowContextTrait;
 use Neos\ContentRepository\Domain\Repository\NodeDataRepository;
 use Neos\ContentRepository\Domain\Service\ContextFactoryInterface;
@@ -54,7 +54,7 @@ require_once(__DIR__ . '/FusionTrait.php');
 /**
  * Features context
  */
-class FeatureContext extends MinkContext
+class FeatureContext implements Behat\Behat\Context\Context
 {
     use FlowContextTrait;
     use NodeOperationsTrait;
@@ -460,7 +460,7 @@ class FeatureContext extends MinkContext
      */
     public function locatePath($path)
     {
-        return parent::locatePath($this->resolvePath($path));
+        // return parent::locatePath($this->resolvePath($path));
     }
 
     /**
@@ -538,5 +538,10 @@ class FeatureContext extends MinkContext
         /** @var SiteImportService $siteImportService */
         $siteImportService = $this->objectManager->get(SiteImportService::class);
         $siteImportService->importFromFile($this->lastExportedSiteXmlPathAndFilename);
+    }
+
+    protected function getObject(string $className): object
+    {
+        return $this->objectManager->get($className);
     }
 }
