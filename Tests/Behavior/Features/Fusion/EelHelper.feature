@@ -3,6 +3,7 @@ Feature: Tests for the EEL helpers interacting with the CR
 
   Background:
     Given I have the site "a"
+    Given I have the site "b"
     And I have the following NodeTypes configuration:
     """yaml
     'unstructured': {}
@@ -54,6 +55,7 @@ Feature: Tests for the EEL helpers interacting with the CR
       | a1b3       | /sites/a/a1/a1b/a1b3       | Neos.Neos:Test.DocumentType1  | {"uriPathSegment": "a1b3", "title": "Node a1b3"}   | false           |
       | a1c        | /sites/a/a1/a1c            | Neos.Neos:Test.DocumentType1  | {"uriPathSegment": "a1c", "title": "Node a1c"}     | true            |
       | a1c1       | /sites/a/a1/a1c/a1c1       | Neos.Neos:Test.DocumentType1  | {"uriPathSegment": "a1c1", "title": "Node a1c1"}   | false           |
+      | b          | /sites/b                   | Neos.Neos:Test.Site           | {"uriPathSegment": "b", "title": "Node b"}         | false           |
     And the Fusion context request URI is "http://localhost"
     And I have the following Fusion setup:
     """fusion
@@ -69,6 +71,8 @@ Feature: Tests for the EEL helpers interacting with the CR
       siteEntity_title = ${Neos.Site.findBySiteNode(node).name}
       siteEntity_packageKey = ${Neos.Site.findBySiteNode(node).siteResourcesPackageKey}
 
+      foreignSiteEntity = ${Neos.Site.findBySiteNode(q(node).find('#b').get(0)).nodeName}
+
       notASiteNode = ${Neos.Site.findBySiteNode(q(node).children().get(0))}
       @process.render = ${Json.stringify(value, ['JSON_PRETTY_PRINT'])}
     }
@@ -79,6 +83,7 @@ Feature: Tests for the EEL helpers interacting with the CR
         "siteEntity_nodeName": "a",
         "siteEntity_title": "Untitled Site",
         "siteEntity_packageKey": "Neos.Demo",
+        "foreignSiteEntity": "b",
         "notASiteNode": null
     }
     """
