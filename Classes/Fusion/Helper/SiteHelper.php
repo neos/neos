@@ -17,6 +17,9 @@ namespace Neos\Neos\Fusion\Helper;
 use Neos\ContentRepository\Domain\Model\NodeInterface;
 use Neos\Eel\ProtectedContextAwareInterface;
 use Neos\Neos\Domain\Model\Site;
+use Neos\Neos\Domain\Repository\SiteRepository;
+use Neos\Neos\Domain\Service\SiteService;
+use Neos\Flow\Annotations as Flow;
 
 /**
  * ForwardCompatibility Neos 9.0
@@ -24,10 +27,15 @@ use Neos\Neos\Domain\Model\Site;
  */
 class SiteHelper implements ProtectedContextAwareInterface
 {
+    #[Flow\Inject]
+    protected SiteRepository $siteRepository;
 
     public function findBySiteNode(NodeInterface $siteNode): ?Site
     {
-        return $siteNode->getContext()->getCurrentSite();
+        if ($siteNode->getParentPath() !== SiteService::SITES_ROOT_PATH) {
+            return null; // not a side node
+        }
+        return $this->siteRepository->findOneByNodeName($siteNode->getName());
     }
 
     /**
