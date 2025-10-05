@@ -57,6 +57,9 @@ class Version20251005080230 extends AbstractMigration
         //     ),
         //     new FusionPrototypeNameReplacement('Neos.Neos:PrimaryContent', 'Neos.Neos:ContentCollection', '"Neos.Neos:PrimaryContent" has been removed without a complete replacement. We replaced all usages with "Neos.Neos:ContentCollection" but not the prototype definition. Please check the replacements and if you have overridden the "Neos.Neos:PrimaryContent" prototype and rewrite it for your needs.', true),
         // ]);
+        // $rectorConfig->ruleWithConfiguration(FusionPrototypeNameAddCommentRector::class, [
+        //     new FusionPrototypeNameAddComment('Neos.Fusion:Attributes', 'TODO 9.0 migration: Neos.Fusion:Attributes has been removed without a replacement. You need to replace it by the property attributes in "Neos.Fusion:Tag" or apply the Eel helper "Neos.Array.toHtmlAttributesString(attributes)".')
+        // ]);
 
         /**
          * Neos\ContentRepository\Domain\Model\NodeInterface
@@ -242,24 +245,7 @@ class Version20251005080230 extends AbstractMigration
         // Add comment if .cacheLifetime() is used.
         $this->addCommentsIfRegexMatches('/\.cacheLifetime()/', '// TODO 9.0 migration: Line %LINE: You may need to remove ".cacheLifetime()" as this FlowQuery Operation has been removed. This is not needed anymore as the concept of timeable node visibility has changed. See https://github.com/neos/timeable-node-visibility');
         // Rewrite node to Neos.Caching.entryIdentifierForNode(...) in @cache.entryIdentifier segments
-        /* todo
-        function (string $eelExpression, FusionPath $path) {
-            if (!$path->containsSegments('__meta', 'cache', 'entryIdentifier')) {
-                return $eelExpression;
-            }
-            return preg_replace(
-                '/(?<!Neos\.Caching\.entryIdentifierForNode\()(node|documentNode|site)/',
-                'Neos.Caching.entryIdentifierForNode($1)',
-                $eelExpression
-            );
-        }*/
-
-        /**
-         * Neos.Fusion:Attributes
-         */
-        // todo $rectorConfig->ruleWithConfiguration(FusionPrototypeNameAddCommentRector::class, [
-        //     new FusionPrototypeNameAddComment('Neos.Fusion:Attributes', 'TODO 9.0 migration: Neos.Fusion:Attributes has been removed without a replacement. You need to replace it by the property attributes in "Neos.Fusion:Tag" or apply the Eel helper "Neos.Array.toHtmlAttributesString(attributes)".')
-        // ]);
+        $this->replaceEelExpressionInsideFusionPath('/(?<!Neos\.Caching\.entryIdentifierForNode\()(node|documentNode|site)/', 'Neos.Caching.entryIdentifierForNode($1)', '__meta/cache/entryIdentifier');
 
         /**
          * FlowQuery Operation context()

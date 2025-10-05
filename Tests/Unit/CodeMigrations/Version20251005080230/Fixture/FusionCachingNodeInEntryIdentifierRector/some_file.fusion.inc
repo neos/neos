@@ -1,4 +1,5 @@
 prototype(Neos.Fusion.Form:Checkbox)  < prototype(Neos.Fusion.Form:Component.Field) {
+  assignPlainNode = ${node}
 
   renderer = Neos.Fusion:Component {
     @cache {
@@ -15,6 +16,7 @@ prototype(Neos.Fusion.Form:Checkbox)  < prototype(Neos.Fusion.Form:Component.Fie
 }
 -----
 prototype(Neos.Fusion.Form:Checkbox)  < prototype(Neos.Fusion.Form:Component.Field) {
+  assignPlainNode = ${node}
 
   renderer = Neos.Fusion:Component {
     @cache {
