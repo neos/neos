@@ -27,7 +27,10 @@ class Version20251005080230Test extends TestCase
             if (count($parts) !== 2) {
                 throw new \RuntimeException(sprintf('Expect exact two segments split by ----- in file %s', $filePath), 1759646552);
             }
-            yield $filePath => $parts;
+            yield $filePath => [
+                rtrim($parts[0]),
+                rtrim($parts[1])
+            ];
         }
     }
 
