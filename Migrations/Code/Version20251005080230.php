@@ -85,7 +85,7 @@ class Version20251005080230 extends AbstractMigration
         $this->replaceEelExpression('/(node|documentNode|site)\.hidden\b(?!\.|\()/', 'Neos.Node.isDisabled($1)');
         $this->addCommentsIfRegexMatches('/\.hidden\b(?!\.|\()/', '// TODO 9.0 migration: Line %LINE: You may need to rewrite "VARIABLE.hidden" to Neos.Node.isDisabled(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\([\'"]_hidden[\'"]\)/', 'Neos.Node.isDisabled($1)');
-        $this->addCommentsIfRegexMatches('/\.property\([\'"]_hidden[\'"]\)/', '// TODO 9.0 migration: Line %LINE: You may need to rewrite "q(VARIABLE).property(\'_hidden\')" to Neos.Node.isDisabled(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
+        $this->fusionFlowQueryNodePropertyToWarningComment('_hidden', 'Line %LINE: You may need to rewrite "q(VARIABLE).property(\'_hidden\')" to Neos.Node.isDisabled(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getHiddenBeforeDateTime
         // Rewrite node.hiddenBeforeDateTime to q(node).property("enableAfterDateTime")'
         $this->replaceEelExpression('/(node|documentNode)\.hiddenBeforeDateTime/', 'q($1).property("enableAfterDateTime")');
@@ -115,14 +115,12 @@ class Version20251005080230 extends AbstractMigration
         $this->replaceEelExpression('/(node|documentNode|site)\.contextPath\b(?!\.|\()/', 'Neos.Node.serializedNodeAddress($1)');
         $this->addCommentsIfRegexMatches('/\.contextPath\b(?!\.|\()/', '// TODO 9.0 migration: Line %LINE: !! You very likely need to rewrite "VARIABLE.contextPath" to "Neos.Node.serializedNodeAddress(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\([\'"]_contextPath[\'"]\)/', 'Neos.Node.serializedNodeAddress($1)');
-        $this->addCommentsIfRegexMatches('/\.property\([\'"]_contextPath[\'"]\)/', '// TODO 9.0 migration: Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property(\'_contextPath\')" to "Neos.Node.serializedNodeAddress(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->fusionFlowQueryNodePropertyToWarningComment('_contextPath', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_contextPath")" to "Neos.Node.serializedNodeAddress(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getDepth
         // Rewrite node.depth and q(node).property("_depth") to Neos.Node.depth(node)
         $this->replaceEelExpression('/([a-zA-Z.]+)?(site|node|documentNode)\.depth\b(?!\.|\()/', 'Neos.Node.depth($1$2)');
         $this->addCommentsIfRegexMatches('/\.depth\b(?!\.|\()/', '// TODO 9.0 migration: Line %LINE: You may need to rewrite "VARIABLE.depth" to Neos.Node.depth(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\([\'"]_depth[\'"]\)/', 'Neos.Node.depth($1)');
-        $this->addCommentsIfRegexMatches('/\.property\([\'"]_depth[\'"]\)/', '// TODO 9.0 migration: Line %LINE: You may need to rewrite "q(VARIABLE).property(\'_depth\')" to Neos.Node.depth(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->fusionFlowQueryNodePropertyToWarningComment('_depth', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_depth")" to "Neos.Node.depth(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getWorkspace
         // todo refactor workspace.name to workspaceName
@@ -132,7 +130,6 @@ class Version20251005080230 extends AbstractMigration
         $this->replaceEelExpression('/(node|documentNode|site)\.identifier/', '$1.aggregateId');
         $this->addCommentsIfRegexMatches('/\.identifier/', '// TODO 9.0 migration: Line %LINE: You may need to rewrite "VARIABLE.identifier" to "VARIABLE.aggregateId". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\([\'"]_identifier[\'"]\)/', '$1.aggregateId');
-        $this->addCommentsIfRegexMatches('/\.property\([\'"]_identifier[\'"]\)/', '// TODO 9.0 migration: Line %LINE: You may need to rewrite "VARIABLE.identifier" to "VARIABLE.aggregateId". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->fusionFlowQueryNodePropertyToWarningComment('_identifier', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_identifier")" to "VARIABLE.aggregateId". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getIndex
         $this->fusionFlowQueryNodePropertyToWarningComment('_index', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_index")". You can fetch all siblings and inspect the ordering.');

@@ -19,7 +19,7 @@ prototype(Neos.Context:Prototype)  < prototype(Neos.Fusion:Component) {
 // TODO 9.0 migration: Line 19: !! node.context.properties is removed in Neos 9.0.
 // TODO 9.0 migration: Line 9: !! node.context.currentDomain is removed in Neos 9.0.
 // TODO 9.0 migration: Line 8: !! node.context.currentSiteNode is removed in Neos 9.0. Check if you can't simply use ${site}.
-// TODO 9.0 migration: Line 14: You very likely need to rewrite "VARIABLE.context.currentRenderingMode..." to "renderingMode...". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.
+// TODO 9.0 migration: Line 17: You very likely need to rewrite "VARIABLE.context.currentRenderingMode..." to "renderingMode...". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.
 prototype(Neos.Context:Prototype)  < prototype(Neos.Fusion:Component) {
 
     currentSite = ${Neos.Site.findBySiteNode(site)}
