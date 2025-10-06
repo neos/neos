@@ -46,21 +46,6 @@ class Version20251005080230 extends AbstractMigration
 
     public function up(): void
     {
-        // todo $rectorConfig->ruleWithConfiguration(FusionReplacePrototypeNameRector::class, [
-        //     new FusionPrototypeNameReplacement('Neos.Fusion:Array', 'Neos.Fusion:Join'),
-        //     new FusionPrototypeNameReplacement('Neos.Fusion:RawArray', 'Neos.Fusion:DataStructure'),
-        //     new FusionPrototypeNameReplacement('Neos.Fusion:Collection', 'Neos.Fusion:Loop',
-        //         'Migration of Neos.Fusion:Collection to Neos.Fusion:Loop needs manual action. The key `collection` has to be renamed to `items` which cannot be done automatically'
-        //     ),
-        //     new FusionPrototypeNameReplacement('Neos.Fusion:RawCollection', 'Neos.Fusion:Map',
-        //         'Migration of Neos.Fusion:RawCollection to Neos.Fusion:Map needs manual action. The key `collection` has to be renamed to `items` which cannot be done automatically'
-        //     ),
-        //     new FusionPrototypeNameReplacement('Neos.Neos:PrimaryContent', 'Neos.Neos:ContentCollection', '"Neos.Neos:PrimaryContent" has been removed without a complete replacement. We replaced all usages with "Neos.Neos:ContentCollection" but not the prototype definition. Please check the replacements and if you have overridden the "Neos.Neos:PrimaryContent" prototype and rewrite it for your needs.', true),
-        // ]);
-        // $rectorConfig->ruleWithConfiguration(FusionPrototypeNameAddCommentRector::class, [
-        //     new FusionPrototypeNameAddComment('Neos.Fusion:Attributes', 'TODO 9.0 migration: Neos.Fusion:Attributes has been removed without a replacement. You need to replace it by the property attributes in "Neos.Fusion:Tag" or apply the Eel helper "Neos.Array.toHtmlAttributesString(attributes)".')
-        // ]);
-
         /**
          * Neos\ContentRepository\Domain\Model\NodeInterface
          */
@@ -252,5 +237,10 @@ class Version20251005080230 extends AbstractMigration
          */
         // Add comments for q(node).context({targetDimensions|currentDateTime|removedContentShown|inaccessibleContentShown: ...})
         $this->addCommentsIfRegexMatches('/context\(\s*\{(.*)[\'"](targetDimensions|currentDateTime|removedContentShown|inaccessibleContentShown)[\'"](.*)\}\s*\)/', '// TODO 9.0 migration: Line %LINE: The "context()" FlowQuery operation has changed and does not support the following properties anymore: targetDimensions,currentDateTime,removedContentShown,inaccessibleContentShown.');
+
+        /**
+         * Neos.Neos-FusionObject changes
+         */
+        $this->renameOnlyFusionPrototypeInstantiations('Neos.Neos:PrimaryContent', 'Neos.Neos:ContentCollection', '"Neos.Neos:PrimaryContent" has been removed without a complete replacement. We replaced all usages with "Neos.Neos:ContentCollection" but not the prototype definition. Please check the replacements and if you have overridden the "Neos.Neos:PrimaryContent" prototype and rewrite it for your needs.');
     }
 }
