@@ -19,10 +19,10 @@ default:
             - FeatureContext
 
   extensions:
-    Behat\MinkExtension:
-      show_cmd: 'open %s'
-      goutte: ~
-      selenium2: ~
+    # Behat\MinkExtension:
+    #   show_cmd: 'open %s'
+    #   goutte: ~
+    #   selenium2: ~
 
       # Project base URL
       #
