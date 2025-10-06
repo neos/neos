@@ -17,8 +17,11 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
       properties:
         title:
           type: string
+    'Neos.Neos:Site':
+      abstract: true
     'Neos.Neos:Test.Site':
       superTypes:
+        'Neos.Neos:Site': true
         'Neos.Neos:Document': true
     'Neos.Neos:Test.DocumentType1':
       superTypes:
@@ -106,6 +109,7 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     test = Neos.Fusion:DataStructure {
       noFilter = ${q(node).children().get()}
       withFilter = ${q(node).children('[instanceof Neos.Neos:Test.DocumentType2]').get()}
+      withName = ${q(node).children('a1a4').get()}
       @process.render = Neos.Neos:Test.RenderNodesDataStructure
     }
     """
@@ -113,6 +117,7 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     """
     noFilter: a1a1,a1a2,a1a3,a1a4,a1a5,a1a6,a1a7
     withFilter: a1a2,a1a3,a1a4,a1a5,a1a6
+    withName: a1a4
     """
 
   Scenario: Has
@@ -164,7 +169,7 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     When I execute the following Fusion code:
     """fusion
     test = Neos.Fusion:DataStructure {
-      criteria = ${q(node).parentsUntil('[instanceof Neos.Neos:Test.Site]').get()}
+      criteria = ${q(node).parentsUntil('[instanceof Neos.Neos:Site]').get()}
       # this does not work in Neos 8.3 but it should according to documentation and yield "a1a"
       # criteriaAndFilter = ${q(node).parentsUntil('[instanceof Neos.Neos:Test.DocumentType1]', '[instanceof Neos.Neos:Test.DocumentType2]').get()}
       @process.render = Neos.Neos:Test.RenderNodesDataStructure
@@ -180,7 +185,7 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     """fusion
     test = Neos.Fusion:DataStructure {
       upToType = ${q(node).closest('[instanceof Neos.Neos:Test.DocumentType1]').get()}
-      upToSite = ${q(node).closest('[instanceof Neos.Neos:Test.Site]').get()}
+      upToSite = ${q(node).closest('[instanceof Neos.Neos:Site]').get()}
       currentNode = ${q(node).closest('[instanceof Neos.Neos:Test.DocumentType2a]').get()}
       @process.render = Neos.Neos:Test.RenderNodesDataStructure
     }
@@ -196,7 +201,7 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     When I execute the following Fusion code:
     """fusion
     test = Neos.Fusion:DataStructure {
-      filterSite = ${q([documentNode, node, site]).filter('[instanceof Neos.Neos:Test.Site]').get()}
+      filterSite = ${q([documentNode, node, site]).filter('[instanceof Neos.Neos:Site]').get()}
       filterDocument = ${q([documentNode, node, site]).filter('[instanceof Neos.Neos:Document]').get()}
       filterProperty = ${q([documentNode, node, site]).filter('[uriPathSegment="a1a4"]').get()}
       @process.render = Neos.Neos:Test.RenderNodesDataStructure
@@ -242,6 +247,7 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     matchingFilter: a1a5
     nonMatchingFilter:
     """
+
   Scenario: PrevAll
     When I execute the following Fusion code:
     """fusion
@@ -320,6 +326,10 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     test = Neos.Fusion:DataStructure {
       typeFilter = ${q(node).find('[instanceof Neos.Neos:Test.DocumentType2]').get()}
       combinedFilter = ${q(node).find('[instanceof Neos.Neos:Test.DocumentType2][uriPathSegment*="b1"]').get()}
+      identifier = ${q(node).find('#a1b1a').get()}
+      name = ${q(node).find('a1b').get()}
+      relativePath = ${q(node).find('a1b/a1b1').get()}
+      absolutePath = ${q(node).find('/sites/a/a1/a1b').get()}
       @process.render = Neos.Neos:Test.RenderNodesDataStructure
     }
     """
@@ -327,4 +337,122 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     """
     typeFilter: a1a,a1b1a,a1a2,a1b2,a1a3,a1a4,a1a5,a1a6
     combinedFilter: a1b1a
+    identifier: a1b1a
+    name: a1b
+    relativePath: a1b1
+    absolutePath: a1b
+    """
+
+  Scenario: Unique
+    When I execute the following Fusion code:
+    """fusion
+    test = Neos.Fusion:DataStructure {
+      unique = ${q([node,site,documentNode]).unique().get()}
+      @process.render = Neos.Neos:Test.RenderNodesDataStructure
+    }
+    """
+    Then I expect the following Fusion rendering result:
+    """
+    unique: a1a4,a
+    """
+
+  Scenario: Remove
+    When I execute the following Fusion code:
+    """fusion
+    test = Neos.Fusion:DataStructure {
+      removeNode = ${q([node,site,documentNode]).remove(node).get()}
+      nothingToRemove = ${q([node,node,node]).remove(site).get()}
+      @process.render = Neos.Neos:Test.RenderNodesDataStructure
+    }
+    """
+    Then I expect the following Fusion rendering result:
+    """
+    removeNode: a
+    nothingToRemove: a1a4,a1a4,a1a4
+    """
+
+  Scenario: Sort
+    When I execute the following Fusion code:
+    """fusion
+    test = Neos.Fusion:DataStructure {
+      @context {
+        a2 = ${q(site).find('#a2').get(0)}
+        a1a1 = ${q(site).find('#a1a1').get(0)}
+        a1a2 = ${q(site).find('#a1a2').get(0)}
+        a1a3 = ${q(site).find('#a1a3').get(0)}
+        a1a4 = ${q(site).find('#a1a4').get(0)}
+      }
+      unsorted = ${q([a1a3, a1a4, a1a1, a1a2]).get()}
+      sortByTitleAsc = ${q([a1a3, a1a4, a1a1, a1a2]).sort("title", "ASC").get()}
+      sortByUriDesc = ${q([a1a3, a1a4, a1a1, a1a2]).sort("uriPathSegment", "DESC").get()}
+      # a2 is "older"
+      # todo 8.4 sortByDateAsc = ${q([a2, a1a1]).sortByTimestamp("created", "ASC").get()}
+      @process.render = Neos.Neos:Test.RenderNodesDataStructure
+    }
+    """
+    Then I expect the following Fusion rendering result:
+    """
+    unsorted: a1a3,a1a4,a1a1,a1a2
+    sortByTitleAsc: a1a1,a1a2,a1a3,a1a4
+    sortByUriDesc: a1a4,a1a3,a1a2,a1a1
+    """
+    # todo 8.4 sortByDateAsc: a1a1,a2
+
+  Scenario: Node field accessors
+    When the Fusion context node is "a1"
+    When I execute the following Fusion code:
+    """fusion
+    test = Neos.Fusion:DataStructure {
+      property = ${node.properties.title}
+      identifier = ${node.aggregateId}
+      nodeTypeName = ${node.nodeTypeName}
+      @process.render = ${Json.stringify(value, ['JSON_PRETTY_PRINT'])}
+    }
+    """
+    Then I expect the following Fusion rendering result:
+    """
+    {
+        "property": "Node a1",
+        "identifier": "a1",
+        "nodeTypeName": "Neos.Neos:Test.DocumentType1"
+    }
+    """
+
+  Scenario: Node label rendering
+    When the Fusion context node is "a1"
+    When I execute the following Fusion code:
+    """fusion
+    test = Neos.Fusion:DataStructure {
+      # label = ${Neos.Node.label(node)}
+      nodeTypeName = ${node.nodeTypeName}
+      @process.render = ${Json.stringify(value, ['JSON_PRETTY_PRINT'])}
+    }
+    """
+    Then I expect the following Fusion rendering result:
+    # todo 8.4   "label": "Neos.Neos:Test.DocumentType1 (a1)",
+    """
+    {
+        "nodeTypeName": "Neos.Neos:Test.DocumentType1"
+    }
+    """
+    # if the node type config is empty, the label rendering should still work
+    Given I have the following NodeTypes configuration:
+    """yaml
+    unstructured: {}
+    Neos.Neos:FallbackNode: {}
+    """
+    When I execute the following Fusion code:
+    """fusion
+    test = Neos.Fusion:DataStructure {
+      # label = ${Neos.Node.label(node)}
+      nodeTypeName = ${node.nodeTypeName}
+      @process.render = ${Json.stringify(value, ['JSON_PRETTY_PRINT'])}
+    }
+    """
+    # todo 8.4   "label": "Neos.Neos:Test.DocumentType1 (a1)",
+    Then I expect the following Fusion rendering result:
+    """
+    {
+        "nodeTypeName": "Neos.Neos:FallbackNode"
+    }
     """
