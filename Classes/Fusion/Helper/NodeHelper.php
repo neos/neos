@@ -24,7 +24,6 @@ use Neos\Neos\Domain\Exception;
  */
 class NodeHelper implements ProtectedContextAwareInterface
 {
-
     /**
      * @Flow\Inject
      * @var NodeTypeManager
@@ -62,7 +61,13 @@ class NodeHelper implements ProtectedContextAwareInterface
      */
     public function nodeType(Node $node): ?NodeType
     {
-        return $this->nodeTypeManager->hasNodeType($node->getNodeTypeName()) ? $node->getNodeType() : null;
+        $realNodeTypeName = $node->getNodeData()->getRealNodeTypeNameWithoutFallback();
+
+        if (!$this->nodeTypeManager->hasNodeType($realNodeTypeName)) {
+            return null;
+        }
+
+        return $this->nodeTypeManager->getNodeType($realNodeTypeName);
     }
 
     /**
