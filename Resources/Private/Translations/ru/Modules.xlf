@@ -269,9 +269,9 @@
         <source>This module provides an overview of all relevant events affecting this Neos installation.</source>
         <target state="final">Этот модуль предоставляет обзор всех событий, имеющих отношение к данной инсталяции Neos.</target>
       </trans-unit>
-      <trans-unit id="history.messages.hereIsWhatHappenedRecentlyInNeos" xml:space="preserve" approved="yes">
+      <trans-unit id="history.messages.hereIsWhatHappenedRecentlyInNeos" xml:space="preserve" approved="no">
         <source>Here's what happened recently in Neos</source>
-        <target state="final">Вот что недавно произошло в Neos:</target>
+        <target state="translated">Вот что недавно произошло в Neos</target>
       </trans-unit>
       <trans-unit id="history.messages.emptyHistory" xml:space="preserve" approved="yes">
         <source>There have not been recorded any events yet which could be displayed in this history.</source>
@@ -1104,8 +1104,8 @@ Click on one of the nodes to only see its fallbacks and variants. Click again to
         <target state="needs-translation">Domain created</target>
       </trans-unit>
       <trans-unit id="sites.domainCreated.body" xml:space="preserve">
-        <source>'The domain "{0}" has been created.'</source>
-        <target state="needs-translation">'The domain "{0}" has been created.'</target>
+        <source>The domain "{0}" has been created.</source>
+        <target state="translated">Домен "{0}" создан.</target>
       </trans-unit>
       <trans-unit id="sites.domainDeleted.title" xml:space="preserve">
         <source>Domain deleted</source>
