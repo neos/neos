@@ -73,4 +73,46 @@ class Version20251005080230Test extends TestCase
             file_get_contents('vfs://fusion/Target.Package/Resources/SomeFile.fusion')
         );
     }
+
+    /**
+     * @dataProvider fixtures
+     * @test
+     */
+    public function reExecuteMigrationWhenCommentsAreDisabledEmitsNoChanges(string $_, string $migratedFusionFile): void
+    {
+        vfsStream::setup('fusion', null, [
+            "Target.Package" => [
+                'Resources' => [
+                    'SomeFile.fusion' => $migratedFusionFile
+                ],
+            ]
+        ]);
+
+        $fakeManager = $this->getMockBuilder(Manager::class)->disableOriginalConstructor()->disableAutoReturnValueGeneration()->getMock();
+
+        if (!class_exists(Version20251005080230::class)) {
+            // migrations are not PSR auto-loaded
+            require_once __DIR__ . '/../../../../Migrations/Version20251005080230.php';
+        }
+
+        $migration = new Version20251005080230(
+            $fakeManager,
+            'Neos.Neos'
+        );
+
+        $targetPackageData = [
+            'path' => 'vfs://fusion/Target.Package'
+        ];
+
+        $migration->prepare($targetPackageData);
+        $migration->up();
+
+        $migration->disableAddingTodoComments();
+        $migration->execute();
+
+        self::assertEquals(
+            $migratedFusionFile,
+            file_get_contents('vfs://fusion/Target.Package/Resources/SomeFile.fusion')
+        );
+    }
 }
