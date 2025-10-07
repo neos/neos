@@ -61,7 +61,7 @@ class NodeHelper implements ProtectedContextAwareInterface
      */
     public function nodeType(Node $node): ?NodeType
     {
-        $realNodeTypeName = $node->getNodeData()->getRealNodeTypeNameWithoutFallback();
+        $realNodeTypeName = $node->getNodeData()->getNodeTypeNameWithoutFallback();
 
         if (!$this->nodeTypeManager->hasNodeType($realNodeTypeName)) {
             return null;

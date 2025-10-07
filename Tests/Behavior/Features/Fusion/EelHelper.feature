@@ -109,7 +109,6 @@ Feature: Tests for the EEL helpers interacting with the CR
         "nodeTypeName": "Neos.Neos:Test.DocumentType1"
     }
     """
-    # if the node type config is empty, the label rendering should still work
     Given I have the following NodeTypes configuration:
     """yaml
     unstructured: {}
