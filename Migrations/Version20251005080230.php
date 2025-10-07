@@ -14,7 +14,32 @@ namespace Neos\Flow\Core\Migrations;
 use Neos\Fusion\Migrations\FusionMigrationTrait;
 
 /**
- * TODO Add description as this is part of the documentation
+ * NOTE: This migration will be enabled in Neos 9.0 by placing it under Migrations/Code - for Neos 8.4 this contains just the rules which are run via dedicated CLI command.
+ *
+ * Adjust EEL in Fusion code to the new Neos 9 API
+ *
+ * The context variables ${node}, documentNode and site continue to exist in Fusion but there are changes to their API in Fusion.
+ *
+ * While most of the FlowQueries work as before, there are some adjustments that come with the new concepts that are introduced in Neos 9.
+ *
+ * The most important changes are:
+ *
+ * - Accessing properties of the node context via node.context.is no longer supported.
+ *   And modifying the node context via flowQuery q(node).context() is only partially supported.
+ *   The rendering mode (node.context.inBackend) is now moved to a separate variable that is independent of the node context.
+ * - Internal properties like _hidden and _name are no longer in use.
+ * - Cache Entry Identifiers are now a dedicated object and not any value.
+ *
+ * There are some adjustments with a caveat as they don't reflect the 8.3 behaviour 100%.
+ *
+ * A few examples are:
+ *
+ * - `node.nodeType` always returned a NodeType and when removed the `Neos.Neos:FallbackNode`. In Neos 9.0 there exists no magic for the `Neos.Neos:FallbackNode` and thus the helper `Neos.Node.nodeType(node)` returns "NULL".
+ * - `node.context.currentRenderingMode` always returns the rendering mode based on the logged-in user - so when viewing the page logged in in the frontend the mode is still 'inPlaces' as in the backend -> the new `renderingMode` reports "frontend" as expected for this case
+ * - the "live" rendering mode was renamed to "frontend" so the unlikely case of `node.context.currentRenderingMode == "live"` fails when migrated to `renderingMode.name`
+ * - `node.context.currentSite` is rewritten to `Neos.Site.findBySiteNode(site)` which makes the assumption of "site" being present and that "currentSite" is actually the current and was not tampered with
+ * - unlike `node.identifier` the `node.aggregateId` is now a value object in fusion, it is string-able and can be output directly but no direct strict comparison must be done `node.aggregateId == "some-id"` will not work. It has to be cast to string `String.toString(node.aggregateId)`.
+ *
  */
 class Version20251005080230 extends AbstractMigration
 {
@@ -23,6 +48,11 @@ class Version20251005080230 extends AbstractMigration
     public function getIdentifier(): string
     {
         return 'Neos.Neos-20251005080230';
+    }
+
+    public function __construct()
+    {
+        // construct object in 8.4 without arguments
     }
 
     final public function fusionFlowQueryNodePropertyToWarningComment(string $property, string $warningMessage): void
@@ -242,5 +272,10 @@ class Version20251005080230 extends AbstractMigration
          * Neos.Neos-FusionObject changes
          */
         $this->renameOnlyFusionPrototypeInstantiations('Neos.Neos:PrimaryContent', 'Neos.Neos:ContentCollection', '"Neos.Neos:PrimaryContent" has been removed without a complete replacement. We replaced all usages with "Neos.Neos:ContentCollection" but not the prototype definition. Please check the replacements and if you have overridden the "Neos.Neos:PrimaryContent" prototype and rewrite it for your needs.');
+    }
+
+    public function disableAddingTodoComments(): void
+    {
+        $this->regexConditionalCommentsOperations = [];
     }
 }
