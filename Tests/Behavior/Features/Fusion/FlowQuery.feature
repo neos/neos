@@ -423,15 +423,15 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     When I execute the following Fusion code:
     """fusion
     test = Neos.Fusion:DataStructure {
-      # label = ${Neos.Node.label(node)}
+      label = ${Neos.Node.label(node)}
       nodeTypeName = ${node.nodeTypeName}
       @process.render = ${Json.stringify(value, ['JSON_PRETTY_PRINT'])}
     }
     """
     Then I expect the following Fusion rendering result:
-    # todo 8.4   "label": "Neos.Neos:Test.DocumentType1 (a1)",
     """
     {
+        "label": "Neos.Neos:Test.DocumentType1 (a1)",
         "nodeTypeName": "Neos.Neos:Test.DocumentType1"
     }
     """
@@ -444,15 +444,15 @@ Feature: Tests for the "Neos.ContentRepository" Flow Query methods.
     When I execute the following Fusion code:
     """fusion
     test = Neos.Fusion:DataStructure {
-      # label = ${Neos.Node.label(node)}
+      label = ${Neos.Node.label(node)}
       nodeTypeName = ${node.nodeTypeName}
       @process.render = ${Json.stringify(value, ['JSON_PRETTY_PRINT'])}
     }
     """
-    # todo 8.4   "label": "Neos.Neos:Test.DocumentType1 (a1)",
     Then I expect the following Fusion rendering result:
     """
     {
+        "label": "Neos.Neos:FallbackNode (a1)",
         "nodeTypeName": "Neos.Neos:FallbackNode"
     }
     """

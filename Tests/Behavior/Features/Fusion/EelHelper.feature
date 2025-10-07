@@ -22,6 +22,8 @@ Feature: Tests for the EEL helpers interacting with the CR
       superTypes:
         'Neos.Neos:Document': true
     'Neos.Neos:Test.DocumentType1':
+      ui:
+        label: "My Document 1"
       superTypes:
         'Neos.Neos:Document': true
     'Neos.Neos:Test.DocumentType2':
@@ -85,5 +87,49 @@ Feature: Tests for the EEL helpers interacting with the CR
         "siteEntity_packageKey": "Neos.Demo",
         "foreignSiteEntity": "b",
         "notASiteNode": null
+    }
+    """
+
+  Scenario: Neos.Node.nodeType()
+    When the Fusion context node is "a1"
+    When I execute the following Fusion code:
+    """fusion
+    test = Neos.Fusion:DataStructure {
+      nodeType_name = ${Neos.Node.nodeType(node).name}
+      nodeType_label = ${Neos.Node.nodeType(node).label}
+      nodeTypeName = ${node.nodeTypeName}
+      @process.render = ${Json.stringify(value, ['JSON_PRETTY_PRINT'])}
+    }
+    """
+    Then I expect the following Fusion rendering result:
+    """
+    {
+        "nodeType_name": "Neos.Neos:Test.DocumentType1",
+        "nodeType_label": "My Document 1",
+        "nodeTypeName": "Neos.Neos:Test.DocumentType1"
+    }
+    """
+    Given I have the following NodeTypes configuration:
+    """yaml
+    unstructured: {}
+    Neos.Neos:FallbackNode: {}
+    """
+    When I execute the following Fusion code:
+    """fusion
+    test = Neos.Fusion:DataStructure {
+      nodeType = ${Neos.Node.nodeType(node)}
+      nodeType_name = ${Neos.Node.nodeType(node).name}
+      nodeType_label = ${Neos.Node.nodeType(node).label}
+      nodeTypeName = ${node.nodeTypeName}
+      @process.render = ${Json.stringify(value, ['JSON_PRETTY_PRINT'])}
+    }
+    """
+    Then I expect the following Fusion rendering result:
+    """
+    {
+        "nodeType": null,
+        "nodeType_name": null,
+        "nodeType_label": null,
+        "nodeTypeName": "Neos.Neos:FallbackNode"
     }
     """
