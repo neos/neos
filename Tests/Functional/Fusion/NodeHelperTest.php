@@ -14,6 +14,7 @@ namespace Neos\Neos\Tests\Functional\Fusion;
 use Neos\ContentRepository\Domain\Model\Node;
 use Neos\ContentRepository\Domain\Model\NodeType;
 use Neos\Fusion\Tests\Functional\FusionObjects\AbstractFusionObjectTest;
+use Neos\Neos\Domain\Service\ContentContext;
 use PHPUnit\Framework\MockObject\MockObject;
 
 /**
@@ -120,7 +121,7 @@ class NodeHelperTest extends AbstractFusionObjectTest
 
         $textNode = $this
             ->getMockBuilder(Node::class)
-            ->setMethods(['hasProperty', 'getProperty', 'getNodeType', 'isAutoCreated'])
+            ->setMethods(['hasProperty', 'getProperty', 'getNodeType', 'isAutoCreated', 'getContext'])
             ->disableOriginalConstructor()
             ->getMock();
         $textNode
@@ -145,6 +146,11 @@ class NodeHelperTest extends AbstractFusionObjectTest
         $textNode
             ->method('getNodeType')
             ->willReturn($nodeType);
+
+        $fakeContext = $this->getMockBuilder(ContentContext::class)->disableOriginalConstructor()->getMock();
+        $textNode
+            ->method('getContext')
+            ->willReturn($fakeContext);
 
         $this->textNode = $textNode;
     }
