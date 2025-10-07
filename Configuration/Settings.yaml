@@ -313,6 +313,7 @@ Neos:
 
       backendLoginForm:
         backgroundImage: 'resource://Neos.Neos/Public/Images/Login/Wallpaper.webp'
+        backgroundImageAttribution: 'Login background photo of Tuscan Archipelago / Italy by Vera Göpfert.'
         logoImage: 'resource://Neos.Neos/Public/Images/Login/Logo.svg'
         stylesheets:
           'Neos.Neos:DefaultStyles': 'resource://Neos.Neos/Public/Styles/Login.css'
