@@ -81,6 +81,7 @@ class Neos9PreparationCommandController extends CommandController
 
         require_once $migrationFile;
 
+        /** @phpstan-ignore-next-line */
         $migration = new Version20251005080230();
 
         $targetPackageData = [
