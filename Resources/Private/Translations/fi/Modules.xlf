@@ -1299,6 +1299,18 @@ Napsauta yhtä solmuista nähdäksesi vain sen varaosat ja muunnelmat. Napsauta 
         <source>Contains modules related to management of users</source>
         <target state="translated">Sisältää käyttäjien hallintaan liittyvät moduulit</target>
       </trans-unit>
+      <trans-unit id="users.sortBy.fullName" xml:space="preserve">
+        <source>Sort by first and last name</source>
+        <target state="needs-translation">Lajittele etu- ja sukunimen mukaan</target>
+      </trans-unit>
+      <trans-unit id="users.sortBy.accountsAndRoles" xml:space="preserve">
+        <source>Sort by user accounts and roles</source>
+        <target state="needs-translation">Lajittele käyttäjätilien ja roolien mukaan</target>
+      </trans-unit>
+      <trans-unit id="users.sortBy.lastLogin" xml:space="preserve">
+        <source>Sort by last login</source>
+        <target state="needs-translation">Lajittele viimeisen sisäänkirjautumisen mukaan</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>

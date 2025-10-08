@@ -1311,6 +1311,18 @@ Haga clic en uno de los nodos para ver solo sus alternativas y variantes. Haga c
         <source>Go back to your starting module</source>
         <target state="translated">Regresa a tu módulo inicial</target>
       </trans-unit>
+      <trans-unit id="users.sortBy.fullName" xml:space="preserve">
+        <source>Sort by first and last name</source>
+        <target state="needs-translation">Ordenar por nombre y apellidos</target>
+      </trans-unit>
+      <trans-unit id="users.sortBy.accountsAndRoles" xml:space="preserve">
+        <source>Sort by user accounts and roles</source>
+        <target state="needs-translation">Ordenar por cuentas de usuario y funciones</target>
+      </trans-unit>
+      <trans-unit id="users.sortBy.lastLogin" xml:space="preserve">
+        <source>Sort by last login</source>
+        <target state="needs-translation">Ordenar por última conexión</target>
+      </trans-unit>
     </body>
   </file>
 </xliff>
