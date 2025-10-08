@@ -21,8 +21,8 @@ prototype(Neos.Fusion.Form:Checkbox)  < prototype(Neos.Fusion.Form:Component.Fie
     }
 }
 -----
-// TODO 9.0 migration: Line 18: !! You very likely need to rewrite "VARIABLE.contextPath" to "Neos.Node.serializedNodeAddress(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.
-// TODO 9.0 migration: Line 12: !! You very likely need to rewrite "q(VARIABLE).property("_contextPath")" to "Neos.Node.serializedNodeAddress(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.
+// TODO Neos.Neos-20251005080230 Line 18: !! You very likely need to rewrite "VARIABLE.contextPath" to "Neos.Node.serializedNodeAddress(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.
+// TODO Neos.Neos-20251005080230 Line 12: !! You very likely need to rewrite "q(VARIABLE).property("_contextPath")" to "Neos.Node.serializedNodeAddress(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.
 prototype(Neos.Fusion.Form:Checkbox)  < prototype(Neos.Fusion.Form:Component.Field) {
 
     renderer = Neos.Fusion:Component {

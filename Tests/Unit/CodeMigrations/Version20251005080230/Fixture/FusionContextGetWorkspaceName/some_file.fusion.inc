@@ -15,7 +15,7 @@ prototype(Neos.Context:Prototype)  < prototype(Neos.Fusion:Component) {
     `
 }
 -----
-// TODO 9.0 migration: Line 14: You very likely need to rewrite "VARIABLE.context.workspaceName" to "VARIABLE.workspaceName". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.
+// TODO Neos.Neos-20251005080230 Line 14: You very likely need to rewrite "VARIABLE.context.workspaceName" to "VARIABLE.workspaceName". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.
 prototype(Neos.Context:Prototype)  < prototype(Neos.Fusion:Component) {
 
     workspaceName = ${node.workspaceName}

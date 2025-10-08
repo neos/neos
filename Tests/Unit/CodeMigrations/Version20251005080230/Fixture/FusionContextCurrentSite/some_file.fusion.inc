@@ -11,7 +11,7 @@ prototype(Neos.Fusion.Form:Checkbox)  < prototype(Neos.Fusion.Form:Component.Fie
   }
 }
 -----
-// TODO 9.0 migration: Line 8: You very likely need to rewrite "VARIABLE.context.currentSite" to "Neos.Site.findBySiteNode(site)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.
+// TODO Neos.Neos-20251005080230 Line 8: You very likely need to rewrite "VARIABLE.context.currentSite" to "Neos.Site.findBySiteNode(site)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.
 prototype(Neos.Fusion.Form:Checkbox)  < prototype(Neos.Fusion.Form:Component.Field) {
   renderer = Neos.Fusion:Component {
     attributes = ${Neos.Site.findBySiteNode(site).siteResourcesPackageKey || Neos.Site.findBySiteNode(site).siteResourcesPackageKey || Neos.Site.findBySiteNode(site).siteResourcesPackageKey}
