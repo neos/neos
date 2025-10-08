@@ -57,6 +57,8 @@ class Version20251005080230 extends AbstractMigration
 
     final public function fusionFlowQueryNodePropertyToWarningComment(string $property, string $warningMessage): void
     {
+        $property = preg_quote($property);
+
         $this->addCommentsIfRegexMatches(
             "/\.property\(('|\")$property('|\")\)/",
              '// TODO 9.0 migration: ' . $warningMessage
@@ -65,8 +67,7 @@ class Version20251005080230 extends AbstractMigration
 
     final public function fusionNodePropertyPathToWarningComment(string $propertyPath, string $warningMessage): void
     {
-        // escape the fusion path separator "."
-        $propertyPath = str_replace('.', '\.', $propertyPath);
+        $propertyPath = preg_quote($propertyPath);
 
         $this->addCommentsIfRegexMatches(
             "/(node|site|documentNode)\.$propertyPath/",
@@ -87,8 +88,11 @@ class Version20251005080230 extends AbstractMigration
         $this->addCommentsIfRegexMatches('/\.label\b(?!\()/', '// TODO 9.0 migration: Line %LINE: You very likely need to rewrite "VARIABLE.label" to "Neos.Node.label(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\\([\'"]_label[\'"]\\)/', 'Neos.Node.label($1)');
         // getProperties -> PropertyCollectionInterface
-        // getPropertyNames TODO
-        // getContentObject -> DEPRECATED / NON-FUNCTIONAL TODO
+        // getPropertyNames
+        $this->replaceEelExpression('/(node|documentNode|site)\.propertyNames/', 'Array.keys($1.properties)');
+        $this->addCommentsIfRegexMatches('/\.propertyNames/', '// TODO 9.0 migration: Line %LINE: !! You very likely need to rewrite "VARIABLE.propertyNames" to "Array.keys(VARIABLE.properties)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
+        $this->fusionFlowQueryNodePropertyToWarningComment('_propertyNames', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_propertyNames")" to "Array.keys(VARIABLE.properties)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
+        // getContentObject -> DEPRECATED / NON-FUNCTIONAL
         // getNodeType: NodeType
         // Rewrite "node.nodeType" and "q(node).property('_nodeType')" to "Neos.Node.nodeType(node)"
         // Fusion: node.nodeType -> Neos.Node.nodeType(node)
@@ -122,7 +126,7 @@ class Version20251005080230 extends AbstractMigration
         $this->addCommentsIfRegexMatches('/\.hiddenInIndex\b(?!\.|\()/', '// TODO 9.0 migration: Line %LINE: You may need to rewrite "VARIABLE.hiddenInIndex" to VARIABLE.property(\'hiddenInMenu\'). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/\.property\([\'"]_hiddenInIndex[\'"]\)/', '.property(\'hiddenInMenu\')');
         $this->fusionFlowQueryNodePropertyToWarningComment('_hiddenInIndex', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_hiddenInIndex")" to "VARIABLE.property(\'hiddenInMenu\')". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
-        // getAccessRoles todo add warning
+        // getAccessRoles DEPRECATED
         // getPath
         // Rewrite node.path and q(node).property("_path") to Neos.Node.path(node)
         $this->replaceEelExpression('/(node|documentNode|site)\.path\b(?!\.|\()/', 'Neos.Node.path($1)');
@@ -159,28 +163,32 @@ class Version20251005080230 extends AbstractMigration
         $this->replaceEelExpression('/(node|documentNode)\.parent/', 'q($1).parent().get(0)');
         $this->addCommentsIfRegexMatches('/\.parent($|[^a-z(])/i', '// TODO 9.0 migration: Line %LINE: You may need to rewrite "VARIABLE.parent" to "q(VARIABLE).parent().get(0)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->fusionFlowQueryNodePropertyToWarningComment('_parent', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_parent")" to "q(VARIABLE).parent().get(0)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
-        // getParentPath - deprecated todo warning
-        // getPrimaryChildNode() - deprecated todo warning
-        $this->fusionNodePropertyPathToWarningComment('removed', 'Line %LINE: !! node.removed - the new CR *never* returns removed nodes; so you can simplify your code and just assume removed == FALSE in all scenarios.');
-        // isVisible() todo
-        // isAccessible() todo
-        // hasAccessRestrictions() todo
-        // getNodeData() todo warning
+        // getParentPath - deprecated
+        // getPrimaryChildNode() - deprecated
+        // isRemoved()
+        $this->fusionNodePropertyPathToWarningComment('removed', 'Line %LINE: !! node.removed - the new CR does not return removed nodes unless the visibility constraints are loosed manually.');
+        // isVisible()
+        $this->fusionNodePropertyPathToWarningComment('visible', 'Line %LINE: !! node.visible was removed in the new CR. Please use Neos.Node.isDisabled(VARIABLE) instead in combination with the Neos.TimeableNodeVisibility package to enable support for timed content.');
+        // isAccessible() - deprecated
+        // hasAccessRestrictions() - deprecated
+        // getNodeData() - internal
+        $this->fusionNodePropertyPathToWarningComment('nodeData', 'Line %LINE: !! node.nodeDate is internal and was removed in the new CR please operate on the node instead.');
         // getContext()
         $this->addCommentsIfRegexMatches('/\.context\b(?![(.])/', '// TODO 9.0 migration: Line %LINE: !! node.context is removed in Neos 9.0 and cannot be passed around. In Neos 9.0 you likely want to pass the NodeAddress, the Node around or Subgraph around');
-        // getDimensions() TODO: Fusion
+        $this->fusionNodePropertyPathToWarningComment('dimensions', 'Line %LINE: !! node.dimensions is removed in Neos 9.0. You can get node DimensionSpacePoints via node.dimensionSpacePoints now or use the `Neos.Dimension.*` helper.');
         // isAutoCreated()
         // Rewrite node.autoCreated to node.classification.tethered
         $this->replaceEelExpression('/(node|documentNode|site)\.autoCreated/', '$1.classification.tethered');
         $this->addCommentsIfRegexMatches('/\.autoCreated/', '// TODO 9.0 migration: Line %LINE: !! You very likely need to rewrite "VARIABLE.autoCreated" to "VARIABLE.classification.tethered". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->fusionFlowQueryNodePropertyToWarningComment('_autoCreated', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_autoCreated")" to "VARIABLE.classification.tethered". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
 
-        // getOtherNodeVariants() TODO: Fusion?
+        // getOtherNodeVariants()
+        $this->addCommentsIfRegexMatches('/\.otherNodeVariants/', '// TODO 9.0 migration: Line %LINE: !! "node.otherNodeVariants" was removed. Please use a custom EEL Helper and leverage the ContentGraph and NodeAggregate to work cross dimensional.');
 
         /**
          * Neos\ContentRepository\Domain\Projection\Content\NodeInterface
          */
-        // isRoot() todo
+        // isRoot() - the root node is usually never available in fusion
         // isTethered()
         $this->replaceEelExpression('/(node|documentNode|site)\.tethered/', '$1.classification.tethered');
         $this->addCommentsIfRegexMatches('/(?<!classification)\.tethered/', '// TODO 9.0 migration: Line %LINE: !! You very likely need to rewrite "VARIABLE.tethered" to "VARIABLE.classification.tethered". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
