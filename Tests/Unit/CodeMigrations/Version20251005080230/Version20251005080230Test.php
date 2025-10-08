@@ -78,7 +78,7 @@ class Version20251005080230Test extends TestCase
      * @dataProvider fixtures
      * @test
      */
-    public function reExecuteMigrationWhenCommentsAreDisabledEmitsNoChanges(string $_, string $migratedFusionFile): void
+    public function reExecuteMigrationEmitsNoChanges(string $_, string $migratedFusionFile): void
     {
         vfsStream::setup('fusion', null, [
             "Target.Package" => [
@@ -107,12 +107,19 @@ class Version20251005080230Test extends TestCase
         $migration->prepare($targetPackageData);
         $migration->up();
 
-        $migration->disableAddingTodoComments();
         $migration->execute();
 
         self::assertEquals(
             $migratedFusionFile,
             file_get_contents('vfs://fusion/Target.Package/Resources/SomeFile.fusion')
         );
+
+        if ($migration->hasWarnings()) {
+            // warnings were logged but not written
+            self::assertContains(
+                'File ./Resources/SomeFile.fusion: No migration todo comments written as the migration was already run.',
+                $migration->getWarnings()
+            );
+        }
     }
 }
