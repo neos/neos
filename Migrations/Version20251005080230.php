@@ -166,7 +166,8 @@ class Version20251005080230 extends AbstractMigration
         // isAccessible() todo
         // hasAccessRestrictions() todo
         // getNodeData() todo warning
-        // getContext() todo warning when just passing around
+        // getContext()
+        $this->addCommentsIfRegexMatches('/\.context\b(?![(.])/', '// TODO 9.0 migration: Line %LINE: !! node.context is removed in Neos 9.0 and cannot be passed around. In Neos 9.0 you likely want to pass the NodeAddress, the Node around or Subgraph around');
         // getDimensions() TODO: Fusion
         // isAutoCreated()
         // Rewrite node.autoCreated to node.classification.tethered
@@ -180,14 +181,20 @@ class Version20251005080230 extends AbstractMigration
          * Neos\ContentRepository\Domain\Projection\Content\NodeInterface
          */
         // isRoot() todo
-        // isTethered() todo
+        // isTethered()
+        $this->replaceEelExpression('/(node|documentNode|site)\.tethered/', '$1.classification.tethered');
+        $this->addCommentsIfRegexMatches('/(?<!classification)\.tethered/', '// TODO 9.0 migration: Line %LINE: !! You very likely need to rewrite "VARIABLE.tethered" to "VARIABLE.classification.tethered". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
+        $this->fusionFlowQueryNodePropertyToWarningComment('_tethered', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_tethered")" to "VARIABLE.classification.tethered". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getContentStreamIdentifier() -> threw exception in <= Neos 8.0 - so nobody could have used this
         // getNodeAggregateIdentifier()
         // Rewrite node.nodeAggregateIdentifier to node.aggregateId
         $this->replaceEelExpression('/(node|documentNode|site)\.nodeAggregateIdentifier/', '$1.aggregateId');
         $this->addCommentsIfRegexMatches('/\.nodeAggregateIdentifier/', '// TODO 9.0 migration: Line %LINE: You may need to rewrite "VARIABLE.nodeAggregateIdentifier" to VARIABLE.aggregateId. We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getNodeTypeName() compatible with property access
-        // getNodeName() todo rename to node.name
+        // getNodeName()
+        $this->replaceEelExpression('/(node|documentNode|site)\.nodeName/', '$1.name');
+        $this->addCommentsIfRegexMatches('/\.nodeName/', '// TODO 9.0 migration: Line %LINE: !! You very likely need to rewrite "VARIABLE.nodeName" to "VARIABLE.name". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
+        $this->fusionFlowQueryNodePropertyToWarningComment('_nodeName', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_nodeName")" to "VARIABLE.name". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getOriginDimensionSpacePoint() -> threw exception in <= Neos 8.0 - so nobody could have used this
 
         /**
@@ -249,7 +256,6 @@ class Version20251005080230 extends AbstractMigration
         $this->replaceEelExpression('/(node|documentNode|site)\.context\.currentRenderingMode\.edit/', 'renderingMode.isEdit');
         $this->replaceEelExpression('/(node|documentNode|site)\.context\.currentRenderingMode\.preview/', 'renderingMode.isPreview');
         $this->addCommentsIfRegexMatches('/\.context\.currentRenderingMode/', '// TODO 9.0 migration: Line %LINE: You very likely need to rewrite "VARIABLE.context.currentRenderingMode..." to "renderingMode...". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
-        $this->addCommentsIfRegexMatches('/\.context\b(?![(.])/', '// TODO 9.0 migration: Line %LINE: !! node.context is removed in Neos 9.0 and cannot be passed around. In Neos 9.0 you likely want to pass the NodeAddress, the Node around or Subgraph around');
         /**
          * CacheLifetimeOperation and caching
          */
