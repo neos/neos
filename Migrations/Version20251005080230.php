@@ -278,6 +278,9 @@ class Version20251005080230 extends AbstractMigration
         // Add comments for q(node).context({targetDimensions|currentDateTime|removedContentShown|inaccessibleContentShown: ...})
         $this->addCommentsIfRegexMatches('/context\(\s*\{(.*)[\'"](targetDimensions|currentDateTime|removedContentShown|inaccessibleContentShown)[\'"](.*)\}\s*\)/', '// TODO 9.0 migration: Line %LINE: The "context()" FlowQuery operation has changed and does not support the following properties anymore: targetDimensions,currentDateTime,removedContentShown,inaccessibleContentShown.');
 
+        // Add comments for legacy underscore access in sort() operation with nodes
+        $this->addCommentsIfRegexMatches('/sort\(\s*[\'"]_.*[\'"]/', '// TODO 9.0 migration: Line %LINE: The "sort()" FlowQuery operation for nodes does no longer support underscore properties. In case it was sorted by _creationDateTime, _lastModificationDateTime or _lastPublicationDateTime in neos 9.0 the new sortByTimestamp(created|lastModified|originalCreated|originalLastModified) flowquery can be used.');
+
         /**
          * Neos.Neos-FusionObject changes
          */
