@@ -229,7 +229,8 @@ class Version20251005080230 extends AbstractMigration
          */
         // ContentContext::getCurrentSite
         // Rewrite node.context.currentSite to Neos.Site.findBySiteNode(site)
-        $this->replaceEelExpression('/(node|documentNode|site|[a-zA-Z]+)\.context\.currentSite\b/', 'Neos.Site.findBySiteNode(site)');
+        $this->replaceEelExpression('/(node|documentNode|site)\.context\.currentSite\b/', 'Neos.Site.findBySiteNode(site)');
+        $this->addCommentsIfRegexMatches('/\.context\.currentSite\b/', '// TODO 9.0 migration: Line %LINE: You very likely need to rewrite "VARIABLE.context.currentSite" to "Neos.Site.findBySiteNode(site)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // ContentContext::getCurrentDomain
         $this->fusionNodePropertyPathToWarningComment('context.currentDomain', 'Line %LINE: !! node.context.currentDomain is removed in Neos 9.0.');
         // ContentContext::getCurrentSiteNode
