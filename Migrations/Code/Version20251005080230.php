@@ -14,8 +14,6 @@ namespace Neos\Flow\Core\Migrations;
 use Neos\Fusion\Migrations\FusionMigrationTrait;
 
 /**
- * NOTE: This migration will be enabled in Neos 9.0 by placing it under Migrations/Code - for Neos 8.4 this contains just the rules which are run via dedicated CLI command.
- *
  * Adjust EEL in Fusion code to the new Neos 9 API
  *
  * The context variables ${node}, documentNode and site continue to exist in Fusion but there are changes to their API in Fusion.
@@ -48,11 +46,6 @@ class Version20251005080230 extends AbstractMigration
     public function getIdentifier(): string
     {
         return 'Neos.Neos-20251005080230';
-    }
-
-    public function __construct()
-    {
-        // construct object in 8.4 without arguments
     }
 
     final public function fusionFlowQueryNodePropertyToWarningComment(string $property, string $warningMessage): void
@@ -277,10 +270,5 @@ class Version20251005080230 extends AbstractMigration
          * Neos.Neos-FusionObject changes
          */
         $this->renameOnlyFusionPrototypeInstantiations('Neos.Neos:PrimaryContent', 'Neos.Neos:ContentCollection', '"Neos.Neos:PrimaryContent" has been removed without a complete replacement. We replaced all usages with "Neos.Neos:ContentCollection" but not the prototype definition. Please check the replacements and if you have overridden the "Neos.Neos:PrimaryContent" prototype and rewrite it for your needs.');
-    }
-
-    public function disableAddingTodoComments(): void
-    {
-        $this->regexConditionalCommentsOperations = [];
     }
 }

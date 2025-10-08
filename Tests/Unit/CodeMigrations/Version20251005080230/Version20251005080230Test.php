@@ -52,7 +52,7 @@ class Version20251005080230Test extends TestCase
 
         if (!class_exists(Version20251005080230::class)) {
             // migrations are not PSR auto-loaded
-            require_once __DIR__ . '/../../../../Migrations/Version20251005080230.php';
+            require_once __DIR__ . '/../../../../Migrations/Code/Version20251005080230.php';
         }
 
         $migration = new Version20251005080230(
@@ -92,7 +92,7 @@ class Version20251005080230Test extends TestCase
 
         if (!class_exists(Version20251005080230::class)) {
             // migrations are not PSR auto-loaded
-            require_once __DIR__ . '/../../../../Migrations/Version20251005080230.php';
+            require_once __DIR__ . '/../../../../Migrations/Code/Version20251005080230.php';
         }
 
         $migration = new Version20251005080230(
