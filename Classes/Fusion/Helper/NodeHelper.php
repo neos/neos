@@ -85,6 +85,9 @@ class NodeHelper implements ProtectedContextAwareInterface
     }
 
     /**
+     * In Neos 8.4 it will just return the context path while in Neos 9 the actual json representation of the NodeAddress is returned.
+     * Thus, the code must be likely adjusted still in Neos 9.0
+     *
      * @internal experimental API without documentation and clear use-case
      */
     public function serializedNodeAddress(Node $node): string
