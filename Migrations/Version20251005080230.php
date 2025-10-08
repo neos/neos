@@ -96,6 +96,7 @@ class Version20251005080230 extends AbstractMigration
         $this->replaceEelExpression('/(node|documentNode|site)\.nodeType\.name/', '$1.nodeTypeName');
         $this->replaceEelExpression('/(node|documentNode|site)\.nodeType\b/', 'Neos.Node.nodeType($1)');
         $this->addCommentsIfRegexMatches('/\.nodeType\b(?!\()/', '// TODO 9.0 migration: Line %LINE: You very likely need to rewrite "VARIABLE.nodeType" to "Neos.Node.nodeType(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
+        $this->addCommentsIfRegexMatches('/\.nodeType.name/', '// TODO 9.0 migration: Line %LINE: You may need to rewrite "VARIABLE.nodeType.name" to "VARIABLE.nodeTypeName". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\\([\'"]_nodeType\.name[\'"]\\)/', '$1.nodeTypeName');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\\([\'"]_nodeType(\.[^\'"]*)?[\'"]\\)/', 'Neos.Node.nodeType($1)$2');
         // isHidden
@@ -141,8 +142,10 @@ class Version20251005080230 extends AbstractMigration
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\([\'"]_depth[\'"]\)/', 'Neos.Node.depth($1)');
         $this->fusionFlowQueryNodePropertyToWarningComment('_depth', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_depth")" to "Neos.Node.depth(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getWorkspace
-        // todo refactor workspace.name to workspaceName
-        $this->fusionFlowQueryNodePropertyToWarningComment('_workspace', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_workspace")". It does not make sense anymore concept-wise. In Neos < 9, it pointed to the workspace where the node was *at home at*. Now, the closest we have here is the node identity.');
+        $this->replaceEelExpression('/(node|documentNode|site)\.workspace\.name/', '$1.workspaceName');
+        $this->replaceEelExpression('/q\(([^)]+)\)\.property\\([\'"]_workspace\.name[\'"]\\)/', '$1.workspaceName');
+        $this->addCommentsIfRegexMatches('/(?<!context)\.workspace\b(?!\()/', '// TODO 9.0 migration: Line %LINE: You very likely need to rewrite "VARIABLE.workspace" as the "workspace" of nodes is not accessible this way and the object contains less information which is split up to the WorkspaceMetadata. If you really need the workspace in fusion you need to create a dedicated helper yourself which should ideally do ALL the complex logic in php directly and return the computed result.');
+        $this->fusionFlowQueryNodePropertyToWarningComment('_workspace', 'Line %LINE: You very likely need to rewrite "VARIABLE.workspace" as the "workspace" of nodes is not accessible this way and the object contains less information which is split up to the WorkspaceMetadata. If you really need the workspace in fusion you need to create a dedicated helper yourself which should ideally do ALL the complex logic in php directly and return the computed result.');
         // getIdentifier
         // Rewrite "node.identifier" and "q(node).property('_identifier')" to "node.aggregateId"
         $this->replaceEelExpression('/(node|documentNode|site)\.identifier/', '$1.aggregateId');
@@ -186,14 +189,6 @@ class Version20251005080230 extends AbstractMigration
         // getNodeTypeName() compatible with property access
         // getNodeName() todo rename to node.name
         // getOriginDimensionSpacePoint() -> threw exception in <= Neos 8.0 - so nobody could have used this
-
-        /**
-         * Neos\ContentRepository\Core\NodeType\NodeType
-         */
-        // getName()
-        // Rewrite node.nodeType.name to node.nodeTypeName
-        $this->replaceEelExpression('/(node|documentNode|site)\.nodeType\.name/', '$1.nodeTypeName');
-        $this->addCommentsIfRegexMatches('/\.nodeType.name/', '// TODO 9.0 migration: Line %LINE: You may need to rewrite "VARIABLE.nodeType.name" to "VARIABLE.nodeTypeName". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
 
         /**
          * Neos\ContentRepository\Domain\Projection\Content\TraversableNodeInterface
@@ -253,7 +248,7 @@ class Version20251005080230 extends AbstractMigration
         $this->replaceEelExpression('/(node|documentNode|site)\.context\.currentRenderingMode\.edit/', 'renderingMode.isEdit');
         $this->replaceEelExpression('/(node|documentNode|site)\.context\.currentRenderingMode\.preview/', 'renderingMode.isPreview');
         $this->addCommentsIfRegexMatches('/\.context\.currentRenderingMode/', '// TODO 9.0 migration: Line %LINE: You very likely need to rewrite "VARIABLE.context.currentRenderingMode..." to "renderingMode...". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
-
+        $this->addCommentsIfRegexMatches('/\.context\b(?![(.])/', '// TODO 9.0 migration: Line %LINE: !! node.context is removed in Neos 9.0 and cannot be passed around. In Neos 9.0 you likely want to pass the NodeAddress, the Node around or Subgraph around');
         /**
          * CacheLifetimeOperation and caching
          */
