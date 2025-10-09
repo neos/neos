@@ -160,7 +160,7 @@ class Version20251005080230 extends AbstractMigration
         $this->fusionFlowQueryNodePropertyToWarningComment('_index', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_index")". You can fetch all siblings and inspect the ordering.');
         // getParent -> Node
         // Rewrite node.parent to q(node).parent().get(0)
-        $this->replaceEelExpression('/(node|documentNode)\.parent/', 'q($1).parent().get(0)');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.parent/', 'q($1).parent().get(0)');
         $this->addCommentsIfRegexMatches('/\.parent($|[^a-z(])/i', 'Line %LINE: You may need to rewrite "VARIABLE.parent" to "q(VARIABLE).parent().get(0)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->fusionFlowQueryNodePropertyToWarningComment('_parent', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_parent")" to "q(VARIABLE).parent().get(0)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getParentPath - deprecated
