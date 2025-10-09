@@ -97,6 +97,13 @@ class Neos9PreparationCommandController extends CommandController
 
         $migration->execute();
 
+        if ($migration->hasWarnings()) {
+            foreach ($migration->getWarnings() as $warning) {
+                $this->outputLine(sprintf('<comment>%s</comment>', $warning));
+            }
+            $this->outputLine();
+        }
+
         $this->outputLine('All changes were applied to your working directory. Please go ahead and review and commit them.');
         $this->outputLine('When updating to Neos 9 this command will be removed but `flow flow:core:migrate` will help you with a final polish.');
     }
