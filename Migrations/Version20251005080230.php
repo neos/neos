@@ -85,7 +85,7 @@ class Version20251005080230 extends AbstractMigration
         // getLabel
         // Rewrite "node.label" and "q(node).property('_label')" to "Neos.Node.label(node)"
         $this->replaceEelExpression('/(node|documentNode|site)\.label/', 'Neos.Node.label($1)');
-        $this->addCommentsIfRegexMatches('/\.label\b(?!\()/', 'Line %LINE: You very likely need to rewrite "VARIABLE.label" to "Neos.Node.label(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
+        $this->addCommentsIfRegexMatches('/(?<!props)\.label\b(?!\()/', 'Line %LINE: You very likely need to rewrite "VARIABLE.label" to "Neos.Node.label(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\\([\'"]_label[\'"]\\)/', 'Neos.Node.label($1)');
         // getProperties -> PropertyCollectionInterface
         // getPropertyNames
