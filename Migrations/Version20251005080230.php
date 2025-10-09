@@ -141,7 +141,7 @@ class Version20251005080230 extends AbstractMigration
         $this->fusionFlowQueryNodePropertyToWarningComment('_contextPath', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_contextPath")" to "Neos.Node.serializedNodeAddress(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getDepth
         // Rewrite node.depth and q(node).property("_depth") to Neos.Node.depth(node)
-        $this->replaceEelExpression('/([a-zA-Z.]+)?(site|node|documentNode)\.depth\b(?!\.|\()/', 'Neos.Node.depth($1$2)');
+        $this->replaceEelExpression('/(?<!\.)(site|node|documentNode)\.depth\b(?!\.|\()/', 'Neos.Node.depth($1)');
         $this->addCommentsIfRegexMatches('/\.depth\b(?!\.|\()/', 'Line %LINE: You may need to rewrite "VARIABLE.depth" to Neos.Node.depth(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\([\'"]_depth[\'"]\)/', 'Neos.Node.depth($1)');
         $this->fusionFlowQueryNodePropertyToWarningComment('_depth', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_depth")" to "Neos.Node.depth(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
