@@ -5,7 +5,7 @@ prototype(Neos.Neos:Test)  < prototype(Neos.Fusion:Value) {
   inAfx = afx`<Neos.Fusion:Value value={q(node).property('_hidden')}/>`
 }
 -----
-// TODO 9.0 migration: Line 5: You may need to rewrite "q(VARIABLE).property('_hidden')" to Neos.Node.isDisabled(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.
+// TODO Neos.Neos-20251005080230 Line 5: You may need to rewrite "q(VARIABLE).property('_hidden')" to Neos.Node.isDisabled(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.
 prototype(Neos.Neos:Test)  < prototype(Neos.Fusion:Value) {
   node = ${Neos.Node.isDisabled(node) || Neos.Node.isDisabled(documentNode) || Neos.Node.isDisabled(site)}
   otherVariable = ${Neos.Node.isDisabled(someOtherVariable)}
