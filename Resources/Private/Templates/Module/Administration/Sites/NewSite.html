@@ -38,7 +38,7 @@
               </div>
             </div>
             <div class="neos-control-group{f:validation.ifHasErrors(for: 'nodeType', then: ' neos-error')}">
-              <label class="neos-control-label" for="node-type">{neos:backend.translate(id: 'sites.documentType', value: 'Select a document nodeType', source: 'Modules')}</label>
+              <label class="neos-control-label" for="node-type">{neos:backend.translate(id: 'sites.documentType', value: 'Select a document nodeType', source: 'Modules')} <i>(based on Neos.Neos:Site)</i></label>
               <div class="neos-controls neos-select">
                 <f:form.select name="nodeType" options="{documentNodeTypes}" optionLabelField="name" optionValueField="name" id="node-type" class="neos-span12" />
               </div>

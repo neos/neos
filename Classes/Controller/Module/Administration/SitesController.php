@@ -234,7 +234,7 @@ class SitesController extends AbstractModuleController
     public function newSiteAction(?Site $site = null)
     {
         $sitePackages = $this->packageManager->getFilteredPackages('available', 'neos-site');
-        $documentNodeTypes = $this->nodeTypeManager->getSubNodeTypes('Neos.Neos:Document', false);
+        $documentNodeTypes = $this->nodeTypeManager->getSubNodeTypes('Neos.Neos:Site', false);
 
         $generatorServiceIsAvailable = $this->packageManager->isPackageAvailable('Neos.SiteKickstarter');
         $generatorServices = [];
