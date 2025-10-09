@@ -84,12 +84,12 @@ class Version20251005080230 extends AbstractMigration
         $this->fusionFlowQueryNodePropertyToWarningComment('_name', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_name")" to "VARIABLE.nodeName". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getLabel
         // Rewrite "node.label" and "q(node).property('_label')" to "Neos.Node.label(node)"
-        $this->replaceEelExpression('/(node|documentNode|site)\.label/', 'Neos.Node.label($1)');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.label/', 'Neos.Node.label($1)');
         $this->addCommentsIfRegexMatches('/(?<!props)\.label\b(?!\()/', 'Line %LINE: You very likely need to rewrite "VARIABLE.label" to "Neos.Node.label(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\\([\'"]_label[\'"]\\)/', 'Neos.Node.label($1)');
         // getProperties -> PropertyCollectionInterface
         // getPropertyNames
-        $this->replaceEelExpression('/(node|documentNode|site)\.propertyNames/', 'Array.keys($1.properties)');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.propertyNames/', 'Array.keys($1.properties)');
         $this->addCommentsIfRegexMatches('/\.propertyNames/', 'Line %LINE: !! You very likely need to rewrite "VARIABLE.propertyNames" to "Array.keys(VARIABLE.properties)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->fusionFlowQueryNodePropertyToWarningComment('_propertyNames', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_propertyNames")" to "Array.keys(VARIABLE.properties)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getContentObject -> DEPRECATED / NON-FUNCTIONAL
@@ -97,15 +97,15 @@ class Version20251005080230 extends AbstractMigration
         // Rewrite "node.nodeType" and "q(node).property('_nodeType')" to "Neos.Node.nodeType(node)"
         // Fusion: node.nodeType -> Neos.Node.nodeType(node)
         // Fusion: node.nodeType.name -> node.nodeTypeName
-        $this->replaceEelExpression('/(node|documentNode|site)\.nodeType\.name/', '$1.nodeTypeName');
-        $this->replaceEelExpression('/(node|documentNode|site)\.nodeType\b/', 'Neos.Node.nodeType($1)');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.nodeType\.name/', '$1.nodeTypeName');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.nodeType\b/', 'Neos.Node.nodeType($1)');
         $this->addCommentsIfRegexMatches('/\.nodeType\b(?!\()/', 'Line %LINE: You very likely need to rewrite "VARIABLE.nodeType" to "Neos.Node.nodeType(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->addCommentsIfRegexMatches('/\.nodeType.name/', 'Line %LINE: You may need to rewrite "VARIABLE.nodeType.name" to "VARIABLE.nodeTypeName". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\\([\'"]_nodeType\.name[\'"]\\)/', '$1.nodeTypeName');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\\([\'"]_nodeType(\.[^\'"]*)?[\'"]\\)/', 'Neos.Node.nodeType($1)$2');
         // isHidden
         // Rewrite node.hidden and q(node).property("_hidden") to Neos.Node.isDisabled(node)
-        $this->replaceEelExpression('/(node|documentNode|site)\.hidden\b(?!\.|\()/', 'Neos.Node.isDisabled($1)');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.hidden\b(?!\.|\()/', 'Neos.Node.isDisabled($1)');
         $this->addCommentsIfRegexMatches('/\.hidden\b(?!\.|\()/', 'Line %LINE: You may need to rewrite "VARIABLE.hidden" to Neos.Node.isDisabled(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\([\'"]_hidden[\'"]\)/', 'Neos.Node.isDisabled($1)');
         $this->fusionFlowQueryNodePropertyToWarningComment('_hidden', 'Line %LINE: You may need to rewrite "q(VARIABLE).property(\'_hidden\')" to Neos.Node.isDisabled(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
@@ -122,20 +122,20 @@ class Version20251005080230 extends AbstractMigration
         // isHiddenInIndex
         // Fusion: .hiddenInIndex -> node.properties._hiddenInIndex
         // Rewrite node.hiddenInIndex and q(node).property("_hiddenInIndex") to node.property('hiddenInMenu')
-        $this->replaceEelExpression('/(node|documentNode|site)\.hiddenInIndex\b(?!\.|\()/', '$1.property(\'hiddenInMenu\')');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.hiddenInIndex\b(?!\.|\()/', '$1.property(\'hiddenInMenu\')');
         $this->addCommentsIfRegexMatches('/\.hiddenInIndex\b(?!\.|\()/', 'Line %LINE: You may need to rewrite "VARIABLE.hiddenInIndex" to VARIABLE.property(\'hiddenInMenu\'). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/\.property\([\'"]_hiddenInIndex[\'"]\)/', '.property(\'hiddenInMenu\')');
         $this->fusionFlowQueryNodePropertyToWarningComment('_hiddenInIndex', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_hiddenInIndex")" to "VARIABLE.property(\'hiddenInMenu\')". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getAccessRoles DEPRECATED
         // getPath
         // Rewrite node.path and q(node).property("_path") to Neos.Node.path(node)
-        $this->replaceEelExpression('/(node|documentNode|site)\.path\b(?!\.|\()/', 'Neos.Node.path($1)');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.path\b(?!\.|\()/', 'Neos.Node.path($1)');
         $this->addCommentsIfRegexMatches('/\.path\b(?!\.|\()/', 'Line %LINE: You may need to rewrite "VARIABLE.path" to Neos.Node.path(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\([\'"]_path[\'"]\)/', 'Neos.Node.path($1)');
         $this->fusionFlowQueryNodePropertyToWarningComment('_path', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_path")" to "Neos.Node.path(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getContextPath
         // Rewrite node.contextPath to Neos.Node.serializedNodeAddress(node)
-        $this->replaceEelExpression('/(node|documentNode|site)\.contextPath\b(?!\.|\()/', 'Neos.Node.serializedNodeAddress($1)');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.contextPath\b(?!\.|\()/', 'Neos.Node.serializedNodeAddress($1)');
         $this->addCommentsIfRegexMatches('/\.contextPath\b(?!\.|\()/', 'Line %LINE: !! You very likely need to rewrite "VARIABLE.contextPath" to "Neos.Node.serializedNodeAddress(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\([\'"]_contextPath[\'"]\)/', 'Neos.Node.serializedNodeAddress($1)');
         $this->fusionFlowQueryNodePropertyToWarningComment('_contextPath', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_contextPath")" to "Neos.Node.serializedNodeAddress(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
@@ -146,13 +146,13 @@ class Version20251005080230 extends AbstractMigration
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\([\'"]_depth[\'"]\)/', 'Neos.Node.depth($1)');
         $this->fusionFlowQueryNodePropertyToWarningComment('_depth', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_depth")" to "Neos.Node.depth(VARIABLE)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getWorkspace
-        $this->replaceEelExpression('/(node|documentNode|site)\.workspace\.name/', '$1.workspaceName');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.workspace\.name/', '$1.workspaceName');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\\([\'"]_workspace\.name[\'"]\\)/', '$1.workspaceName');
         $this->addCommentsIfRegexMatches('/(?<!context)\.workspace\b(?!\()/', 'Line %LINE: You very likely need to rewrite "VARIABLE.workspace" as the "workspace" of nodes is not accessible this way and the object contains less information which is split up to the WorkspaceMetadata. If you really need the workspace in fusion you need to create a dedicated helper yourself which should ideally do ALL the complex logic in php directly and return the computed result.');
         $this->fusionFlowQueryNodePropertyToWarningComment('_workspace', 'Line %LINE: You very likely need to rewrite "VARIABLE.workspace" as the "workspace" of nodes is not accessible this way and the object contains less information which is split up to the WorkspaceMetadata. If you really need the workspace in fusion you need to create a dedicated helper yourself which should ideally do ALL the complex logic in php directly and return the computed result.');
         // getIdentifier
         // Rewrite "node.identifier" and "q(node).property('_identifier')" to "node.aggregateId"
-        $this->replaceEelExpression('/(node|documentNode|site)\.identifier/', '$1.aggregateId');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.identifier/', '$1.aggregateId');
         $this->addCommentsIfRegexMatches('/\.identifier/', 'Line %LINE: You may need to rewrite "VARIABLE.identifier" to "VARIABLE.aggregateId". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\([\'"]_identifier[\'"]\)/', '$1.aggregateId');
         $this->fusionFlowQueryNodePropertyToWarningComment('_identifier', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_identifier")" to "VARIABLE.aggregateId". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
@@ -178,7 +178,7 @@ class Version20251005080230 extends AbstractMigration
         $this->fusionNodePropertyPathToWarningComment('dimensions', 'Line %LINE: !! node.dimensions is removed in Neos 9.0. You can get node DimensionSpacePoints via node.dimensionSpacePoints now or use the `Neos.Dimension.*` helper.');
         // isAutoCreated()
         // Rewrite node.autoCreated to node.classification.tethered
-        $this->replaceEelExpression('/(node|documentNode|site)\.autoCreated/', '$1.classification.tethered');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.autoCreated/', '$1.classification.tethered');
         $this->addCommentsIfRegexMatches('/\.autoCreated/', 'Line %LINE: !! You very likely need to rewrite "VARIABLE.autoCreated" to "VARIABLE.classification.tethered". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->fusionFlowQueryNodePropertyToWarningComment('_autoCreated', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_autoCreated")" to "VARIABLE.classification.tethered". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
 
@@ -190,17 +190,17 @@ class Version20251005080230 extends AbstractMigration
          */
         // isRoot() - the root node is usually never available in fusion
         // isTethered()
-        $this->replaceEelExpression('/(node|documentNode|site)\.tethered/', '$1.classification.tethered');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.tethered/', '$1.classification.tethered');
         $this->addCommentsIfRegexMatches('/(?<!classification)\.tethered/', 'Line %LINE: !! You very likely need to rewrite "VARIABLE.tethered" to "VARIABLE.classification.tethered". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->fusionFlowQueryNodePropertyToWarningComment('_tethered', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_tethered")" to "VARIABLE.classification.tethered". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getContentStreamIdentifier() -> threw exception in <= Neos 8.0 - so nobody could have used this
         // getNodeAggregateIdentifier()
         // Rewrite node.nodeAggregateIdentifier to node.aggregateId
-        $this->replaceEelExpression('/(node|documentNode|site)\.nodeAggregateIdentifier/', '$1.aggregateId');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.nodeAggregateIdentifier/', '$1.aggregateId');
         $this->addCommentsIfRegexMatches('/\.nodeAggregateIdentifier/', 'Line %LINE: You may need to rewrite "VARIABLE.nodeAggregateIdentifier" to VARIABLE.aggregateId. We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getNodeTypeName() compatible with property access
         // getNodeName()
-        $this->replaceEelExpression('/(node|documentNode|site)\.nodeName/', '$1.name');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.nodeName/', '$1.name');
         $this->addCommentsIfRegexMatches('/\.nodeName/', 'Line %LINE: !! You very likely need to rewrite "VARIABLE.nodeName" to "VARIABLE.name". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->fusionFlowQueryNodePropertyToWarningComment('_nodeName', 'Line %LINE: !! You very likely need to rewrite "q(VARIABLE).property("_nodeName")" to "VARIABLE.name". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // getOriginDimensionSpacePoint() -> threw exception in <= Neos 8.0 - so nobody could have used this
@@ -215,7 +215,7 @@ class Version20251005080230 extends AbstractMigration
          */
         // Context::getWorkspaceName()
         // Rewrite "node.context.workspaceName" to "node.workspaceName"
-        $this->replaceEelExpression('/(node|documentNode|site)\.context\.(workspaceName|workspace\.name)\b/', '$1.workspaceName');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.context\.(workspaceName|workspace\.name)\b/', '$1.workspaceName');
         $this->addCommentsIfRegexMatches('/\.context\.workspaceName/', 'Line %LINE: You very likely need to rewrite "VARIABLE.context.workspaceName" to "VARIABLE.workspaceName". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // Context::getRootNode()
         $this->fusionNodePropertyPathToWarningComment('context.rootNode', 'Line %LINE: !! node.context.rootNode is removed in Neos 9.0.');
@@ -244,7 +244,7 @@ class Version20251005080230 extends AbstractMigration
          */
         // ContentContext::getCurrentSite
         // Rewrite node.context.currentSite to Neos.Site.findBySiteNode(site)
-        $this->replaceEelExpression('/(node|documentNode|site)\.context\.currentSite\b/', 'Neos.Site.findBySiteNode(site)');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.context\.currentSite\b/', 'Neos.Site.findBySiteNode(site)');
         $this->addCommentsIfRegexMatches('/\.context\.currentSite\b/', 'Line %LINE: You very likely need to rewrite "VARIABLE.context.currentSite" to "Neos.Site.findBySiteNode(site)". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // ContentContext::getCurrentDomain
         $this->fusionNodePropertyPathToWarningComment('context.currentDomain', 'Line %LINE: !! node.context.currentDomain is removed in Neos 9.0.');
@@ -252,17 +252,17 @@ class Version20251005080230 extends AbstractMigration
         $this->fusionNodePropertyPathToWarningComment('context.currentSiteNode', 'Line %LINE: !! node.context.currentSiteNode is removed in Neos 9.0. Check if you can\'t simply use ${site}.');
         // ContentContext::isLive
         // Rewrite "node.context.live" to "!renderingMode.isEdit"
-        $this->replaceEelExpression('/(node|documentNode|site)\.context\.live/', '!renderingMode.isEdit');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.context\.live/', '!renderingMode.isEdit');
         $this->addCommentsIfRegexMatches('/\.context\.live/', 'Line %LINE: You very likely need to rewrite "VARIABLE.context.live" to "!renderingMode.isEdit". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // ContentContext::isInBackend
         // Rewrite "node.context.inBackend" to "renderingMode.isEdit"
-        $this->replaceEelExpression('/(node|documentNode|site)\.context\.inBackend/', 'renderingMode.isEdit');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.context\.inBackend/', 'renderingMode.isEdit');
         $this->addCommentsIfRegexMatches('/\.context\.inBackend/', 'Line %LINE: You very likely need to rewrite "VARIABLE.context.inBackend" to "renderingMode.isEdit". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // ContentContext::getCurrentRenderingMode... -> renderingMode...
         // Rewrite node.context.currentRenderingMode... to renderingMode...
-        $this->replaceEelExpression('/(node|documentNode|site)\.context\.currentRenderingMode\.(name|title|fusionPath|options)/', 'renderingMode.$2');
-        $this->replaceEelExpression('/(node|documentNode|site)\.context\.currentRenderingMode\.edit/', 'renderingMode.isEdit');
-        $this->replaceEelExpression('/(node|documentNode|site)\.context\.currentRenderingMode\.preview/', 'renderingMode.isPreview');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.context\.currentRenderingMode\.(name|title|fusionPath|options)/', 'renderingMode.$2');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.context\.currentRenderingMode\.edit/', 'renderingMode.isEdit');
+        $this->replaceEelExpression('/(?<!\.)(node|documentNode|site)\.context\.currentRenderingMode\.preview/', 'renderingMode.isPreview');
         $this->addCommentsIfRegexMatches('/\.context\.currentRenderingMode/', 'Line %LINE: You very likely need to rewrite "VARIABLE.context.currentRenderingMode..." to "renderingMode...". We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         /**
          * CacheLifetimeOperation and caching
