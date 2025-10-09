@@ -256,7 +256,8 @@ class SitesController extends AbstractModuleController
             'documentNodeTypes' => $documentNodeTypes,
             'site' => $site,
             'generatorServiceIsAvailable' => $generatorServiceIsAvailable,
-            'generatorServices' => $generatorServices
+            'generatorServices' => $generatorServices,
+            'settings' => $this->moduleConfiguration['settings'],
         ]);
     }
 
