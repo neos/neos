@@ -390,6 +390,11 @@ Neos:
               newSite:
                 label: 'Neos.Neos:Modules:sites.actions.newSite.label'
                 title: 'Neos.Neos:Modules:sites.actions.newSite.title'
+            settings:
+              baseNodeType: 'Neos.Neos:Site'
+              # Options are disabled by default with Neos 8.4 as these functionalities were removed in Neos 9.0
+              enableLegacyPackageImport: false
+              enableLegacyPackageCreation: false
           configuration:
             label: 'Neos.Neos:Modules:configuration.label'
             controller: 'Neos\Neos\Controller\Module\Administration\ConfigurationController'
