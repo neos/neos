@@ -78,7 +78,7 @@ class UserCommandController extends CommandController
      * @return void
      * @throws Exception|StopCommandException
      */
-    public function showCommand(string $username, string $authenticationProvider = null): void
+    public function showCommand(string $username, ?string $authenticationProvider): void
     {
         $user = $this->userService->getUser($username, $authenticationProvider);
         if (!$user instanceof User) {

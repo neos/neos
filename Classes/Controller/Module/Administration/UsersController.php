@@ -117,7 +117,7 @@ class UsersController extends AbstractModuleController
         string $searchTerm = '',
         string $sortBy = 'accounts.accountIdentifier',
         string $sortDirection = QueryInterface::ORDER_ASCENDING,
-        string $role = null,
+        ?string $role = null,
     ): void {
         $allowedRoles = $this->getAllowedRoles();
 
@@ -255,7 +255,7 @@ class UsersController extends AbstractModuleController
     {
         if (!$this->isEditingAllowed($user)) {
             $this->addFlashMessage(
-                $this->translator->translateById('users.userEditingDenied.editing.body', [htmlspecialchars($user->getName())], null, null, 'Modules', 'Neos.Neos'),
+                $this->translator->translateById('users.userEditingDenied.editing.body', [htmlspecialchars($user->getName()->getFullName())], null, null, 'Modules', 'Neos.Neos'),
                 $this->translator->translateById('users.userEditingDenied.editing.‚title', [], null, null, 'Modules', 'Neos.Neos'),
                 Message::SEVERITY_ERROR,
                 [],
@@ -510,7 +510,6 @@ class UsersController extends AbstractModuleController
         $user->removeElectronicAddress($electronicAddress);
         $this->userService->updateUser($user);
 
-        /** @var PersonName $personName */
         $personName = $user->getName();
         $name = $personName ? $personName->getFullName() : '';
         $this->addFlashMessage(
@@ -534,7 +533,6 @@ class UsersController extends AbstractModuleController
             $electronicAddressTypes[$type] = $type;
         }
         $electronicAddressUsageTypes = [];
-        $translationHelper = new TranslationHelper();
         foreach ($electronicAddress->getAvailableUsageTypes() as $type) {
             $electronicAddressUsageTypes[$type] = $type;
         }
