@@ -13,7 +13,7 @@ class Version20150309215317 extends AbstractMigration
      * @param Schema $schema
      * @return void
      */
-    public function up(Schema $schema): void 
+    public function up(Schema $schema): void
     {
         $this->abortIf($this->connection->getDatabasePlatform()->getName() != "mysql");
 
@@ -37,7 +37,7 @@ class Version20150309215317 extends AbstractMigration
             $this->addSql("ALTER TABLE typo3_neos_domain_model_user ADD CONSTRAINT typo3_neos_domain_model_user_ibfk_1 FOREIGN KEY (preferences) REFERENCES typo3_neos_domain_model_userpreferences (persistence_object_identifier)");
         }
         $indexes = $this->sm->listTableIndexes('typo3_neos_eventlog_domain_model_event');
-        if (array_key_exists('uid', $indexes)) {
+        if (array_key_exists('uid', $indexes) && $this->connection->getDatabasePlatform() instanceof MariaDBPlatform) {
             $this->addSql("DROP INDEX uid ON typo3_neos_eventlog_domain_model_event");
         }
     }
@@ -46,7 +46,7 @@ class Version20150309215317 extends AbstractMigration
      * @param Schema $schema
      * @return void
      */
-    public function down(Schema $schema): void 
+    public function down(Schema $schema): void
     {
         $this->abortIf($this->connection->getDatabasePlatform()->getName() != "mysql");
 
