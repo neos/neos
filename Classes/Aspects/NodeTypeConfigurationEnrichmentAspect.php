@@ -57,9 +57,7 @@ class NodeTypeConfigurationEnrichmentAspect
         $declaredSuperTypes = $joinPoint->getMethodArgument('declaredSuperTypes');
         $configuration = $joinPoint->getMethodArgument('configuration');
         $nodeTypeName = $joinPoint->getMethodArgument('name');
-        //\Neos\Flow\var_dump("---------------------------------------");
         $this->addLabelsToNodeTypeConfiguration($nodeTypeName, $configuration, $declaredSuperTypes);
-        //\Neos\Flow\var_dump(json_encode($configuration));
         $joinPoint->setMethodArgument('configuration', $configuration);
         $joinPoint->getAdviceChain()->proceed($joinPoint);
     }
@@ -80,6 +78,7 @@ class NodeTypeConfigurationEnrichmentAspect
             $this->setPropertyLabels($nodeTypeName, $configuration, $declaredSuperTypes);
         }
 
+        //\Neos\Flow\var_dump($this->translator->translateById(labelId: "childNodes.column0", sourceName: "", packageKey: "Neos.Demo"));
         if (isset($configuration['childNodes'])) {
             $this->setChildNodeLabels($nodeTypeName, $configuration, $declaredSuperTypes);
         }
