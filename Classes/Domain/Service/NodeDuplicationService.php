@@ -115,8 +115,10 @@ final class NodeDuplicationService
             if ($isFirstCommand) {
                 if (
                     $command instanceof CreateNodeAggregateWithNode
+                    && $contentRepository->getNodeTypeManager()->getNodeType($command->nodeTypeName)
+                        ?->isOfType('Neos.Neos:Document')
                     && array_key_exists('uriPathSegment', $command->initialPropertyValues->values)
-                ){
+                ) {
                     $command = $command->withInitialPropertyValues(
                         newInitialPropertyValues: $command->initialPropertyValues->withValue(
                             valueName: 'uriPathSegment',
