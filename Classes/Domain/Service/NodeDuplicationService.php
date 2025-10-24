@@ -206,9 +206,7 @@ final class NodeDuplicationService
         NodeAggregateId $targetParentNodeAggregateId,
         ContentSubgraphInterface $subgraph
     ): string {
-        $alreadyClaimedUriPathSegments = [
-            $originalUriPathSegment
-        ];
+        $alreadyClaimedUriPathSegments = [];
         foreach (
             $subgraph->findChildNodes(
                 $targetParentNodeAggregateId,
