@@ -78,7 +78,6 @@ class NodeTypeConfigurationEnrichmentAspect
             $this->setPropertyLabels($nodeTypeName, $configuration, $declaredSuperTypes);
         }
 
-        //\Neos\Flow\var_dump($this->translator->translateById(labelId: "childNodes.column0", sourceName: "", packageKey: "Neos.Demo"));
         if (isset($configuration['childNodes'])) {
             $this->setChildNodeLabels($nodeTypeName, $configuration, $declaredSuperTypes);
         }
