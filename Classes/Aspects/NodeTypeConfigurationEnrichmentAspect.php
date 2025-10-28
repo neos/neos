@@ -79,7 +79,7 @@ class NodeTypeConfigurationEnrichmentAspect
         }
 
         if (isset($configuration['childNodes'])) {
-            $this->setChildNodeLabels($nodeTypeName, $configuration, $declaredSuperTypes);
+            $this->setChildNodeLabels($nodeTypeName, $configuration);
         }
     }
 
@@ -87,14 +87,13 @@ class NodeTypeConfigurationEnrichmentAspect
     /**
      * @param $nodeTypeName
      * @param array $configuration
-     * @param array $declaredSuperTypes
      * @return void
      */
-    protected function setChildNodeLabels($nodeTypeName, array &$configuration, array $declaredSuperTypes)
+    protected function setChildNodeLabels($nodeTypeName, array &$configuration)
     {
         $nodeTypeLabelIdPrefix = $this->generateNodeTypeLabelIdPrefix($nodeTypeName);
         foreach ($configuration['childNodes'] as $childNodeName => &$childNodeConfiguration) {
-            if ($this->shouldFetchTranslation($childNodeConfiguration)) {
+            if ($childNodeConfiguration && $this->shouldFetchTranslation($childNodeConfiguration)) {
                 $childNodeConfiguration['label'] = $this->getChildNodeLabelTranslationId($nodeTypeLabelIdPrefix, $childNodeName);
             }
         }
