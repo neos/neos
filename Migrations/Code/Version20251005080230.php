@@ -102,8 +102,16 @@ class Version20251005080230 extends AbstractMigration
         $this->addCommentsIfRegexMatches('/\.hidden\b(?!\.|\()/', 'Line %LINE: You may need to rewrite "VARIABLE.hidden" to Neos.Node.isDisabled(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\([\'"]_hidden[\'"]\)/', 'Neos.Node.isDisabled($1)');
         $this->fusionFlowQueryNodePropertyToWarningComment('_hidden', 'Line %LINE: You may need to rewrite "q(VARIABLE).property(\'_hidden\')" to Neos.Node.isDisabled(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
-        // getHiddenBeforeDateTime not adjusted in 8.4
-        // getHiddenAfterDateTime not adjusted in 8.4
+        // getHiddenBeforeDateTime
+        // Rewrite node.hiddenBeforeDateTime to q(node).property("enableAfterDateTime")'
+        $this->replaceEelExpression('/(node|documentNode)\.hiddenBeforeDateTime/', 'q($1).property("enableAfterDateTime")');
+        $this->replaceEelExpression('/.property\(["\']_hiddenBeforeDateTime["\']\)/', '.property("enableAfterDateTime")');
+        $this->addCommentsIfRegexMatches('/\.hiddenBeforeDateTime/', 'Line %LINE: You may need to rewrite "VARIABLE.hiddenBeforeDateTime" to q(VARIABLE).property("enableAfterDateTime"). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
+        // getHiddenAfterDateTime
+        // Rewrite node.hiddenAfterDateTime to q(node).property("disableAfterDateTime")
+        $this->replaceEelExpression('/(node|documentNode)\.hiddenAfterDateTime/', 'q($1).property("disableAfterDateTime")');
+        $this->replaceEelExpression('/.property\(["\']_hiddenAfterDateTime["\']\)/', '.property("disableAfterDateTime")');
+        $this->addCommentsIfRegexMatches('/\.hiddenAfterDateTime/', 'Line %LINE: You may need to rewrite "VARIABLE.hiddenAfterDateTime" to q(VARIABLE).property("disableAfterDateTime"). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // isHiddenInIndex
         // Fusion: .hiddenInIndex -> node.properties._hiddenInIndex
         // Rewrite node.hiddenInIndex and q(node).property("_hiddenInIndex") to node.property('hiddenInMenu')
