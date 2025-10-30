@@ -15,6 +15,7 @@ use Neos\ContentRepository\Core\SharedModel\Node\NodeAggregateId;
 use Neos\ContentRepository\Core\SharedModel\Workspace\Workspace;
 use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\ContentRepository\Core\SharedModel\Workspace\Workspaces;
+use Neos\Flow\Annotations\Scope;
 use Neos\Flow\Persistence\Doctrine\PersistenceManager;
 use Neos\Media\Domain\Model\AssetInterface;
 use Neos\Media\Domain\Model\AssetVariantInterface;
@@ -34,6 +35,7 @@ use Neos\Utility\TypeHandling;
  * 2. Which cache entries do I need to flush on a change to an asset (this requires an additional traversal over all
  *    dependent workspaces).
  */
+#[Scope("singleton")]
 final class AssetUsageIndexingService
 {
     /** @var array <string, string> */
