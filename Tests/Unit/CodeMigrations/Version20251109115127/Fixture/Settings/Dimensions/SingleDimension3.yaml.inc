@@ -27,7 +27,6 @@ Neos:
     sites:
       '*':
         contentDimensions:
-          # defaultDimensionSpacePoint is used for the homepage (URL /)
           defaultDimensionSpacePoint:
             language: en_US
           resolver:
@@ -36,5 +35,4 @@ Neos:
               segments:
                 -
                   dimensionIdentifier: language
-                  # dimensionValue => uriPathSegment (empty uriPathSegment allowed)
                   dimensionValueMapping: {  }

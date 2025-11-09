@@ -5,7 +5,10 @@ namespace Neos\Flow\Core\Migrations;
 use Neos\Utility\Arrays;
 
 /**
- * Todo
+ * Adjust configuration to Neos 9
+ *
+ * Rewrite Settings.yaml config to new language
+ * Rewrite Routes.yaml config to use Neos\Neos\FrontendRouting\FrontendNodeRoutePartHandlerInterface as route part handler
  */
 class Version20251109115127 extends AbstractMigration
 {
@@ -41,11 +44,10 @@ class Version20251109115127 extends AbstractMigration
 
         $defaultDimensionSpacePoint = [];
         $uriPathSegments = [];
+        $errors = [];
         foreach ($parsed['Neos']['ContentRepository']['contentDimensions'] as $dimensionName => $oldDimensionConfig) {
-            $errors = [];
             $uriPathSegmentsForDimension = [
                 'dimensionIdentifier' => $dimensionName,
-                // todo 'dimensionValueMapping##' => YamlWithComments::comment('dimensionValue => uriPathSegment (empty uriPathSegment allowed)'),
                 'dimensionValueMapping' => []
             ];
             $newContentDimensionConfig = [];
@@ -60,14 +62,13 @@ class Version20251109115127 extends AbstractMigration
             if (isset($oldDimensionConfig['default'])) {
                 $defaultDimensionSpacePoint[$dimensionName] = $oldDimensionConfig['default'];
             } else {
-                $errors[] = sprintf('TODO: FIXME: For preset "%s", did not find any default dimension value underneath "default". The defaultDimensionSpacePoint might be incomplete.', $presetName);
+                $this->showWarning(sprintf('For content dimension "%s", did not find any default dimension value underneath "default". The defaultDimensionSpacePoint might be incomplete.', $dimensionName));
             }
             foreach ($oldDimensionConfig['presets'] as $presetName => $presetConfig) {
                 // we need to use the last dimension value as the the new dimension value name; because that is
                 // what the dimension migrator expects.
                 //
                 // The PresetName is discarded
-                // TODO: PresetName as comment
                 $dimensionValueConfig = [];
                 if (isset($presetConfig['label'])) {
                     $dimensionValueConfig['label'] = $presetConfig['label'];
@@ -77,7 +78,7 @@ class Version20251109115127 extends AbstractMigration
                 }
 
                 if (!isset($presetConfig['values'])) {
-                    $errors[] = sprintf('TODO: FIXME: For preset "%s", did not find any dimension values underneath "values"', $presetName);
+                    $this->showWarning(sprintf('For preset "%s", did not find any dimension values underneath "values"', $presetName));
                 } else {
                     $valuesExceptLast = $presetConfig['values'];
                     $valuesExceptLast = array_reverse($valuesExceptLast);
@@ -91,14 +92,11 @@ class Version20251109115127 extends AbstractMigration
                     if (isset($presetConfig['uriSegment'])) {
                         $uriPathSegmentsForDimension['dimensionValueMapping'][$lastValue] = $presetConfig['uriSegment'];
                     } else {
-                        $errors[] = sprintf('TODO: FIXME: For preset "%s", did not find any uriSegment.', $presetName);
+                        $this->showWarning(sprintf('For preset "%s", did not find any uriSegment.', $presetName));
                     }
                 }
             }
 
-            // todo if ($errors) {
-            //     $parsed['Neos']['ContentRepositoryRegistry']['contentRepositories']['default']['contentDimensions'][$dimensionName . '##'] = YamlWithComments::comment(implode("\n", $errors));
-            // }
             $parsed['Neos']['ContentRepositoryRegistry']['contentRepositories']['default']['contentDimensions'][$dimensionName] = $newContentDimensionConfig;
             $uriPathSegments[] = $uriPathSegmentsForDimension;
         }
@@ -106,7 +104,6 @@ class Version20251109115127 extends AbstractMigration
         $parsed = Arrays::removeEmptyElementsRecursively($parsed);
 
         $parsed['Neos']['Neos']['sites']['*']['contentDimensions'] = [
-            // todo 'defaultDimensionSpacePoint##' => YamlWithComments::comment('defaultDimensionSpacePoint is used for the homepage (URL /)'),
             'defaultDimensionSpacePoint' => $defaultDimensionSpacePoint,
             'resolver' => [
                 'factoryClassName' => 'Neos\Neos\FrontendRouting\DimensionResolution\Resolver\UriPathResolverFactory',
@@ -130,8 +127,8 @@ class Version20251109115127 extends AbstractMigration
             }
 
             $handlerToReplace = [
-                \Neos\Neos\Routing\FrontendNodeRoutePartHandler::class,
-                \Neos\Neos\Routing\FrontendNodeRoutePartHandlerInterface::class,
+                'Neos\Neos\Routing\FrontendNodeRoutePartHandler',
+                'Neos\Neos\Routing\FrontendNodeRoutePartHandlerInterface',
             ];
 
             foreach ($routeConfig['routeParts'] as $routePartKey => $routePart) {

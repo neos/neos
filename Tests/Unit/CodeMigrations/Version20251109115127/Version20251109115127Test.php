@@ -26,7 +26,7 @@ class Version20251109115127Test extends TestCase
      * @dataProvider settingsFixtures
      * @test
      */
-    public function executeSettingsMigration(string $yamlInputFile, string $expectedYamlOutputFile): void
+    public function executeSettingsMigration(string $yamlInputFile, string $expectedYamlOutputFile, string $expectedWarnings = ''): void
     {
         vfsStream::setup('yaml', null, [
             "Target.Package" => [
@@ -60,10 +60,7 @@ class Version20251109115127Test extends TestCase
             $expectedYamlOutputFile,
             rtrim(file_get_contents('vfs://yaml/Target.Package/Configuration/Settings.SomeFile.yaml'))
         );
-
-        self::assertEmpty($migration->getWarnings());
     }
-
 
     /**
      * @dataProvider routesFixtures

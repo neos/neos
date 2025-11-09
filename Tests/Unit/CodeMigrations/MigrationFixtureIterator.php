@@ -26,8 +26,8 @@ final readonly class MigrationFixtureIterator
                 throw new \RuntimeException(sprintf('Expect exactly two segments split by ----- in file %s', $filePath), 1759646552);
             }
             yield $filePath => [
-                rtrim($parts[0]),
-                rtrim($parts[1])
+                rtrim($parts[0]), // original content
+                rtrim($parts[1]), // expectation for new
             ];
         }
     }
