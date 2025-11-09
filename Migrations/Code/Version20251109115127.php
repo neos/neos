@@ -17,12 +17,11 @@ class Version20251109115127 extends AbstractMigration
     public function up(): void
     {
         $this->processConfiguration('Settings', function (array &$configurationByReference) {
-            $currentConfiguration = $configurationByReference;
-            $currentConfiguration = $this->rewriteDimensionConfiguration($currentConfiguration);
+            $configurationByReference = $this->rewriteDimensionConfiguration($configurationByReference);
+        }, true);
 
-            if ($currentConfiguration !== $configurationByReference) {
-                $configurationByReference = $currentConfiguration;
-            }
+        $this->processConfiguration('Routes', function (array &$configurationByReference) {
+            $configurationByReference = $this->rewriteFrontendRoutePartHandler($configurationByReference);
         }, true);
     }
 
@@ -116,6 +115,31 @@ class Version20251109115127 extends AbstractMigration
                 ]
             ]
         ];
+
+        return $parsed;
+    }
+
+    public function rewriteFrontendRoutePartHandler(array $parsed): array
+    {
+        foreach ($parsed as $routeConfigKey => $routeConfig) {
+            if (!is_array($routeConfig)) {
+                continue;
+            }
+            if (!isset($routeConfig['routeParts']) || !is_array($routeConfig['routeParts'])) {
+                continue;
+            }
+
+            $handlerToReplace = [
+                \Neos\Neos\Routing\FrontendNodeRoutePartHandler::class,
+                \Neos\Neos\Routing\FrontendNodeRoutePartHandlerInterface::class,
+            ];
+
+            foreach ($routeConfig['routeParts'] as $routePartKey => $routePart) {
+                if (isset($routePart['handler']) && in_array($routePart['handler'], $handlerToReplace)) {
+                    $parsed[$routeConfigKey]['routeParts'][$routePartKey]['handler'] = \Neos\Neos\FrontendRouting\FrontendNodeRoutePartHandlerInterface::class;
+                }
+            }
+        }
 
         return $parsed;
     }

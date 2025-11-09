@@ -12,16 +12,21 @@ use PHPUnit\Framework\TestCase;
 
 class Version20251109115127Test extends TestCase
 {
-    public static function fixtures(): iterable
+    public static function settingsFixtures(): iterable
     {
         yield from MigrationFixtureIterator::createForFilesInDirectory(__DIR__ . '/Fixture/Settings', 'yaml.inc');
     }
 
+    public static function routesFixtures(): iterable
+    {
+        yield from MigrationFixtureIterator::createForFilesInDirectory(__DIR__ . '/Fixture/Routes', 'yaml.inc');
+    }
+
     /**
-     * @dataProvider fixtures
+     * @dataProvider settingsFixtures
      * @test
      */
-    public function executeMigration(string $yamlInputFile, string $expectedYamlOutputFile): void
+    public function executeSettingsMigration(string $yamlInputFile, string $expectedYamlOutputFile): void
     {
         vfsStream::setup('yaml', null, [
             "Target.Package" => [
@@ -59,8 +64,52 @@ class Version20251109115127Test extends TestCase
         self::assertEmpty($migration->getWarnings());
     }
 
+
     /**
-     * @dataProvider fixtures
+     * @dataProvider routesFixtures
+     * @test
+     */
+    public function executeRoutesMigration(string $yamlInputFile, string $expectedYamlOutputFile): void
+    {
+        vfsStream::setup('yaml', null, [
+            "Target.Package" => [
+                'Configuration' => [
+                    'Routes.yaml' => $yamlInputFile
+                ],
+            ]
+        ]);
+
+        $fakeManager = $this->getMockBuilder(Manager::class)->disableOriginalConstructor()->disableAutoReturnValueGeneration()->getMock();
+
+        if (!class_exists(Version20251109115127::class)) {
+            // migrations are not PSR auto-loaded
+            require_once __DIR__ . '/../../../../Migrations/Code/Version20251109115127.php';
+        }
+
+        $migration = new Version20251109115127(
+            $fakeManager,
+            'Neos.Neos'
+        );
+
+        $targetPackageData = [
+            'path' => 'vfs://yaml/Target.Package'
+        ];
+
+        $migration->prepare($targetPackageData);
+        $migration->up();
+        $migration->execute();
+
+        self::assertEquals(
+            $expectedYamlOutputFile,
+            rtrim(file_get_contents('vfs://yaml/Target.Package/Configuration/Routes.yaml'))
+        );
+
+        self::assertEmpty($migration->getWarnings());
+    }
+
+    /**
+     * @dataProvider settingsFixtures
+     * @dataProvider routesFixtures
      * @test
      */
     public function reExecuteMigrationEmitsNoChanges(string $_, string $migratedYamlFile): void
@@ -68,7 +117,8 @@ class Version20251109115127Test extends TestCase
         vfsStream::setup('yaml', null, [
             "Target.Package" => [
                 'Configuration' => [
-                    'Settings.SomeFile.yaml' => $migratedYamlFile
+                    'Settings.SomeFile.yaml' => $migratedYamlFile,
+                    'Routes.yaml' => $migratedYamlFile,
                 ],
             ]
         ]);
@@ -97,6 +147,11 @@ class Version20251109115127Test extends TestCase
         self::assertEquals(
             $migratedYamlFile,
             file_get_contents('vfs://yaml/Target.Package/Configuration/Settings.SomeFile.yaml')
+        );
+
+        self::assertEquals(
+            $migratedYamlFile,
+            file_get_contents('vfs://yaml/Target.Package/Configuration/Routes.yaml')
         );
 
         self::assertEmpty($migration->getWarnings());
