@@ -6,6 +6,7 @@ namespace Neos\Neos\Tests\Unit\CodeMigrations\Version20251109115127;
 
 use Neos\Flow\Core\Migrations\Manager;
 use Neos\Flow\Core\Migrations\Version20251109115127;
+use Neos\Neos\Tests\Unit\CodeMigrations\MigrationFixtureIterator;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 
@@ -13,25 +14,7 @@ class Version20251109115127Test extends TestCase
 {
     public static function fixtures(): iterable
     {
-        $filePaths = new \RegexIterator(
-            new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator(__DIR__ . '/Fixture'),
-            ),
-            '/\.yaml.inc$/',
-            \RecursiveRegexIterator::GET_MATCH,
-        );
-
-        foreach ($filePaths as $filePath => $_) {
-            $contents = file_get_contents($filePath);
-            $parts = explode("\n-----\n", $contents);
-            if (count($parts) !== 2) {
-                throw new \RuntimeException(sprintf('Expect exact two segments split by ----- in file %s', $filePath), 1759646552);
-            }
-            yield $filePath => [
-                rtrim($parts[0]),
-                rtrim($parts[1])
-            ];
-        }
+        yield from MigrationFixtureIterator::createForFilesInDirectory(__DIR__ . '/Fixture/Settings', 'yaml.inc');
     }
 
     /**
@@ -76,6 +59,10 @@ class Version20251109115127Test extends TestCase
         self::assertEmpty($migration->getWarnings());
     }
 
+    /**
+     * @dataProvider fixtures
+     * @test
+     */
     public function reExecuteMigrationEmitsNoChanges(string $_, string $migratedYamlFile): void
     {
         vfsStream::setup('yaml', null, [
@@ -109,7 +96,7 @@ class Version20251109115127Test extends TestCase
 
         self::assertEquals(
             $migratedYamlFile,
-            file_get_contents('vfs://fusion/Target.Package/Configuration/Settings.SomeFile.yaml')
+            file_get_contents('vfs://yaml/Target.Package/Configuration/Settings.SomeFile.yaml')
         );
 
         self::assertEmpty($migration->getWarnings());

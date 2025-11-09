@@ -6,6 +6,7 @@ namespace Neos\Neos\Tests\Unit\CodeMigrations\Version20251005080230;
 
 use Neos\Flow\Core\Migrations\Manager;
 use Neos\Flow\Core\Migrations\Version20251005080230;
+use Neos\Neos\Tests\Unit\CodeMigrations\MigrationFixtureIterator;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\TestCase;
 
@@ -13,25 +14,7 @@ class Version20251005080230Test extends TestCase
 {
     public static function fixtures(): iterable
     {
-        $filePaths = new \RegexIterator(
-            new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator(__DIR__ . '/Fixture'),
-            ),
-            '/\.fusion.inc$/',
-            \RecursiveRegexIterator::GET_MATCH,
-        );
-
-        foreach ($filePaths as $filePath => $_) {
-            $contents = file_get_contents($filePath);
-            $parts = explode("\n-----\n", $contents);
-            if (count($parts) !== 2) {
-                throw new \RuntimeException(sprintf('Expect exact two segments split by ----- in file %s', $filePath), 1759646552);
-            }
-            yield $filePath => [
-                rtrim($parts[0]),
-                rtrim($parts[1])
-            ];
-        }
+        yield from MigrationFixtureIterator::createForFilesInDirectory(__DIR__ . '/Fixture', 'fusion.inc');
     }
 
     /**
