@@ -14,12 +14,12 @@ Neos:
             # no values here, should produce error
 
 -----
+# TODO Neos.Neos-20251109115127 For preset "en_US", did not find any dimension values underneath "values"
 Neos:
   ContentRepositoryRegistry:
     contentRepositories:
       default:
         contentDimensions:
-          # TODO: FIXME: For preset "en_US", did not find any dimension values underneath "values"
           language:
             label: 'Neos.Demo:Main:contentDimensions.language'
             icon: icon-language
