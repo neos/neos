@@ -65,24 +65,26 @@ final readonly class Link implements \JsonSerializable
     }
 
     /**
+     * Note: The signature of this method might be extended in the future, so it should always be used with named arguments
+     * @see https://www.php.net/manual/en/functions.arguments.php#functions.named-arguments
+     *
      * @param array<int, string> $rel
      */
     public static function create(
         UriInterface $href,
-        ?string $title,
-        ?string $target,
-        array $rel,
-        bool $download,
+        ?string $title = null,
+        ?string $target = null,
+        array $rel = [],
+        bool $download = false,
     ): self {
         $relMap = [];
         foreach ($rel as $value) {
-            $relMap[trim(strtolower($value))] = true;
+            $relMap[strtolower($value)] = true;
         }
-        $trimmedTarget = $target !== null ? trim($target) : '';
         return new self(
             $href,
-            $title,
-            $trimmedTarget !== '' ? strtolower($trimmedTarget) : null,
+            ($title === '' || $title === null) ? null : $title,
+            ($target === '' || $target === null) ? null : strtolower($target),
             array_keys($relMap),
             $download
         );
@@ -105,58 +107,29 @@ final readonly class Link implements \JsonSerializable
     public static function fromString(string $string): self
     {
         return self::create(
-            new Uri($string),
-            null,
-            null,
-            [],
-            false,
-        );
-    }
-
-    public function withTitle(?string $title): self
-    {
-        return self::create(
-            $this->href,
-            $title,
-            $this->target,
-            $this->rel,
-            $this->download,
-        );
-    }
-
-    public function withTarget(?string $target): self
-    {
-        return self::create(
-            $this->href,
-            $this->title,
-            $target,
-            $this->rel,
-            $this->download,
+            href: new Uri($string)
         );
     }
 
     /**
-     * @param array<int, string> $rel
+     * Note: The signature of this method might be extended in the future, so it should always be used with named arguments
+     * @see https://www.php.net/manual/en/functions.arguments.php#functions.named-arguments
+     *
+     * @param array<int, string>|null $rel
      */
-    public function withRel(array $rel): self
-    {
+    public function with(
+        ?UriInterface $href = null,
+        ?string $title = null,
+        ?string $target = null,
+        ?array $rel = null,
+        ?bool $download = null,
+    ): self {
         return self::create(
-            $this->href,
-            $this->title,
-            $this->target,
-            $rel,
-            $this->download,
-        );
-    }
-
-    public function withDownload(bool $download): self
-    {
-        return self::create(
-            $this->href,
-            $this->title,
-            $this->target,
-            $this->rel,
-            $download,
+            $href ?? $this->href,
+            $title ?? $this->title,
+            $target ?? $this->target,
+            $rel ?? $this->rel,
+            $download ?? $this->download,
         );
     }
 
