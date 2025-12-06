@@ -59,19 +59,4 @@ final class ChangeFinder implements ProjectionStateInterface
             ]
         );
     }
-
-    public function findByContentStreamIdAndChangeType(ContentStreamId $contentStreamId, ChangeType $changeType): Changes
-    {
-        $changeRows = $this->dbal->executeQuery(
-            <<<SQL
-                SELECT * FROM {$this->tableName}
-                WHERE contentStreamId = :contentStreamId
-                AND {$changeType->value} = true
-            SQL,
-            [
-                'contentStreamId' => $contentStreamId->value
-            ]
-        )->fetchAllAssociative();
-        return Changes::fromArray(array_map(Change::fromDatabaseRow(...), $changeRows));
-    }
 }
