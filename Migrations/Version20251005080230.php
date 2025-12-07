@@ -262,7 +262,7 @@ class Version20251005080230 extends AbstractMigration
         // Add comment if .cacheLifetime() is used.
         $this->addCommentsIfRegexMatches('/\.cacheLifetime()/', 'Line %LINE: You may need to remove ".cacheLifetime()" as this FlowQuery Operation has been removed. This is not needed anymore as the concept of timeable node visibility has changed. See https://github.com/neos/timeable-node-visibility');
         // Rewrite node to Neos.Caching.entryIdentifierForNode(...) in @cache.entryIdentifier segments
-        $this->replaceEelExpressionInsideFusionPath('/(?<!Neos\.Caching\.entryIdentifierForNode\()(node|documentNode|site)/', 'Neos.Caching.entryIdentifierForNode($1)', '__meta/cache/entryIdentifier');
+        $this->replaceEelExpressionInsideFusionPath('/^(?<!Neos\.Caching\.entryIdentifierForNode\()(node|documentNode|site)$/', 'Neos.Caching.entryIdentifierForNode($1)', '__meta/cache/entryIdentifier');
 
         /**
          * FlowQuery Operation context()
