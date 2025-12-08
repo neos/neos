@@ -53,7 +53,7 @@ class HistoryController extends AbstractModuleController
                 ->controllerContext
                 ->getUriBuilder()
                 ->setCreateAbsoluteUri(true)
-                ->uriFor('Index', ['offset' => $offset + $limit], 'History', 'Neos.Neos');
+                ->uriFor('index', ['offset' => $offset + $limit]);
         }
 
         $eventsByDate = [];
