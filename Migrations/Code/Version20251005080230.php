@@ -14,8 +14,6 @@ namespace Neos\Flow\Core\Migrations;
 use Neos\Fusion\Migrations\FusionMigrationTrait;
 
 /**
- * NOTE: This migration will be enabled in Neos 9.0 by placing it under Migrations/Code - for Neos 8.4 this contains just the rules which are run via dedicated CLI command.
- *
  * Adjust EEL in Fusion code to the new Neos 9 API
  *
  * The context variables ${node}, documentNode and site continue to exist in Fusion but there are changes to their API in Fusion.
@@ -48,11 +46,6 @@ class Version20251005080230 extends AbstractMigration
     public function getIdentifier(): string
     {
         return 'Neos.Neos-20251005080230';
-    }
-
-    public function __construct()
-    {
-        // construct object in 8.4 without arguments
     }
 
     final public function fusionFlowQueryNodePropertyToWarningComment(string $property, string $warningMessage): void
@@ -109,8 +102,16 @@ class Version20251005080230 extends AbstractMigration
         $this->addCommentsIfRegexMatches('/\.hidden\b(?!\.|\()/', 'Line %LINE: You may need to rewrite "VARIABLE.hidden" to Neos.Node.isDisabled(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         $this->replaceEelExpression('/q\(([^)]+)\)\.property\([\'"]_hidden[\'"]\)/', 'Neos.Node.isDisabled($1)');
         $this->fusionFlowQueryNodePropertyToWarningComment('_hidden', 'Line %LINE: You may need to rewrite "q(VARIABLE).property(\'_hidden\')" to Neos.Node.isDisabled(VARIABLE). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
-        // getHiddenBeforeDateTime not adjusted in 8.4
-        // getHiddenAfterDateTime not adjusted in 8.4
+        // getHiddenBeforeDateTime
+        // Rewrite node.hiddenBeforeDateTime to q(node).property("enableAfterDateTime")'
+        $this->replaceEelExpression('/(node|documentNode)\.hiddenBeforeDateTime/', 'q($1).property("enableAfterDateTime")');
+        $this->replaceEelExpression('/.property\(["\']_hiddenBeforeDateTime["\']\)/', '.property("enableAfterDateTime")');
+        $this->addCommentsIfRegexMatches('/\.hiddenBeforeDateTime/', 'Line %LINE: You may need to rewrite "VARIABLE.hiddenBeforeDateTime" to q(VARIABLE).property("enableAfterDateTime"). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
+        // getHiddenAfterDateTime
+        // Rewrite node.hiddenAfterDateTime to q(node).property("disableAfterDateTime")
+        $this->replaceEelExpression('/(node|documentNode)\.hiddenAfterDateTime/', 'q($1).property("disableAfterDateTime")');
+        $this->replaceEelExpression('/.property\(["\']_hiddenAfterDateTime["\']\)/', '.property("disableAfterDateTime")');
+        $this->addCommentsIfRegexMatches('/\.hiddenAfterDateTime/', 'Line %LINE: You may need to rewrite "VARIABLE.hiddenAfterDateTime" to q(VARIABLE).property("disableAfterDateTime"). We did not auto-apply this migration because we cannot be sure whether the variable is a Node.');
         // isHiddenInIndex
         // Fusion: .hiddenInIndex -> node.properties._hiddenInIndex
         // Rewrite node.hiddenInIndex and q(node).property("_hiddenInIndex") to node.property('hiddenInMenu')
@@ -277,10 +278,5 @@ class Version20251005080230 extends AbstractMigration
          * Neos.Neos-FusionObject changes
          */
         $this->renameOnlyFusionPrototypeInstantiations('Neos.Neos:PrimaryContent', 'Neos.Neos:ContentCollection', '"Neos.Neos:PrimaryContent" has been removed without a complete replacement. We replaced all usages with "Neos.Neos:ContentCollection" but not the prototype definition. Please check the replacements and if you have overridden the "Neos.Neos:PrimaryContent" prototype and rewrite it for your needs.');
-    }
-
-    public function disableAddingTodoComments(): void
-    {
-        $this->regexConditionalCommentsOperations = [];
     }
 }
