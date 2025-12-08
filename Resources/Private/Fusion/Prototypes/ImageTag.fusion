@@ -10,7 +10,7 @@ prototype(Neos.Neos:ImageTag) < prototype(Neos.Fusion:Tag) {
   async = false
   quality = NULL
   preset = NULL
-  @context.thumbnail = ${Neos.Media.Image.createThumbnail(
+  @context.thumbnail = ${this.asset ? Neos.Media.Image.createThumbnail(
     this.asset,
     this.preset,
     this.width,
@@ -22,7 +22,7 @@ prototype(Neos.Neos:ImageTag) < prototype(Neos.Fusion:Tag) {
     this.async,
     this.quality,
     this.format
-  )}
+  ) : null}
 
   tagName = 'img'
   attributes {
