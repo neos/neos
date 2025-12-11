@@ -42,6 +42,7 @@ use Neos\ContentRepository\Core\SharedModel\Workspace\WorkspaceName;
 use Neos\Flow\Security\Context as SecurityContext;
 use Neos\Neos\Domain\Model\WorkspacePermissions;
 use Neos\Neos\Domain\Service\UserService;
+use Neos\Neos\Domain\SubtreeTagging\NeosVisibilityConstraints;
 use Neos\Neos\Security\Authorization\ContentRepositoryAuthorizationService;
 use Neos\Neos\Security\Authorization\Privilege\EditNodePrivilege;
 
@@ -73,6 +74,9 @@ final readonly class ContentRepositoryAuthProvider implements AuthProviderInterf
 
     public function getVisibilityConstraints(WorkspaceName $workspaceName): VisibilityConstraints
     {
+        if ($this->securityContext->areAuthorizationChecksDisabled()) {
+            return NeosVisibilityConstraints::excludeRemoved();
+        }
         return $this->authorizationService->getVisibilityConstraints($this->contentRepositoryId, $this->securityContext->getRoles());
     }
 
