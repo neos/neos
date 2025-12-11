@@ -127,7 +127,7 @@ class NodesController extends ActionController
 
         $convertedNodeProperties = $this->nodePropertyConverterService->getPropertiesArray($node);
         array_walk($convertedNodeProperties, function (&$value) {
-            if (is_array($value)) {
+            if (is_array($value) || $value instanceof \JsonSerializable) {
                 $value = json_encode($value);
             }
         });
