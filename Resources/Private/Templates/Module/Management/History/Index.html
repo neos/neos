@@ -48,7 +48,7 @@
 	window.addEventListener('DOMContentLoaded', (event) => {
 		jQuery(function($) {
 
-			var nextPage = '{nextPage}';
+			var nextPage = jQuery('div.loadMore').data('neos-history-nextpage');
 			var historyContainer = $('.neos-history');
 			$('.loadMore button').click(function() {
 
