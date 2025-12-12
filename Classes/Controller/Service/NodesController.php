@@ -227,7 +227,7 @@ class NodesController extends ActionController
         // @todo illegal dependency direction. Neos Neos has no business calling the ui
         $convertedNodeProperties = $this->nodePropertyConverterService->getPropertiesArray($node);
         array_walk($convertedNodeProperties, function (&$value) {
-            if (is_array($value)) {
+            if (is_array($value) || $value instanceof \JsonSerializable) {
                 $value = json_encode($value);
             }
         });
