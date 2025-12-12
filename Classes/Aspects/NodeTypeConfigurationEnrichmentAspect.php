@@ -85,11 +85,11 @@ class NodeTypeConfigurationEnrichmentAspect
 
 
     /**
-     * @param $nodeTypeName
+     * @param string $nodeTypeName
      * @param array $configuration
      * @return void
      */
-    protected function setChildNodeLabels($nodeTypeName, array &$configuration)
+    protected function setChildNodeLabels(string $nodeTypeName, array &$configuration)
     {
         $nodeTypeLabelIdPrefix = $this->generateNodeTypeLabelIdPrefix($nodeTypeName);
         foreach ($configuration['childNodes'] as $childNodeName => &$childNodeConfiguration) {
@@ -325,7 +325,7 @@ class NodeTypeConfigurationEnrichmentAspect
      * @param string $childNodeName
      * @return string
      */
-    protected function getChildNodeLabelTranslationId($nodeTypeSpecificPrefix, $childNodeName)
+    protected function getChildNodeLabelTranslationId(string $nodeTypeSpecificPrefix, string $childNodeName)
     {
         return $nodeTypeSpecificPrefix . 'childNodes.' . $childNodeName;
     }
