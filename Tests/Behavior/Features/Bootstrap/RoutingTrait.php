@@ -29,11 +29,8 @@ use Neos\Flow\Mvc\Routing\Dto\RouteContext;
 use Neos\Flow\Mvc\Routing\Dto\RouteParameters;
 use Neos\Flow\Mvc\Routing\RouterInterface;
 use Neos\Flow\Persistence\PersistenceManagerInterface;
-use Neos\Flow\ResourceManagement\ResourceManager;
 use Neos\Flow\Tests\FunctionalTestRequestHandler;
 use Neos\Flow\Tests\Unit\Http\Fixtures\SpyRequestHandler;
-use Neos\Media\Domain\Model\Asset;
-use Neos\Media\Domain\Repository\AssetRepository;
 use Neos\Neos\Domain\Model\Domain;
 use Neos\Neos\Domain\Model\Site;
 use Neos\Neos\Domain\Model\SiteConfiguration;
@@ -139,27 +136,6 @@ trait RoutingTrait
         };
 
         $entityManager->getEventManager()->addEventListener('postLoad', $this->routingTraitSiteConfigurationPostLoadHook);
-    }
-
-    /**
-     * @Given an asset with id :assetIdentifier and file name :fileName exists with the content :content
-     */
-    public function anAssetExists(string $assetIdentifier, string $fileName, string $content): void
-    {
-        /** @var ResourceManager $resourceManager */
-        $resourceManager = $this->getObject(ResourceManager::class);
-        /** @var AssetRepository $assetRepository */
-        $assetRepository = $this->getObject(AssetRepository::class);
-
-        $resource = $resourceManager->importResourceFromContent($content, $fileName);
-        $asset = new Asset($resource);
-        ObjectAccess::setProperty($asset, 'Persistence_Object_Identifier', $assetIdentifier, true);
-        $assetRepository->add($asset);
-
-        /** @var PersistenceManagerInterface $persistenceManager */
-        $persistenceManager = $this->getObject(PersistenceManagerInterface::class);
-        $persistenceManager->persistAll();
-        $persistenceManager->clearState();
     }
 
     /**
