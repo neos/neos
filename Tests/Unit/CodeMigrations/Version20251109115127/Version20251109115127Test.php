@@ -54,7 +54,6 @@ class Version20251109115127Test extends TestCase
 
         $migration->prepare($targetPackageData);
         $migration->up();
-        $migration->execute();
 
         self::assertEquals(
             $expectedYamlOutputFile,
@@ -94,7 +93,6 @@ class Version20251109115127Test extends TestCase
 
         $migration->prepare($targetPackageData);
         $migration->up();
-        $migration->execute();
 
         self::assertEquals(
             $expectedYamlOutputFile,
@@ -138,8 +136,6 @@ class Version20251109115127Test extends TestCase
 
         $migration->prepare($targetPackageData);
         $migration->up();
-
-        $migration->execute();
 
         self::assertEquals(
             $migratedYamlFile,

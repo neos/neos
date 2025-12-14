@@ -49,7 +49,8 @@ class Version20251005080230Test extends TestCase
 
         $migration->prepare($targetPackageData);
         $migration->up();
-        $migration->execute();
+        // FIXME, we cannot use execute() in the tests as applySearchAndReplaceOperations() does not work on a vfs because of realpath()
+        $migration->applyEelFusionOperations();
 
         self::assertEquals(
             $expectedFusionOutputFile,
@@ -89,8 +90,8 @@ class Version20251005080230Test extends TestCase
 
         $migration->prepare($targetPackageData);
         $migration->up();
-
-        $migration->execute();
+        // FIXME, we cannot use execute() in the tests as applySearchAndReplaceOperations() does not work on a vfs because of realpath()
+        $migration->applyEelFusionOperations();
 
         self::assertEquals(
             $migratedFusionFile,
