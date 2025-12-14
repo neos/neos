@@ -57,9 +57,7 @@ class NodeTypeConfigurationEnrichmentAspect
         $declaredSuperTypes = $joinPoint->getMethodArgument('declaredSuperTypes');
         $configuration = $joinPoint->getMethodArgument('configuration');
         $nodeTypeName = $joinPoint->getMethodArgument('name');
-
         $this->addLabelsToNodeTypeConfiguration($nodeTypeName, $configuration, $declaredSuperTypes);
-
         $joinPoint->setMethodArgument('configuration', $configuration);
         $joinPoint->getAdviceChain()->proceed($joinPoint);
     }
@@ -78,6 +76,26 @@ class NodeTypeConfigurationEnrichmentAspect
 
         if (isset($configuration['properties'])) {
             $this->setPropertyLabels($nodeTypeName, $configuration, $declaredSuperTypes);
+        }
+
+        if (isset($configuration['childNodes'])) {
+            $this->setChildNodeLabels($nodeTypeName, $configuration);
+        }
+    }
+
+
+    /**
+     * @param string $nodeTypeName
+     * @param array $configuration
+     * @return void
+     */
+    protected function setChildNodeLabels(string $nodeTypeName, array &$configuration)
+    {
+        $nodeTypeLabelIdPrefix = $this->generateNodeTypeLabelIdPrefix($nodeTypeName);
+        foreach ($configuration['childNodes'] as $childNodeName => &$childNodeConfiguration) {
+            if ($childNodeConfiguration && $this->shouldFetchTranslation($childNodeConfiguration)) {
+                $childNodeConfiguration['label'] = $this->getChildNodeLabelTranslationId($nodeTypeLabelIdPrefix, $childNodeName);
+            }
         }
     }
 
@@ -298,6 +316,18 @@ class NodeTypeConfigurationEnrichmentAspect
     protected function getPropertyLabelTranslationId($nodeTypeSpecificPrefix, $propertyName)
     {
         return $nodeTypeSpecificPrefix . 'properties.' . $propertyName;
+    }
+
+    /**
+     * Generates a childNode label with the given $nodeTypeSpecificPrefix.
+     *
+     * @param string $nodeTypeSpecificPrefix
+     * @param string $childNodeName
+     * @return string
+     */
+    protected function getChildNodeLabelTranslationId(string $nodeTypeSpecificPrefix, string $childNodeName)
+    {
+        return $nodeTypeSpecificPrefix . 'childNodes.' . $childNodeName;
     }
 
     /**
