@@ -83,7 +83,7 @@ class ExpressionBasedNodeLabelGenerator implements NodeLabelGeneratorInterface
 
         if (Utility::parseEelExpression($expression) === null) {
             if ($node->classification->isTethered()) {
-                return $this->translationHelper->translate($expression);
+                return $this->translationHelper->translate($expression) ?? $expression;
             }
             return $expression;
         }
