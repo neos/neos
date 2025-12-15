@@ -411,6 +411,7 @@ Web (configuration ``linkTypes.Web``):
 The Web Link Type handles external links, so links that begin with `http://` or `https://`.
 
 Link Type Options Reference:
+
 ``enabled`` (boolean)
 	If ``false``, disables this link type.
 ``position`` (string|integer)
@@ -424,6 +425,7 @@ The `Document` Link Type handles internal links. The editor offers you a documen
 The `Document` Link Type can be configured as follows:
 
 Link Type Options Reference:
+
 ``enabled`` (boolean)
 	If ``false``, disables this link type.
 ``position`` (string|integer)
@@ -458,6 +460,7 @@ Asset (configuration ``linkTypes.Asset``):
 The `Asset` Link Type handles links to files from the Media Module. The editor will offer you a media browser from which you can select any asset from within your site.
 
 Link Type Options Reference:
+
 ``enabled`` (boolean)
 	If ``false``, disables this link type.
 ``position`` (string|integer)
@@ -474,6 +477,7 @@ The editor for the `MailTo` Link Type will offer all of those fields. Each field
 The `MailTo` Link Type can be configured as follows:
 
 Link Type Options Reference:
+
 ``enabled`` (boolean)
 	If ``false``, disables this link type.
 ``position`` (string|integer)
@@ -502,6 +506,7 @@ Phone (configuration ``linkTypes.Phone``):
 The `Phone` link type handles phone links, which start with `tel:` and allow to start a call.
 
 Link Type Options Reference:
+
 ``enabled`` (boolean)
 	If ``false``, disables this link type.
 ``position`` (string|integer)
