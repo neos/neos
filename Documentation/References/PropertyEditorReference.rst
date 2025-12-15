@@ -382,8 +382,6 @@ Options Reference:
 ``linkTypes``
   Configure the link types (see below).
 
-Neos comes with the following built-in link types.
-
 All link types can be configured via ``editorOptions.linkTypes.<id of link type>``:
 
 Example:
@@ -405,6 +403,8 @@ Example:
 
 .. note:: When using the link editor inline all options are specified inside ``inline.editorOptions.linking``.
 
+You can find the available link types and their configuration options below.
+
 Web (configuration ``linkTypes.Web``):
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -412,7 +412,7 @@ The Web Link Type handles external links, so links that begin with `http://` or 
 
 Link Type Options Reference:
 ``enabled`` (boolean)
-	If ``true``, disables this link type.
+	If ``false``, disables this link type.
 ``position`` (string|integer)
 	Defines order of this link type. E.g. ``"before <id of link type>"``.
 
@@ -423,18 +423,15 @@ The `Document` Link Type handles internal links. The editor offers you a documen
 
 The `Document` Link Type can be configured as follows:
 
-# @deprecated legacy options
-              startingPoint: '/<Neos.Neos:Sites>/my-site/'
-
 Link Type Options Reference:
 ``enabled`` (boolean)
-	If ``true``, disables this link type.
+	If ``false``, disables this link type.
 ``position`` (string|integer)
 	Defines order of this link type. E.g. ``"before <id of link type>"``.
 ``startingPoint`` (string)
   Starting point for the node tree, by default the current site node
 ``baseNodeType`` (string)
-  Base NodeType for the node tree by default behaves like the document tree and follows all child hierachies for nodes of type ``Neos.Neos:Document``.
+  Base NodeType for the node tree by default behaves like the document tree and follows all child hierarchies for nodes of type ``Neos.Neos:Document``.
 ``loadingDepth`` (integer)
   Loading depth for the node tree by default behaves like the document tree and lists nodes up to a depth of ``4``.
 ``allowedNodeTypes`` (array of strings)
@@ -462,7 +459,7 @@ The `Asset` Link Type handles links to files from the Media Module. The editor w
 
 Link Type Options Reference:
 ``enabled`` (boolean)
-	If ``true``, disables this link type.
+	If ``false``, disables this link type.
 ``position`` (string|integer)
 	Defines order of this link type. E.g. ``"before <id of link type>"``.
 
@@ -478,7 +475,7 @@ The `MailTo` Link Type can be configured as follows:
 
 Link Type Options Reference:
 ``enabled`` (boolean)
-	If ``true``, disables this link type.
+	If ``false``, disables this link type.
 ``position`` (string|integer)
 	Defines order of this link type. E.g. ``"before <id of link type>"``.
 ``enabledFields`` (object)
@@ -506,7 +503,7 @@ The `Phone` link type handles phone links, which start with `tel:` and allow to 
 
 Link Type Options Reference:
 ``enabled`` (boolean)
-	If ``true``, disables this link type.
+	If ``false``, disables this link type.
 ``position`` (string|integer)
 	Defines order of this link type. E.g. ``"before <id of link type>"``.
 
