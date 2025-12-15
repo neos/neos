@@ -14,13 +14,12 @@ namespace Neos\Neos\Domain\NodeLabel;
  * source code.
  */
 
-use Neos\ContentRepository\Core\NodeType\NodeType;
 use Neos\ContentRepository\Core\Projection\ContentGraph\Node;
-use Neos\ContentRepository\Core\SharedModel\Node\NodeName;
 use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Eel\EelEvaluatorInterface;
 use Neos\Eel\Utility;
 use Neos\Flow\Annotations as Flow;
+use Neos\Flow\I18n\EelHelper\TranslationHelper;
 
 /**
  * The expression based node label generator that is used as default if a label expression is configured.
@@ -34,6 +33,9 @@ class ExpressionBasedNodeLabelGenerator implements NodeLabelGeneratorInterface
 
     #[Flow\Inject]
     protected ContentRepositoryRegistry $contentRepositoryRegistry;
+
+    #[Flow\Inject]
+    protected TranslationHelper $translationHelper;
 
     /**
      * @var array<string, string>
@@ -80,6 +82,9 @@ class ExpressionBasedNodeLabelGenerator implements NodeLabelGeneratorInterface
         }
 
         if (Utility::parseEelExpression($expression) === null) {
+            if ($node->classification->isTethered()) {
+                return $this->translationHelper->translate($expression) ?? $expression;
+            }
             return $expression;
         }
 
