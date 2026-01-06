@@ -272,7 +272,7 @@ class NodeTypeConfigurationEnrichmentAspect
     {
         $fieldValue = array_key_exists($fieldName, $parentConfiguration) ? $parentConfiguration[$fieldName] : '';
 
-        return (trim($fieldValue) === 'i18n');
+        return ($fieldValue !== null && trim($fieldValue) === 'i18n');
     }
 
     /**
