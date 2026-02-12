@@ -1,0 +1,67 @@
+`8.4.4 (2026-02-12) <https://github.com/neos/neos-development-collection/releases/tag/8.4.4>`_
+==============================================================================================
+
+Overview of merged pull requests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`BUGFIX: Allow possible translation value to be null <https://github.com/neos/neos-development-collection/pull/5726>`_
+----------------------------------------------------------------------------------------------------------------------
+
+backport of https://github.com/neos/neos-development-collection/pull/5722
+
+**Upgrade instructions**
+
+
+* Packages: ``NodeTypes.ColumnLayouts`` ``Neos``
+
+`BUGFIX: Translate label for childNodes <https://github.com/neos/neos-development-collection/pull/5667>`_
+---------------------------------------------------------------------------------------------------------
+
+Added translation support for labels of autocreated childNodes
+
+## Example:
+
+yaml-File:
+```yaml
+'Neos.Demo:Content.Columns.Two':
+  ...
+  childNodes:
+    column0:
+      type: 'Neos.Demo:Collection.Content.Column'
+      label: i18n
+    column1:
+      type: 'Neos.Demo:Collection.Content.Column'
+      label: i18n
+```
+
+xlf-file:
+```xlf
+...
+<trans-unit id="childNodes.column0" xml:space="preserve">
+	<source>Left Column</source>
+</trans-unit>
+<trans-unit id="childNodes.column1" xml:space="preserve">
+	<source>Right Column</source>
+</trans-unit>
+...
+```
+
+## Changes:
+Added childNode labels in addLabelsToNodeTypeConfiguration in NodeConfigurationEnrichmentAspect and implemented function for transforming i18n to a later translated id
+
+Implemented translating of said id to the actual translation in ExpressionBasedNodeLabelGenerator in function getLabel
+
+resolved: https://github.com/neos/neos-development-collection/issues/5643
+
+## Environment
+```
+- Flow: 8.4
+- Neos: 8.4
+- PHP: 8.3
+```
+
+
+* Packages: ``Neos``
+
+`Detailed log <https://github.com/neos/neos-development-collection/compare/8.4.2...8.4.4>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
