@@ -208,7 +208,7 @@ final class AssetUsageIndexingService
     /**
      * @return array<string>
      */
-    private function extractAssetIds(string $type, mixed $value): array
+    protected function extractAssetIds(string $type, mixed $value): array
     {
         if ($value === null) {
             return [];
