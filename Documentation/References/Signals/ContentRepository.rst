@@ -3,7 +3,7 @@
 Content Repository Signals Reference
 ====================================
 
-This reference was automatically generated from code on 2025-02-12
+This reference was automatically generated from code on 2026-03-17
 
 
 .. _`Content Repository Signals Reference: Context (``Neos\ContentRepository\Domain\Service\Context``)`:

@@ -3,7 +3,7 @@
 Eel Helpers Reference
 =====================
 
-This reference was automatically generated from code on 2025-02-12
+This reference was automatically generated from code on 2026-03-17
 
 
 .. _`Eel Helpers Reference: Api`:
@@ -1612,6 +1612,9 @@ NodeInfo.defaultNodesForBackend(site, documentNode, controllerContext)
 
 **Return** (array)
 
+NodeInfo.previewUri(node, controllerContext)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 NodeInfo.renderDocumentNodeAndChildContent(documentNode, controllerContext)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1620,12 +1623,11 @@ NodeInfo.renderDocumentNodeAndChildContent(documentNode, controllerContext)
 
 **Return** (array)
 
-NodeInfo.renderNodeWithMinimalPropertiesAndChildrenInformation(node, controllerContext, nodeTypeFilterOverride)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NodeInfo.renderNodeWithMinimalPropertiesAndChildrenInformation(node, controllerContext, nodeTypeFilter, includeContentChildNodes)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ``node`` (NodeInterface)
 * ``controllerContext`` (ControllerContext|null, *optional*)
-* ``nodeTypeFilterOverride`` (string, *optional*)
 
 **Return** (array|null)
 
@@ -1638,8 +1640,8 @@ NodeInfo.renderNodeWithPropertiesAndChildrenInformation(node, controllerContext,
 
 **Return** (array|null)
 
-NodeInfo.renderNodes(nodes, controllerContext, omitMostPropertiesForTreeState)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NodeInfo.renderNodes(nodes, controllerContext, omitMostPropertiesForTreeState, includeContentChildNodes)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ``nodes`` (array)
 * ``controllerContext`` (ControllerContext)
@@ -1647,8 +1649,8 @@ NodeInfo.renderNodes(nodes, controllerContext, omitMostPropertiesForTreeState)
 
 **Return** (array)
 
-NodeInfo.renderNodesWithParents(nodes, controllerContext, nodeTypeFilter)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NodeInfo.renderNodesWithParents(nodes, controllerContext, nodeTypeFilter, includeContentChildNodes)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ``nodes`` (array)
 * ``controllerContext`` (ControllerContext)
@@ -1659,7 +1661,7 @@ NodeInfo.renderNodesWithParents(nodes, controllerContext, nodeTypeFilter)
 NodeInfo.uri(node, controllerContext)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* ``node`` (NodeInterface)
+* ``node`` (?NodeInterface)
 * ``controllerContext`` (ControllerContext)
 
 **Return** (string)
