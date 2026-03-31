@@ -3,7 +3,7 @@
 ContentRepository Command Reference
 ===================================
 
-This reference was automatically generated from code on 2026-03-26
+This reference was automatically generated from code on 2026-03-31
 
 
 .. _`ContentRepository Command Reference: AddDimensionShineThrough`:
@@ -83,7 +83,7 @@ create(workspaceName, nodeAggregateId, newNodeTypeName, strategy)
 * ``workspaceName`` (WorkspaceName) The workspace in which the operation is to be performed
 * ``nodeAggregateId`` (NodeAggregateId) The unique identifier of the node aggregate to change
 * ``newNodeTypeName`` (NodeTypeName) Name of the new node type
-* ``strategy`` (NodeAggregateTypeChangeChildConstraintConflictResolutionStrategy) Strategy for conflicts on affected child nodes ({@see NodeAggregateTypeChangeChildConstraintConflictResolutionStrategy})
+* ``strategy`` (NodeAggregateTypeChangeChildConstraintConflictResolutionStrategy|NodeAggregateTypeChangeChildConstraintConflictResolutionMarkWithTagStrategy) Strategy for conflicts on affected child nodes ({@see NodeAggregateTypeChangeChildConstraintConflictResolutionStrategy})
 
 
 
