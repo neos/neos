@@ -3,7 +3,7 @@
 FluidAdaptor ViewHelper Reference
 #################################
 
-This reference was automatically generated from code on 2026-03-31
+This reference was automatically generated from code on 2026-04-11
 
 
 .. _`FluidAdaptor ViewHelper Reference: f:debug`:
