@@ -27,6 +27,8 @@ use Neos\ContentRepositoryRegistry\ContentRepositoryRegistry;
 use Neos\Flow\Security\Context as SecurityContext;
 use Neos\Neos\Domain\Service\WorkspacePublishingService;
 use Neos\Neos\Domain\SubtreeTagging\NeosSubtreeTag;
+use Neos\Workspace\Ui\Domain\TrashBin\TrashItemFinder;
+use Psr\Clock\ClockInterface;
 
 /**
  * Service that detects which soft removals in a content repository can be safely transformed to hard removals
@@ -83,10 +85,10 @@ final readonly class SoftRemovalGarbageCollector
     /**
      * Entry point to trigger the hard removal
      */
-    public function run(ContentRepositoryId $contentRepositoryId): void
+    public function run(ContentRepositoryId $contentRepositoryId, ?\DateInterval $gracePeriod = null): void
     {
         $contentRepository = $this->contentRepositoryRegistry->get($contentRepositoryId);
-        $this->securityContext->withoutAuthorizationChecks(function () use ($contentRepository) {
+        $this->securityContext->withoutAuthorizationChecks(function () use ($contentRepository, $gracePeriod) {
             try {
                 $liveContentGraph = $contentRepository->getContentGraph(WorkspaceName::forLive());
             } catch (WorkspaceDoesNotExist) {
@@ -100,7 +102,7 @@ final readonly class SoftRemovalGarbageCollector
 
             $softRemovedNodes = $this->withImpendingHardRemovalConflicts($softRemovedNodes, $contentRepository);
 
-            $this->hardRemoveNodesInDimensionsThatImposeNoConflicts($softRemovedNodes, $contentRepository);
+            $this->hardRemoveNodesInDimensionsThatImposeNoConflicts($softRemovedNodes, $contentRepository, $gracePeriod);
         });
     }
 
@@ -195,7 +197,7 @@ final readonly class SoftRemovalGarbageCollector
      * For the dimensions a node was soft-removed we calculate the dimensions that will via STRATEGY_ALL_SPECIALIZATIONS remove exactly it.
      * If a variant that is about to be removed imposes a conflict here we will skip the hard removal.
      */
-    private function hardRemoveNodesInDimensionsThatImposeNoConflicts(SoftRemovedNodes $softRemovedNodes, ContentRepository $contentRepository): void
+    private function hardRemoveNodesInDimensionsThatImposeNoConflicts(SoftRemovedNodes $softRemovedNodes, ContentRepository $contentRepository, ?\DateInterval $gracePeriod): void
     {
         foreach ($softRemovedNodes as $softRemovedNode) {
             // the generalisations of the non-conflicting soft removed dimensions
@@ -211,15 +213,26 @@ final readonly class SoftRemovalGarbageCollector
                         ->getIntersection($softRemovedNode->conflictingDimensionSpacePoints)
                         ->isEmpty()
                 ) {
-                    try {
-                        $contentRepository->handle(RemoveNodeAggregate::create(
-                            WorkspaceName::forLive(),
-                            $softRemovedNode->nodeAggregateId,
-                            $generalization,
-                            NodeVariantSelectionStrategy::STRATEGY_ALL_SPECIALIZATIONS
-                        ));
-                    } catch (NodeAggregateCurrentlyDoesNotExist | NodeAggregateDoesCurrentlyNotCoverDimensionSpacePoint) {
-                        // already removed by another command further up the graph
+                    $contentRepositoryReflection = new \ReflectionClass($contentRepository);
+                    /** @var ClockInterface $clock */
+                    $clock = $contentRepositoryReflection->getProperty('clock')->getValue($contentRepository);
+                    $trashItemFinder = $contentRepository->projectionState(TrashItemFinder::class);
+                    $trashItem = $trashItemFinder->findItem(
+                        WorkspaceName::forLive(),
+                        $softRemovedNode->nodeAggregateId,
+                        $generalization,
+                    );
+                    if (!$gracePeriod || !$trashItem || !$trashItem->deleteTime || $trashItem->deleteTime->add($gracePeriod) < $clock->now()) {
+                        try {
+                            $contentRepository->handle(RemoveNodeAggregate::create(
+                                WorkspaceName::forLive(),
+                                $softRemovedNode->nodeAggregateId,
+                                $generalization,
+                                NodeVariantSelectionStrategy::STRATEGY_ALL_SPECIALIZATIONS
+                            ));
+                        } catch (NodeAggregateCurrentlyDoesNotExist | NodeAggregateDoesCurrentlyNotCoverDimensionSpacePoint) {
+                            // already removed by another command further up the graph
+                        }
                     }
                 }
             }
