@@ -222,7 +222,7 @@ final readonly class SoftRemovalGarbageCollector
                             $softRemovedNode->nodeAggregateId,
                             $generalization,
                         );
-                        if ($trashItem !== null && $trashItem->deleteTime->add($gracePeriod) >= $now) {
+                        if ($trashItem?->deleteTime !== null && $trashItem->deleteTime->add($gracePeriod) >= $now) {
                             continue;
                         }
                     }
