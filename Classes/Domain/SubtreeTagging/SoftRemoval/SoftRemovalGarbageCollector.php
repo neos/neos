@@ -79,6 +79,7 @@ final readonly class SoftRemovalGarbageCollector
         private ContentRepositoryRegistry $contentRepositoryRegistry,
         private ImpendingHardRemovalConflictRepository $impendingConflictRepository,
         private SecurityContext $securityContext,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -199,6 +200,7 @@ final readonly class SoftRemovalGarbageCollector
      */
     private function hardRemoveNodesInDimensionsThatImposeNoConflicts(SoftRemovedNodes $softRemovedNodes, ContentRepository $contentRepository, ?\DateInterval $gracePeriod): void
     {
+        $now = $this->clock->now();
         foreach ($softRemovedNodes as $softRemovedNode) {
             // the generalisations of the non-conflicting soft removed dimensions
             $generalizationsToRemoveWithAllSpecializations = $contentRepository->getVariationGraph()->reduceSetToRelativeRoots(
@@ -213,26 +215,26 @@ final readonly class SoftRemovalGarbageCollector
                         ->getIntersection($softRemovedNode->conflictingDimensionSpacePoints)
                         ->isEmpty()
                 ) {
-                    $contentRepositoryReflection = new \ReflectionClass($contentRepository);
-                    /** @var ClockInterface $clock */
-                    $clock = $contentRepositoryReflection->getProperty('clock')->getValue($contentRepository);
-                    $trashItemFinder = $contentRepository->projectionState(TrashItemFinder::class);
-                    $trashItem = $trashItemFinder->findItem(
-                        WorkspaceName::forLive(),
-                        $softRemovedNode->nodeAggregateId,
-                        $generalization,
-                    );
-                    if (!$gracePeriod || !$trashItem || !$trashItem->deleteTime || $trashItem->deleteTime->add($gracePeriod) < $clock->now()) {
-                        try {
-                            $contentRepository->handle(RemoveNodeAggregate::create(
-                                WorkspaceName::forLive(),
-                                $softRemovedNode->nodeAggregateId,
-                                $generalization,
-                                NodeVariantSelectionStrategy::STRATEGY_ALL_SPECIALIZATIONS
-                            ));
-                        } catch (NodeAggregateCurrentlyDoesNotExist | NodeAggregateDoesCurrentlyNotCoverDimensionSpacePoint) {
-                            // already removed by another command further up the graph
+                    if ($gracePeriod !== null) {
+                        $trashItemFinder = $contentRepository->projectionState(TrashItemFinder::class);
+                        $trashItem = $trashItemFinder->findItem(
+                            WorkspaceName::forLive(),
+                            $softRemovedNode->nodeAggregateId,
+                            $generalization,
+                        );
+                        if ($trashItem !== null && $trashItem->deleteTime->add($gracePeriod) >= $now) {
+                            continue;
                         }
+                    }
+                    try {
+                        $contentRepository->handle(RemoveNodeAggregate::create(
+                            WorkspaceName::forLive(),
+                            $softRemovedNode->nodeAggregateId,
+                            $generalization,
+                            NodeVariantSelectionStrategy::STRATEGY_ALL_SPECIALIZATIONS
+                        ));
+                    } catch (NodeAggregateCurrentlyDoesNotExist | NodeAggregateDoesCurrentlyNotCoverDimensionSpacePoint) {
+                        // already removed by another command further up the graph
                     }
                 }
             }
