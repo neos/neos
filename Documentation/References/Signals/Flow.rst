@@ -3,7 +3,7 @@
 Flow Signals Reference
 ======================
 
-This reference was automatically generated from code on 2025-02-05
+This reference was automatically generated from code on 2026-04-22
 
 
 .. _`Flow Signals Reference: AbstractAdvice (``Neos\Flow\Aop\Advice\AbstractAdvice``)`:
@@ -39,13 +39,6 @@ Emit that the view is resolved. The passed ViewInterface reference,
 gives the possibility to add variables to the view,
 before passing it on to further rendering
 
-viewResolved
-^^^^^^^^^^^^
-
-Emit that the view is resolved. The passed ViewInterface reference,
-gives the possibility to add variables to the view,
-before passing it on to further rendering
-
 
 
 
@@ -57,13 +50,6 @@ ActionController (``Neos\Flow\Mvc\Controller\ActionController``)
 ----------------------------------------------------------------
 
 This class contains the following signals.
-
-viewResolved
-^^^^^^^^^^^^
-
-Emit that the view is resolved. The passed ViewInterface reference,
-gives the possibility to add variables to the view,
-before passing it on to further rendering
 
 viewResolved
 ^^^^^^^^^^^^
@@ -261,23 +247,6 @@ Signals that caches should be warmed up.
 
 Other application parts may subscribe to this signal and execute additional
 tasks for preparing the application for the first request.
-
-
-
-
-
-
-.. _`Flow Signals Reference: Compiler (``Neos\Flow\ObjectManagement\Proxy\Compiler``)`:
-
-Compiler (``Neos\Flow\ObjectManagement\Proxy\Compiler``)
---------------------------------------------------------
-
-This class contains the following signals.
-
-compiledClasses
-^^^^^^^^^^^^^^^
-
-
 
 
 

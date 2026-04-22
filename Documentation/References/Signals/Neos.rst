@@ -3,7 +3,7 @@
 Neos Signals Reference
 ======================
 
-This reference was automatically generated from code on 2025-02-05
+This reference was automatically generated from code on 2026-04-22
 
 
 .. _`Neos Signals Reference: AbstractCreate (``Neos\Neos\Ui\Domain\Model\Changes\AbstractCreate``)`:
@@ -29,13 +29,6 @@ AbstractModuleController (``Neos\Neos\Controller\Module\AbstractModuleController
 -----------------------------------------------------------------------------------
 
 This class contains the following signals.
-
-viewResolved
-^^^^^^^^^^^^
-
-Emit that the view is resolved. The passed ViewInterface reference,
-gives the possibility to add variables to the view,
-before passing it on to further rendering
 
 viewResolved
 ^^^^^^^^^^^^

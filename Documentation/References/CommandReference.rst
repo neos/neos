@@ -19,7 +19,7 @@ commands that may be available, use::
 
   ./flow help
 
-The following reference was automatically generated from code on 2025-02-05
+The following reference was automatically generated from code on 2026-04-22
 
 
 .. _`Neos Command Reference: NEOS.CONTENTREPOSITORY`:
@@ -358,9 +358,6 @@ If fatal errors caused by a package prevent the compile time bootstrap
 from running, the removal of any temporary data can be forced by specifying
 the option **--force**.
 
-This command does not remove the precompiled data provided by frozen
-packages unless the **--force** option is used.
-
 
 
 Options
@@ -377,9 +374,9 @@ Related commands
 ``neos.flow:cache:warmup``
   Warm up caches
 ``neos.flow:package:freeze``
-  Freeze a package
+  Freeze a package <b>(DEPRECATED)</b>
 ``neos.flow:package:refreeze``
-  Refreeze a package
+  Refreeze a package <b>(DEPRECATED)</b>
 
 
 
@@ -1232,7 +1229,7 @@ Related commands
 ``neos.flow:package:freeze``
 ****************************
 
-**Freeze a package**
+**Freeze a package &lt;b&gt;(DEPRECATED)&lt;/b&gt;**
 
 This function marks a package as **frozen** in order to improve performance
 in a development context. While a package is frozen, any modification of files
@@ -1261,9 +1258,9 @@ Related commands
 ^^^^^^^^^^^^^^^^
 
 ``neos.flow:package:unfreeze``
-  Unfreeze a package
+  Unfreeze a package <b>(DEPRECATED)</b>
 ``neos.flow:package:refreeze``
-  Refreeze a package
+  Refreeze a package <b>(DEPRECATED)</b>
 
 
 
@@ -1294,7 +1291,7 @@ Options
 ``neos.flow:package:refreeze``
 ******************************
 
-**Refreeze a package**
+**Refreeze a package &lt;b&gt;(DEPRECATED)&lt;/b&gt;**
 
 Refreezes a currently frozen package: all precompiled information is removed
 and file monitoring will consider the package exactly once, on the next
@@ -1318,7 +1315,7 @@ Related commands
 ^^^^^^^^^^^^^^^^
 
 ``neos.flow:package:freeze``
-  Freeze a package
+  Freeze a package <b>(DEPRECATED)</b>
 ``neos.flow:cache:flush``
   Flush all caches
 
@@ -1344,7 +1341,7 @@ Related commands
 ``neos.flow:package:unfreeze``
 ******************************
 
-**Unfreeze a package**
+**Unfreeze a package &lt;b&gt;(DEPRECATED)&lt;/b&gt;**
 
 Unfreezes a previously frozen package. On the next request, this package will
 be considered again by the file monitoring and related services – if they are
@@ -1367,7 +1364,7 @@ Related commands
 ^^^^^^^^^^^^^^^^
 
 ``neos.flow:package:freeze``
-  Freeze a package
+  Freeze a package <b>(DEPRECATED)</b>
 ``neos.flow:cache:flush``
   Flush all caches
 
@@ -2547,6 +2544,56 @@ Options
 
 
 
+.. _`Neos Command Reference: NEOS.NEOS neos.neos:neos9preparation:preadjustfusion`:
+
+``neos.neos:neos9preparation:preadjustfusion``
+**********************************************
+
+**Pre-adjust EEL in Fusion code to the new Neos 9 API**
+
+to hopefully ease the migration when doing the actual Neos 9.0 update.
+this is possible because Neos 8.4 provides the new Runtime API already
+
+The context variables ${node}, documentNode and site continue to exist in Fusion but there are changes to their API in Fusion.
+
+While most of the FlowQueries work as before, there are some adjustments that come with the new concepts that are introduced in Neos 9.
+
+The most important changes are:
+
+- Accessing properties of the node context via node.context.is no longer supported.
+And modifying the node context via flowQuery q(node).context() is only partially supported.
+The rendering mode (node.context.inBackend) is now moved to a separate variable that is independent of the node context.
+- Internal properties like _hidden and _name are no longer in use.
+- Cache Entry Identifiers are now a dedicated object and not any value.
+
+There are some adjustments with a caveat as they don't reflect the 8.3 behaviour 100%.
+
+A few examples are:
+
+- `node.nodeType` always returned a NodeType and when removed the `Neos.Neos:FallbackNode`. In Neos 9.0 there exists no magic for the `Neos.Neos:FallbackNode` and thus the helper `Neos.Node.nodeType(node)` returns "NULL".
+- `node.context.currentRenderingMode` always returns the rendering mode based on the logged-in user - so when viewing the page logged in in the frontend the mode is still 'inPlaces' as in the backend -> the new `renderingMode` reports "frontend" as expected for this case
+- the "live" rendering mode was renamed to "frontend" so the unlikely case of `node.context.currentRenderingMode == "live"` fails when migrated to `renderingMode.name`
+- `node.context.currentSite` is rewritten to `Neos.Site.findBySiteNode(site)` which makes the assumption of "site" being present and that "currentSite" is actually the current and was not tampered with
+- unlike `node.identifier` the `node.aggregateId` is now a value object in fusion, it is string-able and can be output directly but no direct strict comparison must be done `node.aggregateId == "some-id"` will not work. It has to be cast to string `String.toString(node.aggregateId)`.
+
+Arguments
+^^^^^^^^^
+
+``--package-key``
+  The key of the package to migrate
+
+
+
+Options
+^^^^^^^
+
+``--force``
+  By default packages that are not under version control or contain local changes are skipped. With this flag set changes are applied anyways (changes are not committed if there are local changes though)
+
+
+
+
+
 .. _`Neos Command Reference: NEOS.NEOS neos.neos:site:activate`:
 
 ``neos.neos:site:activate``
@@ -3013,14 +3060,10 @@ Arguments
 
 ``--username``
   The username of the user to show. Usually refers to the account identifier of the user's Neos backend account.
-
-
-
-Options
-^^^^^^^
-
 ``--authentication-provider``
   Name of the authentication provider to use. Example: "Neos.Neos:Backend
+
+
 
 
 

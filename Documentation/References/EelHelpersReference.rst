@@ -3,7 +3,7 @@
 Eel Helpers Reference
 =====================
 
-This reference was automatically generated from code on 2025-02-05
+This reference was automatically generated from code on 2026-04-22
 
 
 .. _`Eel Helpers Reference: Api`:
@@ -548,6 +548,39 @@ Format a date to a string with a given cldr format
 * ``date`` (integer|string|\DateTime)
 * ``cldrFormat`` (string) Format string in CLDR format (see http://cldr.unicode.org/translation/date-time)
 * ``locale`` (null|string, *optional*) String locale - example (de|en|ru_RU)
+
+**Return** (string)
+
+Date.formatCldrDate(dateTime, formatLength, locale)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Format a date to a string with a given cldr formatLength
+
+* ``dateTime`` (\DateTimeInterface)
+* ``formatLength`` (string, *optional*) FormatLength in CLDR format ("Full", "Long", "Medium", "Short") (see https://cldr.unicode.org/translation/date-time/date-time-patterns#basic-date-formats)
+* ``locale`` (null|string, *optional*) String locale - example (de|en|en_US). If not provided the current locale of I18nService is used.
+
+**Return** (string)
+
+Date.formatCldrDateTime(dateTime, formatLength, locale)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Format a datetime to a string with a given cldr formatLength
+
+* ``dateTime`` (\DateTimeInterface)
+* ``formatLength`` (string, *optional*) FormatLength in CLDR format ("Full", "Long", "Medium", "Short") (see https://cldr.unicode.org/translation/date-time/date-time-patterns#basic-date-formats and https://cldr.unicode.org/translation/date-time/date-time-patterns#basic-date-formats)
+* ``locale`` (null|string, *optional*) String locale - example (de|en|en_US). If not provided the current locale of I18nService is used.
+
+**Return** (string)
+
+Date.formatCldrTime(dateTime, formatLength, locale)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Format a time to a string with a given cldr formatLength
+
+* ``dateTime`` (\DateTimeInterface)
+* ``formatLength`` (string, *optional*) FormatLength in CLDR format ("Full", "Long", "Medium", "Short") (see https://cldr.unicode.org/translation/date-time/date-time-patterns#basic-time-formats)
+* ``locale`` (null|string, *optional*) String locale - example (de|en|en_US). If not provided the current locale of I18nService is used.
 
 **Return** (string)
 
@@ -1219,6 +1252,15 @@ Neos.Array.sortByPropertyPath(set, positionPropertyPath)
 
 Sorts the input array by the $positionProperty of each element.
 
+Neos.Array.toHtmlAttributesString(attributes)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Converts an array into an HTML attributes string like 'class="foo" id="bar"'
+
+* ``attributes`` (array<string>)
+
+**Return** (string)
+
 
 
 
@@ -1270,6 +1312,17 @@ the given nodes is updated.
 * ``nodes`` (mixed) (A single Node or array or \Traversable of Nodes)
 
 **Return** (array)
+
+Neos.Caching.entryIdentifierForNode(node)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ForwardCompatiblity for Neos 9.0
+
+Generate a `@cache` entry identifier for a given node:
+
+    entryIdentifier {
+      documentNode = ${Neos.Caching.entryIdentifierForNode(documentNode)}
+    }
 
 Neos.Caching.nodeTag(nodes)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1401,6 +1454,36 @@ Neos.Media.Assets.search(searchTerm, tags, collection)
 
 
 
+.. _`Eel Helpers Reference: Neos.Media.Image`:
+
+Neos.Media.Image
+----------------
+
+
+
+Implemented in: ``Neos\Media\Eel\ImageHelper``
+
+Neos.Media.Image.createThumbnail(asset, preset, width, maximumWidth, height, maximumHeight, allowCropping, allowUpScaling, async, quality, format)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Returns a thumbnail of the given asset, allowing integrators to access the thumbnail size and other metadata.
+
+* ``preset`` (string|null, *optional*) Name of the preset that should be used as basis for the configuration
+* ``width`` (integer|null, *optional*) Desired width of the image
+* ``maximumWidth`` (integer|null, *optional*) Desired maximum width of the image
+* ``height`` (integer|null, *optional*) Desired height of the image
+* ``maximumHeight`` (integer|null, *optional*) Desired maximum height of the image
+* ``allowCropping`` (boolean, *optional*) Whether the image should be cropped if the given sizes would hurt the aspect ratio
+* ``allowUpScaling`` (boolean, *optional*) Whether the resulting image size might exceed the size of the original image
+* ``async`` (boolean, *optional*) Whether the thumbnail can be generated asynchronously
+* ``quality`` (integer|null, *optional*) Quality of the processed image
+* ``format`` (string|null, *optional*) Format for the image, only jpg, jpeg, gif, png, wbmp, xbm, webp and bmp are supported.
+
+
+
+
+
+
 .. _`Eel Helpers Reference: Neos.Node`:
 
 Neos.Node
@@ -1410,16 +1493,19 @@ Eel helper for ContentRepository Nodes
 
 Implemented in: ``Neos\Neos\Fusion\Helper\NodeHelper``
 
+Neos.Node.isDisabled(node)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Neos.Node.isOfType(node, nodeType)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If this node type or any of the direct or indirect super types
 has the given name.
 
-* ``node`` (NodeInterface)
-* ``nodeType`` (string)
+Neos.Node.label(node)
+^^^^^^^^^^^^^^^^^^^^^
 
-**Return** (bool)
+Renders the actual node label based on the NodeType definition in Fusion.
 
 Neos.Node.labelForNode(node)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1440,6 +1526,19 @@ if no content collection could be found
 * ``nodePath`` (string)
 
 **Return** (NodeInterface)
+
+Neos.Node.nodeType(node)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Retrieving the NodeType of the given Node.
+
+If the NodeType schema changed and the NodeType does not exist anymore, NULL is returned.
+
+Neos.Node.serializedNodeAddress(node)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In Neos 8.4 it will just return the context path while in Neos 9 the actual json representation of the NodeAddress is returned.
+Thus, the code must be likely adjusted still in Neos 9.0
 
 
 
@@ -1512,6 +1611,24 @@ Neos.Seo.Image.createThumbnail(asset, preset, width, maximumWidth, height, maxim
 * ``format`` (string, *optional*) Format for the image, only jpg, jpeg, gif, png, wbmp, xbm, webp and bmp are supported.
 
 **Return** (null|ImageInterface)
+
+
+
+
+
+
+.. _`Eel Helpers Reference: Neos.Site`:
+
+Neos.Site
+---------
+
+ForwardCompatibility Neos 9.0
+Eel helper for accessing the Site object
+
+Implemented in: ``Neos\Neos\Fusion\Helper\SiteHelper``
+
+Neos.Site.findBySiteNode(siteNode)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 
@@ -1612,6 +1729,9 @@ NodeInfo.defaultNodesForBackend(site, documentNode, controllerContext)
 
 **Return** (array)
 
+NodeInfo.previewUri(node, controllerContext)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 NodeInfo.renderDocumentNodeAndChildContent(documentNode, controllerContext)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1620,12 +1740,11 @@ NodeInfo.renderDocumentNodeAndChildContent(documentNode, controllerContext)
 
 **Return** (array)
 
-NodeInfo.renderNodeWithMinimalPropertiesAndChildrenInformation(node, controllerContext, nodeTypeFilterOverride)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NodeInfo.renderNodeWithMinimalPropertiesAndChildrenInformation(node, controllerContext, nodeTypeFilter, includeContentChildNodes)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ``node`` (NodeInterface)
 * ``controllerContext`` (ControllerContext|null, *optional*)
-* ``nodeTypeFilterOverride`` (string, *optional*)
 
 **Return** (array|null)
 
@@ -1638,8 +1757,8 @@ NodeInfo.renderNodeWithPropertiesAndChildrenInformation(node, controllerContext,
 
 **Return** (array|null)
 
-NodeInfo.renderNodes(nodes, controllerContext, omitMostPropertiesForTreeState)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NodeInfo.renderNodes(nodes, controllerContext, omitMostPropertiesForTreeState, includeContentChildNodes)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ``nodes`` (array)
 * ``controllerContext`` (ControllerContext)
@@ -1647,8 +1766,8 @@ NodeInfo.renderNodes(nodes, controllerContext, omitMostPropertiesForTreeState)
 
 **Return** (array)
 
-NodeInfo.renderNodesWithParents(nodes, controllerContext, nodeTypeFilter)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+NodeInfo.renderNodesWithParents(nodes, controllerContext, nodeTypeFilter, includeContentChildNodes)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * ``nodes`` (array)
 * ``controllerContext`` (ControllerContext)
@@ -1659,7 +1778,7 @@ NodeInfo.renderNodesWithParents(nodes, controllerContext, nodeTypeFilter)
 NodeInfo.uri(node, controllerContext)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* ``node`` (NodeInterface)
+* ``node`` (?NodeInterface)
 * ``controllerContext`` (ControllerContext)
 
 **Return** (string)
