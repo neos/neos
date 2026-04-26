@@ -96,6 +96,10 @@ final readonly class SoftRemovalGarbageCollector
 
             $softRemovedNodes = $this->findNodeAggregatesInWorkspaceByExplicitRemovedTag($liveContentGraph);
 
+            if ($softRemovedNodes->isEmpty()) {
+                return;
+            }
+
             $softRemovedNodes = $this->withVisibleInDependingWorkspacesConflicts($softRemovedNodes, $contentRepository);
 
             $softRemovedNodes = $this->withImpendingHardRemovalConflicts($softRemovedNodes, $contentRepository);
