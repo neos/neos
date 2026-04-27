@@ -48,14 +48,11 @@
                         <table>
                             <tr>
                                 <td>
-                                    <f:if condition="{contentChanges.original}">
-                                        <m:image image="{contentChanges.original}" allowCropping="false" maximumWidth="500" maximumHeight="500" alt=""/>
-                                    </f:if>
+                                    <f:render section="renderImage" arguments="{image: contentChanges.original}" />"
                                 </td>
                                 <td>
-                                    <f:if condition="{contentChanges.changed}">
-                                        <m:image image="{contentChanges.changed}" allowCropping="false" maximumWidth="500" maximumHeight="500" alt=""/>
-                                    </f:if>
+                                    <f:render section="renderImage" arguments="{image: contentChanges.changed}" />"
+
                                 </td>
                             </tr>
                         </table>
@@ -65,12 +62,12 @@
                             <tr>
                                 <td>
                                     <f:if condition="{contentChanges.original}">
-                                        <del><a href="{f:uri.resource(resource: contentChanges.original.resource)}">{contentChanges.original.resource.filename}</a></del>
+                                        <f:render section="renderAssetLink" arguments="{asset: contentChanges.original, mode: 'del'}" />
                                     </f:if>
                                 </td>
                                 <td>
                                     <f:if condition="{contentChanges.changed}">
-                                        <ins><a href="{f:uri.resource(resource: contentChanges.changed.resource)}">{contentChanges.changed.resource.filename}</a></ins>
+                                        <f:render section="renderAssetLink" arguments="{asset: contentChanges.changed, mode: 'ins'}" />
                                     </f:if>
                               </td>
                           </tr>
@@ -93,3 +90,28 @@
         </f:for>
     </table>
 </div>
+
+<f:section name="renderImage">
+    <f:if condition="{image}">
+        <f:if condition="{image -> neos:getType()} == 'string'">
+            <f:then>
+                <span class="neos-label-important">{image}</span>
+            </f:then>
+            <f:else>
+                <m:image image="{image}" allowCropping="false" maximumWidth="500" maximumHeight="500" alt=""/>
+            </f:else>
+        </f:if>
+    </f:if>
+</f:section>
+<f:section name="renderAssetLink">
+    <f:if condition="{asset}">
+        <f:if condition="{asset -> neos:getType()} == 'string'">
+            <f:then>
+                <span class="neos-label-important">{asset}</span>
+            </f:then>
+            <f:else>
+                <{mode}><a href="{f:uri.resource(resource: asset.resource)}">{asset.resource.filename}</a></{mode}>
+            </f:else>
+        </f:if>
+    </f:if>
+</f:section>

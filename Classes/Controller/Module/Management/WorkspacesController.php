@@ -11,6 +11,8 @@ namespace Neos\Neos\Controller\Module\Management;
  * source code.
  */
 
+use Doctrine\ORM\EntityNotFoundException;
+use Doctrine\Persistence\Proxy as DoctrineProxy;
 use Neos\Diff\Diff;
 use Neos\Diff\Renderer\Html\HtmlArrayRenderer;
 use Neos\Eel\FlowQuery\FlowQuery;
@@ -628,15 +630,15 @@ class WorkspacesController extends AbstractModuleController
                 $contentChanges[$propertyName] = [
                     'type' => 'image',
                     'propertyLabel' => $this->getPropertyLabel($propertyName, $changedNode),
-                    'original' => $originalPropertyValue,
-                    'changed' => $changedPropertyValue
+                    'original' => $this->loadAsset($originalPropertyValue),
+                    'changed' => $this->loadAsset($changedPropertyValue)
                 ];
             } elseif ($originalPropertyValue instanceof AssetInterface || $changedPropertyValue instanceof AssetInterface) {
                 $contentChanges[$propertyName] = [
                     'type' => 'asset',
                     'propertyLabel' => $this->getPropertyLabel($propertyName, $changedNode),
-                    'original' => $originalPropertyValue,
-                    'changed' => $changedPropertyValue
+                    'original' => $this->loadAsset($originalPropertyValue),
+                    'changed' => $this->loadAsset($changedPropertyValue)
                 ];
             } elseif ($originalPropertyValue instanceof \DateTime || $changedPropertyValue instanceof \DateTime) {
                 $changed = false;
@@ -656,6 +658,18 @@ class WorkspacesController extends AbstractModuleController
             }
         }
         return $contentChanges;
+    }
+
+    protected function loadAsset(AssetInterface|null $assetOrNull): AssetInterface|string|null
+    {
+        if ($assetOrNull instanceof DoctrineProxy) {
+            try {
+                $assetOrNull->__load();
+            } catch (EntityNotFoundException $e) {
+                return $e->getMessage();
+            }
+        }
+        return $assetOrNull;
     }
 
     /**
